@@ -1,0 +1,15 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    invalid_annotation_target: ignore
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.gr.dart"
+    - "**/*.config.dart"
+
+linter:
+  rules:
+    prefer_const_constructors: true
+    prefer_const_constructors_in_immutables: true
+    use_key_in_widget_constructors: true

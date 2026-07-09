@@ -1,0 +1,65 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Sort Flutter Imports",
+      "type": "shell",
+      "command": "flutter pub run import_sorter:main -e",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": true
+      }
+    },
+    {
+      "label": "Generate Localization key",
+      "type": "shell",
+      "command": "flutter pub run easy_localization:generate -S \"assets/translations\" -O \"lib/gen\" -o \"locale_keys.g.dart\" -f keys",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      }
+    },
+    {
+      "label": "gitCommitPush",
+      "type": "shell",
+      "command": "git add .; git commit -m \"${input:commitMessage}\"; git push",
+      "problemMatcher": []
+    },
+    {
+      "type": "flutter",
+      "command": "flutter",
+      "args": [
+        "pub",
+        "run",
+        "build_runner",
+        "build"
+      ],
+      "problemMatcher": [
+        "$dart-build_runner"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "label": "flutter: flutter pub run build_runner build",
+      "detail": ""
+    }
+  ],
+  "inputs": [
+    {
+      "id": "commitMessage",
+      "type": "promptString",
+      "description": "Enter your commit message"
+    }
+  ]
+}

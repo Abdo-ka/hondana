@@ -1,0 +1,42 @@
+{
+  "app_name": "Mihonx",
+  "nav": {
+    "library": "Library",
+    "updates": "Updates",
+    "history": "History",
+    "browse": "Browse",
+    "more": "More"
+  },
+  "library": {
+    "empty": "Your library is empty.\nAdd manga from Browse.",
+    "all": "All",
+    "select_all": "Select all",
+    "mark_read": "Mark as read",
+    "mark_unread": "Mark as unread",
+    "remove": "Remove from library",
+    "display": "Display",
+    "sort": "Sort",
+    "display_comfortableGrid": "Comfortable grid",
+    "display_compactGrid": "Compact grid",
+    "display_list": "List",
+    "sort_alphabetical": "Alphabetically",
+    "sort_lastUpdate": "Last update",
+    "sort_unread": "Unread",
+    "sort_dateAdded": "Date added"
+  },
+  "updates": {
+    "empty": "No recent updates yet."
+  },
+  "history": {
+    "empty": "Nothing read yet."
+  },
+  "browse": {
+    "empty": "Sources will appear here."
+  },
+  "more": {
+    "placeholder": "Settings coming soon."
+  },
+  "common": {
+    "retry": "Retry"
+  }
+}

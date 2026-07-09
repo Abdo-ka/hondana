@@ -1,0 +1,89 @@
+{
+    "dart.lineLength": 70,
+    "[dart]": {
+        "editor.formatOnSave": true,
+        "editor.formatOnType": true,
+        "editor.rulers": [
+            70
+        ],
+        "editor.selectionHighlight": false,
+        "editor.suggestSelection": "first",
+        "editor.tabCompletion": "on",
+        "editor.wordBasedSuggestions": "off",
+        "editor.codeActionsOnSave": {
+            "source.fixAll": "explicit",
+            "source.organizeImports": "explicit"
+        }
+    },
+    // Global editor settings
+    "editor.formatOnPaste": true,
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "Dart-Code.dart-code",
+    "editor.minimap.enabled": false,
+    "editor.suggest.snippetsPreventQuickSuggestions": false,
+    "editor.inlineSuggest.enabled": true,
+    // Dart & Flutter analyzer settings
+    "dart.flutterRunAdditionalArgs": [
+        "--device-timeout",
+        "60"
+    ],
+    "dart.previewFlutterUiGuides": true,
+    "dart.debugExternalPackageLibraries": false,
+    "dart.debugSdkLibraries": false,
+    "dart.previewFlutterUiGuidesCustomTracking": true,
+    "dart.analysisServerFolding": true,
+    "dart.enableSnippets": true,
+    "dart.flutterSdkPath": "",
+    // File associations
+    "files.associations": {
+        "*.dart": "dart"
+    },
+    // Files to exclude from explorer
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/*.freezed.dart": true,
+        "**/*.g.dart": false,
+        "**/*.gr.dart": false,
+        "**/.flutter-plugins": true,
+        "**/.flutter-plugins-dependencies": true,
+        "**/generated_plugin_registrant.dart": true
+    },
+    // Search settings
+    "search.exclude": {
+        "**/.fvm": true,
+        "**/build": true,
+        "**/.dart_tool": true,
+        "**/*.freezed.dart": true,
+        "**/*.g.dart": true,
+        "**/*.gr.dart": true
+    },
+    // File watcher exclusions for better performance
+    "files.watcherExclude": {
+        "**/.git/objects/**": true,
+        "**/.git/subtree-cache/**": true,
+        "**/node_modules/*/**": true,
+        "**/.hg/store/**": true,
+        "**/.fvm/**": true,
+        "**/build/**": true,
+        "**/.dart_tool/**": true,
+        "**/ios/Pods/**": true,
+        "**/android/.gradle/**": true
+    },
+    // Terminal settings
+    "terminal.integrated.env.osx": {
+        "FVM_GIT_CACHE": "${env:HOME}/.fvm/versions"
+    },
+    // Material Icon Theme (if installed)
+    "material-icon-theme.folders.associations": {
+        "adapters": "controller",
+        "repositories": "database",
+        "entities": "class",
+        "usecases": "routes",
+        "core": "core",
+        "features": "components"
+    }
+}
