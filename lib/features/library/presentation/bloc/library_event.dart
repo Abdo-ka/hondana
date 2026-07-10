@@ -55,3 +55,26 @@ final class LibrarySelectedMarkedRead extends LibraryEvent {
 final class LibraryRefreshRequested extends LibraryEvent {
   const LibraryRefreshRequested();
 }
+
+final class LibrarySelectedSetCategories extends LibraryEvent {
+  const LibrarySelectedSetCategories(this.categoryIds);
+  final List<int> categoryIds;
+}
+
+final class LibrarySearchChanged extends LibraryEvent {
+  const LibrarySearchChanged(this.query);
+  final String query;
+}
+
+enum LibraryFilterKind { unread, completed, downloaded }
+
+/// Cycles the given tri-state filter (ignore → include → exclude).
+final class LibraryFilterCycled extends LibraryEvent {
+  const LibraryFilterCycled(this.kind);
+  final LibraryFilterKind kind;
+}
+
+/// Internal: re-evaluate filters (e.g. the global downloaded-only toggle).
+final class LibraryFiltersRefreshed extends LibraryEvent {
+  const LibraryFiltersRefreshed();
+}

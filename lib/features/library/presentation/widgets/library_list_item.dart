@@ -1,8 +1,10 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:mihonx/core/extensions/context_ext.dart';
+import 'package:mihonx/core/routing/app_router.gr.dart';
 import 'package:mihonx/core/widgets/app_text.dart';
 import 'package:mihonx/features/library/domain/library_manga.dart';
 import 'package:mihonx/features/library/presentation/bloc/library_bloc.dart';
@@ -25,15 +27,22 @@ class LibraryListItem extends StatelessWidget {
       leading: SizedBox(
         width: 40.w,
         height: 56.h,
-        child: MangaCover(url: entry.manga.thumbnailUrl, radius: 4),
+        child: MangaCover(
+          url: entry.manga.thumbnailUrl,
+          sourceId: entry.manga.source,
+          radius: 4,
+        ),
       ),
       title: AppText.bodyMedium(
         entry.manga.title,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
-      trailing: entry.unreadCount > 0
-          ? UnreadBadge(count: entry.unreadCount)
+      trailing: (entry.unreadCount > 0 || entry.downloadCount > 0)
+          ? CoverBadges(
+              unread: entry.unreadCount,
+              downloads: entry.downloadCount,
+            )
           : null,
       onTap: () => _handleTap(context),
       onLongPress: () => context
@@ -46,7 +55,11 @@ class LibraryListItem extends StatelessWidget {
     final bloc = context.read<LibraryBloc>();
     if (bloc.state.isSelecting) {
       bloc.add(LibraryItemSelectionToggled(entry.manga.id));
+      return;
     }
-    // TODO: open manga details when Task #4 lands.
+    context.router.push(MangaDetailsRoute(
+      sourceId: entry.manga.source,
+      initial: entry.manga.toSManga(),
+    ));
   }
 }

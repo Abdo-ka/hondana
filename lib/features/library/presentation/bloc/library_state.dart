@@ -20,21 +20,35 @@ class LibraryState extends Equatable {
     this.displayMode = LibraryDisplayMode.comfortableGrid,
     this.sortMode = LibrarySortMode.alphabetical,
     this.sortAscending = true,
+    this.query = '',
+    this.filterUnread = TriFilter.ignore,
+    this.filterCompleted = TriFilter.ignore,
+    this.filterDownloaded = TriFilter.ignore,
   });
 
   final BlocStatus loadStatus;
   final BlocStatus refreshStatus;
   final List<Category> categories;
   final int? selectedCategoryId;
+
+  /// Already filtered + sorted by the bloc.
   final List<LibraryManga> manga;
   final Set<int> selectedIds;
   final LibraryDisplayMode displayMode;
   final LibrarySortMode sortMode;
   final bool sortAscending;
+  final String query;
+  final TriFilter filterUnread;
+  final TriFilter filterCompleted;
+  final TriFilter filterDownloaded;
 
   bool get isSelecting => selectedIds.isNotEmpty;
   bool get allSelected =>
       manga.isNotEmpty && selectedIds.length == manga.length;
+  bool get hasActiveFilters =>
+      filterUnread != TriFilter.ignore ||
+      filterCompleted != TriFilter.ignore ||
+      filterDownloaded != TriFilter.ignore;
 
   LibraryState copyWith({
     BlocStatus? loadStatus,
@@ -46,6 +60,10 @@ class LibraryState extends Equatable {
     LibraryDisplayMode? displayMode,
     LibrarySortMode? sortMode,
     bool? sortAscending,
+    String? query,
+    TriFilter? filterUnread,
+    TriFilter? filterCompleted,
+    TriFilter? filterDownloaded,
   }) {
     return LibraryState(
       loadStatus: loadStatus ?? this.loadStatus,
@@ -59,6 +77,10 @@ class LibraryState extends Equatable {
       displayMode: displayMode ?? this.displayMode,
       sortMode: sortMode ?? this.sortMode,
       sortAscending: sortAscending ?? this.sortAscending,
+      query: query ?? this.query,
+      filterUnread: filterUnread ?? this.filterUnread,
+      filterCompleted: filterCompleted ?? this.filterCompleted,
+      filterDownloaded: filterDownloaded ?? this.filterDownloaded,
     );
   }
 
@@ -73,5 +95,9 @@ class LibraryState extends Equatable {
         displayMode,
         sortMode,
         sortAscending,
+        query,
+        filterUnread,
+        filterCompleted,
+        filterDownloaded,
       ];
 }

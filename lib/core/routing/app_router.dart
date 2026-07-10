@@ -20,5 +20,14 @@ class AppRouter extends RootStackRouter {
             AutoRoute(page: MoreRoute.page, path: 'more'),
           ],
         ),
+        AutoRoute(page: SourceCatalogueRoute.page, path: '/catalogue'),
+        AutoRoute(page: MangaDetailsRoute.page, path: '/manga'),
+        AutoRoute(page: ExtensionsRoute.page, path: '/extensions'),
+        AutoRoute(page: GlobalSearchRoute.page, path: '/search'),
+        AutoRoute(page: ReaderRoute.page, path: '/reader'),
+        AutoRoute(page: DownloadsRoute.page, path: '/downloads'),
+        AutoRoute(page: SettingsRoute.page, path: '/settings'),
+        AutoRoute(page: CategoriesRoute.page, path: '/categories'),
+        AutoRoute(page: SourceWebViewRoute.page, path: '/webview'),
       ];
 }

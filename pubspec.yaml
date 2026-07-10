@@ -53,6 +53,14 @@ dependencies:
 
   collection: ^1.18.0
   meta: ^1.17.0
+  native_dio_adapter: ^1.6.0
+  cupertino_http: ^3.0.2
+  cronet_http: ^1.9.0
+  flutter_cache_manager: ^3.4.1
+  background_downloader: ^9.5.5
+  flutter_inappwebview: ^6.1.5
+  scrollable_positioned_list: ^0.3.8
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:

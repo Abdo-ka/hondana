@@ -17,7 +17,12 @@ abstract interface class LibraryRepository {
   /// Marks every chapter of the given manga read/unread.
   Future<void> setRead(List<int> mangaIds, bool read);
 
-  /// Dev-only: inserts sample favorites when the library is empty so the UI is
-  /// demoable before Browse/add-flow lands. Remove once real adds work.
-  Future<void> seedDevDataIfEmpty();
+  Future<void> createCategory(String name);
+
+  Future<void> renameCategory(int id, String name);
+
+  Future<void> deleteCategory(int id);
+
+  /// Replaces the category assignments of the given manga.
+  Future<void> setMangaCategories(List<int> mangaIds, List<int> categoryIds);
 }

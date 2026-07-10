@@ -36,6 +36,7 @@ class LibraryBody extends StatelessWidget {
   }
 }
 
+/// Mihon-style scrollable category tab strip ("All" + user categories).
 class _CategoryTabs extends StatelessWidget {
   const _CategoryTabs();
 
@@ -47,34 +48,25 @@ class _CategoryTabs extends StatelessWidget {
           a.selectedCategoryId != b.selectedCategoryId,
       builder: (context, state) => state.categories.isEmpty
           ? const SizedBox.shrink()
-          : SizedBox(
-              height: 48.h,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 6.h),
-                children: [
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4.w),
-                    child: ChoiceChip(
-                      label: const AppText.labelLarge('library.all'),
-                      selected: state.selectedCategoryId == null,
-                      onSelected: (_) => context
-                          .read<LibraryBloc>()
-                          .add(const LibraryCategorySelected(null)),
-                    ),
-                  ),
-                  ...state.categories.map(
-                    (c) => Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 4.w),
-                      child: ChoiceChip(
-                        label: AppText.labelLarge(c.name),
-                        selected: state.selectedCategoryId == c.id,
-                        onSelected: (_) => context
-                            .read<LibraryBloc>()
-                            .add(LibraryCategorySelected(c.id)),
+          : DefaultTabController(
+              length: state.categories.length + 1,
+              initialIndex: state.selectedCategoryId == null
+                  ? 0
+                  : state.categories
+                          .indexWhere((c) => c.id == state.selectedCategoryId) +
+                      1,
+              child: TabBar(
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                onTap: (index) => context.read<LibraryBloc>().add(
+                      LibraryCategorySelected(
+                        index == 0 ? null : state.categories[index - 1].id,
                       ),
                     ),
-                  ),
+                tabs: [
+                  const Tab(child: AppText.labelLarge('library.all')),
+                  ...state.categories
+                      .map((c) => Tab(child: AppText.labelLarge(c.name))),
                 ],
               ),
             ),
@@ -105,7 +97,11 @@ class _LibraryContent extends StatelessWidget {
               padding: EdgeInsets.all(8.w),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
-                childAspectRatio: 0.62,
+                // Comfortable needs extra height for the two-line title below.
+                childAspectRatio:
+                    state.displayMode == LibraryDisplayMode.comfortableGrid
+                        ? 0.52
+                        : 0.62,
                 crossAxisSpacing: 8.w,
                 mainAxisSpacing: 8.w,
               ),
@@ -114,6 +110,7 @@ class _LibraryContent extends StatelessWidget {
                 entry: state.manga[index],
                 selected:
                     state.selectedIds.contains(state.manga[index].manga.id),
+                mode: state.displayMode,
               ),
             ),
     );

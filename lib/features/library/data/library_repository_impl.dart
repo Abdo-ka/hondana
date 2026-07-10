@@ -2,7 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:injectable/injectable.dart';
 
 import 'package:mihonx/core/database/app_database.dart';
-import 'package:mihonx/features/browse/data/source/local_source.dart';
+import 'package:mihonx/features/downloads/domain/download_service.dart';
 import 'package:mihonx/features/library/domain/category.dart';
 import 'package:mihonx/features/library/domain/library_manga.dart';
 import 'package:mihonx/features/library/domain/library_repository.dart';
@@ -10,9 +10,10 @@ import 'package:mihonx/features/library/domain/manga.dart';
 
 @LazySingleton(as: LibraryRepository)
 class LibraryRepositoryImpl implements LibraryRepository {
-  LibraryRepositoryImpl(this._db);
+  LibraryRepositoryImpl(this._db, this._downloads);
 
   final AppDatabase _db;
+  final DownloadService _downloads;
 
   @override
   Stream<List<LibraryManga>> watchLibrary({int? categoryId}) {
@@ -35,14 +36,38 @@ class LibraryRepositoryImpl implements LibraryRepository {
       ..where(_db.mangas.favorite.equals(true))
       ..groupBy([_db.mangas.id])
       ..addColumns([unread]);
-    return query.watch().map(
-          (rows) => rows
-              .map((row) => LibraryManga(
-                    manga: Manga.fromData(row.readTable(_db.mangas)),
-                    unreadCount: row.read(unread) ?? 0,
-                  ))
-              .toList(),
-        );
+    return query.watch().asyncMap((rows) async {
+      final downloadCounts = await _downloadCounts(
+        rows.map((r) => r.readTable(_db.mangas).id).toList(),
+      );
+      return rows
+          .map((row) => LibraryManga(
+                manga: Manga.fromData(row.readTable(_db.mangas)),
+                unreadCount: row.read(unread) ?? 0,
+                downloadCount:
+                    downloadCounts[row.readTable(_db.mangas).id] ?? 0,
+              ))
+          .toList();
+    });
+  }
+
+  /// Downloaded-chapter count per manga, from the filesystem `.done` markers.
+  /// Best-effort: storage errors degrade to zero counts (e.g. in unit tests).
+  Future<Map<int, int>> _downloadCounts(List<int> mangaIds) async {
+    try {
+      final ids = await _downloads.scanDownloadedChapterIds();
+      if (ids.isEmpty || mangaIds.isEmpty) return const {};
+      final chapters = await (_db.select(_db.chapters)
+            ..where((c) => c.mangaId.isIn(mangaIds) & c.id.isIn(ids.toList())))
+          .get();
+      final counts = <int, int>{};
+      for (final c in chapters) {
+        counts[c.mangaId] = (counts[c.mangaId] ?? 0) + 1;
+      }
+      return counts;
+    } catch (_) {
+      return const {};
+    }
   }
 
   @override
@@ -75,56 +100,45 @@ class LibraryRepositoryImpl implements LibraryRepository {
         .write(ChaptersCompanion(read: Value(read)));
   }
 
-  /// Test seam: set false to skip seeding (keeps widget tests free of network
-  /// covers, whose cache manager leaves a pending timer).
-  static bool devSeedEnabled = true;
-
   @override
-  Future<void> seedDevDataIfEmpty() async {
-    if (!devSeedEnabled) return;
-    if (await favoriteCount() > 0) return;
-    final now = DateTime.now();
-    for (var i = 0; i < _seedTitles.length; i++) {
-      final mangaId = await _db.into(_db.mangas).insert(
-            MangasCompanion.insert(
-              source: LocalSource.localSourceId,
-              url: 'seed/$i',
-              title: _seedTitles[i],
-              author: Value('Author ${i + 1}'),
-              description: Value('Sample entry for "${_seedTitles[i]}".'),
-              genre: const Value('Action, Adventure'),
-              status: Value(i.isEven ? 1 : 2),
-              thumbnailUrl:
-                  Value('https://picsum.photos/seed/mihonx$i/300/450'),
-              favorite: const Value(true),
-              dateAdded: Value(now),
-              lastUpdate: Value(now.subtract(Duration(hours: i))),
-            ),
-          );
-      final chapterCount = 8 + i;
-      final readUpTo = i * 2;
-      for (var c = 0; c < chapterCount; c++) {
-        await _db.into(_db.chapters).insert(
-              ChaptersCompanion.insert(
-                mangaId: mangaId,
-                url: 'seed/$i/ch/$c',
-                name: 'Chapter ${c + 1}',
-                read: Value(c < readUpTo),
-                chapterNumber: Value((c + 1).toDouble()),
-                dateUpload: Value(now.subtract(Duration(days: chapterCount - c))),
-                sourceOrder: Value(c),
-              ),
-            );
-      }
-    }
+  Future<void> createCategory(String name) async {
+    final maxPos = await (_db.selectOnly(_db.categories)
+          ..addColumns([_db.categories.position.max()]))
+        .getSingle();
+    await _db.into(_db.categories).insert(
+          CategoriesCompanion.insert(
+            name: name,
+            position: Value((maxPos.read(_db.categories.position.max()) ?? 0) + 1),
+          ),
+        );
   }
 
-  static const _seedTitles = [
-    'Solo Leveling',
-    'One Piece',
-    'Berserk',
-    'Vinland Saga',
-    'Chainsaw Man',
-    'Vagabond',
-  ];
+  @override
+  Future<void> renameCategory(int id, String name) async {
+    await (_db.update(_db.categories)..where((c) => c.id.equals(id)))
+        .write(CategoriesCompanion(name: Value(name)));
+  }
+
+  @override
+  Future<void> deleteCategory(int id) async {
+    await (_db.delete(_db.categories)..where((c) => c.id.equals(id))).go();
+  }
+
+  @override
+  Future<void> setMangaCategories(
+    List<int> mangaIds,
+    List<int> categoryIds,
+  ) async {
+    await _db.batch((batch) {
+      batch.deleteWhere(
+        _db.mangasCategories,
+        (t) => t.mangaId.isIn(mangaIds),
+      );
+      batch.insertAll(_db.mangasCategories, [
+        for (final m in mangaIds)
+          for (final c in categoryIds)
+            MangasCategoriesCompanion.insert(mangaId: m, categoryId: c),
+      ]);
+    });
+  }
 }

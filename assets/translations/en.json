@@ -10,12 +10,18 @@
   "library": {
     "empty": "Your library is empty.\nAdd manga from Browse.",
     "all": "All",
+    "search_hint": "Search library…",
     "select_all": "Select all",
     "mark_read": "Mark as read",
     "mark_unread": "Mark as unread",
     "remove": "Remove from library",
-    "display": "Display",
-    "sort": "Sort",
+    "set_categories": "Set categories",
+    "tab_filter": "Filter",
+    "tab_sort": "Sort",
+    "tab_display": "Display",
+    "filter_downloaded": "Downloaded",
+    "filter_unread": "Unread",
+    "filter_completed": "Completed",
     "display_comfortableGrid": "Comfortable grid",
     "display_compactGrid": "Compact grid",
     "display_list": "List",
@@ -25,18 +31,108 @@
     "sort_dateAdded": "Date added"
   },
   "updates": {
-    "empty": "No recent updates yet."
+    "empty": "No recent updates yet.",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "unknown_date": "Unknown"
   },
   "history": {
     "empty": "Nothing read yet."
   },
   "browse": {
-    "empty": "Sources will appear here."
+    "empty": "Sources will appear here.",
+    "no_results": "No results.",
+    "search_hint": "Search…",
+    "popular": "Popular",
+    "latest": "Latest",
+    "sources": "Sources",
+    "pinned": "Pinned",
+    "lang_all": "Multi",
+    "lang_en": "English",
+    "lang_ar": "Arabic",
+    "lang_local": "Local",
+    "open_webview": "Open in WebView",
+    "edit_url": "Source URL",
+    "edit_url_invalid": "Enter a valid http(s) URL"
+  },
+  "manga": {
+    "add_to_library": "Add to library",
+    "in_library": "In library",
+    "refresh": "Refresh",
+    "chapters": "Chapters",
+    "no_chapters": "No chapters found.",
+    "start_reading": "Start reading",
+    "resume": "Resume",
+    "download_all": "Download all",
+    "download_all_queued": "All chapters queued for download"
+  },
+  "status": {
+    "unknown": "Unknown",
+    "ongoing": "Ongoing",
+    "completed": "Completed",
+    "licensed": "Licensed",
+    "publishingFinished": "Publishing finished",
+    "cancelled": "Cancelled",
+    "onHiatus": "On hiatus"
+  },
+  "reader": {
+    "mode_leftToRight": "Left to right",
+    "mode_rightToLeft": "Right to left",
+    "mode_vertical": "Vertical",
+    "mode_webtoon": "Webtoon (continuous)"
+  },
+  "extensions": {
+    "title": "Extensions",
+    "built_in": "Built-in sources",
+    "catalog": "Catalog (keiyoushi)",
+    "search_hint": "Search extensions…",
+    "installed": "Installed",
+    "not_ported": "Not ported",
+    "not_ported_hint": "This extension has no native port yet — Android APK extensions can't run inside this app or on iOS.",
+    "load_failed": "Couldn't load the extension index.",
+    "all_langs": "All"
+  },
+  "search": {
+    "hint": "Search all sources…"
+  },
+  "downloads": {
+    "title": "Downloads",
+    "empty": "No downloads.",
+    "status_queued": "Queued",
+    "status_completed": "Downloaded",
+    "status_failed": "Failed",
+    "status_cancelled": "Cancelled"
+  },
+  "categories": {
+    "title": "Categories",
+    "empty": "No categories yet.",
+    "add": "Add category",
+    "rename": "Rename category",
+    "name_hint": "Name"
+  },
+  "settings": {
+    "title": "Settings",
+    "theme": "Theme",
+    "theme_system": "System",
+    "theme_light": "Light",
+    "theme_dark": "Dark",
+    "default_reading_mode": "Default reading mode",
+    "about": "About"
   },
   "more": {
-    "placeholder": "Settings coming soon."
+    "downloads": "Download queue",
+    "categories": "Categories",
+    "settings": "Settings",
+    "downloaded_only": "Downloaded only",
+    "downloaded_only_hint": "Filters all entries in your library",
+    "incognito": "Incognito mode",
+    "incognito_hint": "Pauses reading history"
   },
   "common": {
-    "retry": "Retry"
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "ok": "OK",
+    "save": "Save",
+    "reset": "Reset"
   }
 }

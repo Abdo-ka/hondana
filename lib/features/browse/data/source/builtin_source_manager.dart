@@ -1,19 +1,26 @@
 import 'package:injectable/injectable.dart';
 
 import 'package:mihonx/features/browse/data/source/local_source.dart';
+import 'package:mihonx/features/browse/data/source/madara/madara_sites.dart';
+import 'package:mihonx/features/browse/data/source/mangadex/mangadex_source.dart';
 import 'package:mihonx/features/browse/domain/source/source.dart';
 import 'package:mihonx/features/browse/domain/source/source_manager.dart';
 
-/// Phase-1 source registry: LocalSource only. The iOS phase replaces this with
-/// an extension-runtime-backed manager bound to the same [SourceManager]
-/// interface — no feature code changes.
+/// Registry of the built-in native-Dart sources. New ports (Madara /
+/// MangaThemesia / ZeistManga theme sources, etc.) are added here. Source ids
+/// mirror the keiyoushi index so the extensions catalog can mark ported
+/// entries as installed.
 @LazySingleton(as: SourceManager)
-class StubSourceManager implements SourceManager {
-  StubSourceManager() : _local = LocalSource();
+class BuiltinSourceManager implements SourceManager {
+  BuiltinSourceManager()
+      : _all = [
+          LocalSource(),
+          MangaDexSource.en(),
+          MangaDexSource.ar(),
+          ...madaraSources(),
+        ];
 
-  final LocalSource _local;
-
-  List<Source> get _all => [_local];
+  final List<Source> _all;
 
   @override
   Source? get(int id) => _all.where((s) => s.id == id).firstOrNull;

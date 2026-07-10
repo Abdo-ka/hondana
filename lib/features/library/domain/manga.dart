@@ -1,5 +1,6 @@
 import 'package:mihonx/core/database/app_database.dart';
 import 'package:mihonx/features/browse/domain/source/model/manga_status.dart';
+import 'package:mihonx/features/browse/domain/source/model/s_manga.dart';
 
 /// Domain manga entity — presentation-facing view of a persisted [MangaData]
 /// row (keeps drift types out of the UI). `genre` is exploded from the stored
@@ -53,5 +54,18 @@ class Manga {
         favorite: d.favorite,
         dateAdded: d.dateAdded,
         lastUpdate: d.lastUpdate,
+      );
+
+  /// Source-model view for reopening details from a persisted row.
+  SManga toSManga() => SManga(
+        url: url,
+        title: title,
+        author: author,
+        artist: artist,
+        description: description,
+        genre: genre,
+        status: status,
+        thumbnailUrl: thumbnailUrl,
+        initialized: true,
       );
 }
