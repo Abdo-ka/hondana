@@ -63,7 +63,7 @@ dependencies:
   http: ^1.6.0
   # Settings features: app lock (Face ID / Touch ID) and wifi-only library
   # updates.
-  local_auth: ^2.3.0
+  local_auth: ^3.0.2
   connectivity_plus: ^7.0.0
 
 dev_dependencies:
