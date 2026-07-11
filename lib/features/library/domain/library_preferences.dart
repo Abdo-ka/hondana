@@ -1,14 +1,19 @@
 import 'package:injectable/injectable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// How library entries are laid out on the Library screen.
 enum LibraryDisplayMode { comfortableGrid, compactGrid, list }
 
+/// Sort key for library entries; direction is held separately (`sortAscending`).
 enum LibrarySortMode { alphabetical, lastUpdate, unread, dateAdded }
 
 /// Mihon-style tri-state filter: ignore / must match / must not match.
 enum TriFilter { ignore, include, exclude }
 
+/// Convenience cycling for [TriFilter], used by filter chips that toggle
+/// through ignore → include → exclude on tap.
 extension TriFilterX on TriFilter {
+  /// Next state in the ignore → include → exclude → ignore cycle.
   TriFilter get next => TriFilter.values[(index + 1) % TriFilter.values.length];
 }
 
@@ -51,11 +56,13 @@ class LibraryPreferences {
   Future<void> _setIds(String key, Set<int> ids) =>
       _prefs.setStringList(key, ids.map((e) => '$e').toList());
 
+  /// Library layout; defaults to comfortable grid (index 0).
   LibraryDisplayMode get displayMode =>
       LibraryDisplayMode.values[_prefs.getInt(_kDisplay) ?? 0];
   Future<void> setDisplayMode(LibraryDisplayMode m) =>
       _prefs.setInt(_kDisplay, m.index);
 
+  /// Active sort key; defaults to alphabetical (index 0).
   LibrarySortMode get sortMode =>
       LibrarySortMode.values[_prefs.getInt(_kSort) ?? 0];
   Future<void> setSortMode(LibrarySortMode m) => _prefs.setInt(_kSort, m.index);
@@ -63,16 +70,19 @@ class LibraryPreferences {
   bool get sortAscending => _prefs.getBool(_kAsc) ?? true;
   Future<void> setSortAscending(bool v) => _prefs.setBool(_kAsc, v);
 
+  /// Tri-state "has unread chapters" filter.
   TriFilter get filterUnread =>
       TriFilter.values[_prefs.getInt(_kFilterUnread) ?? 0];
   Future<void> setFilterUnread(TriFilter f) =>
       _prefs.setInt(_kFilterUnread, f.index);
 
+  /// Tri-state "completed status" filter.
   TriFilter get filterCompleted =>
       TriFilter.values[_prefs.getInt(_kFilterCompleted) ?? 0];
   Future<void> setFilterCompleted(TriFilter f) =>
       _prefs.setInt(_kFilterCompleted, f.index);
 
+  /// Tri-state "has downloaded chapters" filter.
   TriFilter get filterDownloaded =>
       TriFilter.values[_prefs.getInt(_kFilterDownloaded) ?? 0];
   Future<void> setFilterDownloaded(TriFilter f) =>
@@ -127,13 +137,17 @@ class LibraryPreferences {
   bool get showUpdatesBadge => _prefs.getBool(_kUpdatesBadge) ?? true;
   Future<void> setShowUpdatesBadge(bool v) => _prefs.setBool(_kUpdatesBadge, v);
 
-  ChapterSwipeAction get swipeLeftAction => ChapterSwipeAction
-      .values[_prefs.getInt(_kSwipeLeft) ?? ChapterSwipeAction.bookmark.index];
+  /// Action for a left swipe on a chapter row; defaults to bookmark (Mihon).
+  ChapterSwipeAction get swipeLeftAction =>
+      ChapterSwipeAction.values[_prefs.getInt(_kSwipeLeft) ??
+          ChapterSwipeAction.bookmark.index];
   Future<void> setSwipeLeftAction(ChapterSwipeAction v) =>
       _prefs.setInt(_kSwipeLeft, v.index);
 
-  ChapterSwipeAction get swipeRightAction => ChapterSwipeAction
-      .values[_prefs.getInt(_kSwipeRight) ?? ChapterSwipeAction.markRead.index];
+  /// Action for a right swipe on a chapter row; defaults to mark-read (Mihon).
+  ChapterSwipeAction get swipeRightAction =>
+      ChapterSwipeAction.values[_prefs.getInt(_kSwipeRight) ??
+          ChapterSwipeAction.markRead.index];
   Future<void> setSwipeRightAction(ChapterSwipeAction v) =>
       _prefs.setInt(_kSwipeRight, v.index);
 

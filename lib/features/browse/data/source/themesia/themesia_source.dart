@@ -3,13 +3,13 @@ import 'dart:convert';
 import 'package:html/dom.dart';
 import 'package:html/parser.dart' as html_parser;
 
-import 'package:mihonx/features/browse/data/source/http_source_base.dart';
-import 'package:mihonx/features/browse/domain/source/model/filter.dart';
-import 'package:mihonx/features/browse/domain/source/model/manga_page.dart';
-import 'package:mihonx/features/browse/domain/source/model/manga_status.dart';
-import 'package:mihonx/features/browse/domain/source/model/mangas_page.dart';
-import 'package:mihonx/features/browse/domain/source/model/s_chapter.dart';
-import 'package:mihonx/features/browse/domain/source/model/s_manga.dart';
+import 'package:hondana/features/browse/data/source/http_source_base.dart';
+import 'package:hondana/features/browse/domain/source/model/filter.dart';
+import 'package:hondana/features/browse/domain/source/model/manga_page.dart';
+import 'package:hondana/features/browse/domain/source/model/manga_status.dart';
+import 'package:hondana/features/browse/domain/source/model/mangas_page.dart';
+import 'package:hondana/features/browse/domain/source/model/s_chapter.dart';
+import 'package:hondana/features/browse/domain/source/model/s_manga.dart';
 
 /// Dart port of keiyoushi's `MangaThemesia` multisrc theme (formerly
 /// WPMangaStream / WPMangaReader) — the WordPress theme behind many Arabic
@@ -40,9 +40,14 @@ abstract class ThemesiaSource extends HttpSourceBase {
       '.utao .uta .imgu, .listupd .bs .bsx, .listo .bs .bsx';
 
   /// keiyoushi: `searchMangaNextPageSelector()`.
-  String get searchMangaNextPageSelector => 'div.pagination .next, div.hpage .r';
+  String get searchMangaNextPageSelector =>
+      'div.pagination .next, div.hpage .r';
 
-  Future<MangasPage> _listing(int page, {String order = '', String query = ''}) async {
+  Future<MangasPage> _listing(
+    int page, {
+    String order = '',
+    String query = '',
+  }) async {
     final res = await client.get<String>(
       '$baseUrl$mangaUrlDirectory/',
       queryParameters: {
@@ -55,10 +60,12 @@ abstract class ThemesiaSource extends HttpSourceBase {
   }
 
   @override
-  Future<MangasPage> getPopularManga(int page) => _listing(page, order: 'popular');
+  Future<MangasPage> getPopularManga(int page) =>
+      _listing(page, order: 'popular');
 
   @override
-  Future<MangasPage> getLatestUpdates(int page) => _listing(page, order: 'update');
+  Future<MangasPage> getLatestUpdates(int page) =>
+      _listing(page, order: 'update');
 
   @override
   Future<MangasPage> getSearchManga(int page, String query, FilterList _) =>
@@ -79,6 +86,7 @@ abstract class ThemesiaSource extends HttpSourceBase {
   /// Convenience: listing items only. Exposed for testing.
   List<SManga> parsePopular(String htmlBody) => parseListing(htmlBody).mangas;
 
+  /// Maps one listing/search grid element to an [SManga] (null if unparsable).
   SManga? searchMangaFromElement(Element el) {
     final a = _selfOrChild(el, 'a');
     final href = a?.attributes['href'];
@@ -99,21 +107,38 @@ abstract class ThemesiaSource extends HttpSourceBase {
 
   // ── Details ────────────────────────────────────────────────────────────────
 
+  /// Root container of the series-detail block; skins override.
   String get seriesDetailsSelector =>
       'div.bigcontent, div.animefull, div.main-info, div.postbody';
+
+  /// Series title node within [seriesDetailsSelector].
   String get seriesTitleSelector =>
       'h1.entry-title, .ts-breadcrumb li:last-child span';
+
+  /// Synopsis node(s) within [seriesDetailsSelector].
   String get seriesDescriptionSelector =>
       '.desc, .entry-content[itemprop=description]';
+
+  /// Genre anchor list within [seriesDetailsSelector].
   String get seriesGenreSelector => 'div.gnr a, .mgen a, .seriestugenre a';
+
+  /// Cover image within [seriesDetailsSelector].
   String get seriesThumbnailSelector =>
       '.infomanga > div[itemprop=image] img, .thumb img';
 
   /// Labels for the `:contains(%s)` info-row selectors of the Kotlin theme.
-  List<String> get seriesStatusKeywords =>
-      const ['status', 'الحالة', 'حالة العمل'];
-  List<String> get seriesAuthorKeywords =>
-      const ['author', 'autor', 'المؤلف', 'mangaka', 'yazar'];
+  List<String> get seriesStatusKeywords => const [
+    'status',
+    'الحالة',
+    'حالة العمل',
+  ];
+  List<String> get seriesAuthorKeywords => const [
+    'author',
+    'autor',
+    'المؤلف',
+    'mangaka',
+    'yazar',
+  ];
   List<String> get seriesArtistKeywords => const ['artist', 'الرسام', 'الناشر'];
 
   @override
@@ -147,7 +172,7 @@ abstract class ThemesiaSource extends HttpSourceBase {
       status: parseStatus(infoValue(details, seriesStatusKeywords)),
       thumbnailUrl:
           imgSrc(details.querySelector(seriesThumbnailSelector)) ??
-              base.thumbnailUrl,
+          base.thumbnailUrl,
       initialized: true,
     );
   }
@@ -195,7 +220,13 @@ abstract class ThemesiaSource extends HttpSourceBase {
     if (any(const ['مكتمل', 'completed', 'finished', 'one-shot'])) {
       return MangaStatus.completed;
     }
-    if (any(const ['canceled', 'cancelled', 'dropped', 'discontinued', 'ملغي'])) {
+    if (any(const [
+      'canceled',
+      'cancelled',
+      'dropped',
+      'discontinued',
+      'ملغي',
+    ])) {
       return MangaStatus.cancelled;
     }
     if (any(const ['hiatus', 'on hold', 'متوقف'])) return MangaStatus.onHiatus;
@@ -222,14 +253,17 @@ abstract class ThemesiaSource extends HttpSourceBase {
       // `ul li:has(div.chbox):has(div.eph-num)` fallback, done by hand.
       items = doc
           .querySelectorAll('ul li')
-          .where((li) =>
-              li.querySelector('div.chbox') != null &&
-              li.querySelector('div.eph-num') != null)
+          .where(
+            (li) =>
+                li.querySelector('div.chbox') != null &&
+                li.querySelector('div.eph-num') != null,
+          )
           .toList();
     }
     return items.map(chapterFromElement).nonNulls.toList();
   }
 
+  /// Maps one chapter-list element to an [SChapter] (null if unparsable).
   SChapter? chapterFromElement(Element el) {
     final a = _selfOrChild(el, 'a');
     final href = a?.attributes['href'];
@@ -252,10 +286,13 @@ abstract class ThemesiaSource extends HttpSourceBase {
 
   // ── Pages ──────────────────────────────────────────────────────────────────
 
+  /// Reader-image selector; skins override.
   String get pageSelector => 'div#readerarea img';
 
-  static final _imageListRegex =
-      RegExp(r'"images"\s*:\s*(\[.*?\])', dotAll: true);
+  static final _imageListRegex = RegExp(
+    r'"images"\s*:\s*(\[.*?\])',
+    dotAll: true,
+  );
 
   @override
   Future<List<MangaPage>> getPageList(SChapter chapter) async {
@@ -299,6 +336,8 @@ abstract class ThemesiaSource extends HttpSourceBase {
   /// Some installs emit relative image paths (keiyoushi DespairManga override).
   String _absolute(String url) => url.startsWith('/') ? '$baseUrl$url' : url;
 
+  /// Resolves the real image URL, preferring lazy-load attributes over `src`
+  /// and skipping inline `data:` placeholders. Exposed for skin overrides.
   String? imgSrc(Element? img) {
     if (img == null) return null;
     for (final attr in ['data-lazy-src', 'data-src', 'data-cfsrc', 'src']) {
@@ -316,12 +355,33 @@ abstract class ThemesiaSource extends HttpSourceBase {
   }
 
   static const _months = {
-    'january': 1, 'february': 2, 'march': 3, 'april': 4, 'may': 5,
-    'june': 6, 'july': 7, 'august': 8, 'september': 9, 'october': 10,
-    'november': 11, 'december': 12,
-    'يناير': 1, 'فبراير': 2, 'مارس': 3, 'أبريل': 4, 'ابريل': 4, 'مايو': 5,
-    'يونيو': 6, 'يوليو': 7, 'أغسطس': 8, 'اغسطس': 8, 'سبتمبر': 9,
-    'أكتوبر': 10, 'اكتوبر': 10, 'نوفمبر': 11, 'ديسمبر': 12,
+    'january': 1,
+    'february': 2,
+    'march': 3,
+    'april': 4,
+    'may': 5,
+    'june': 6,
+    'july': 7,
+    'august': 8,
+    'september': 9,
+    'october': 10,
+    'november': 11,
+    'december': 12,
+    'يناير': 1,
+    'فبراير': 2,
+    'مارس': 3,
+    'أبريل': 4,
+    'ابريل': 4,
+    'مايو': 5,
+    'يونيو': 6,
+    'يوليو': 7,
+    'أغسطس': 8,
+    'اغسطس': 8,
+    'سبتمبر': 9,
+    'أكتوبر': 10,
+    'اكتوبر': 10,
+    'نوفمبر': 11,
+    'ديسمبر': 12,
   };
 
   /// Sites emit "July 9, 2026", "9 يوليو، 2026" or numeric "2025/11/19"
@@ -341,10 +401,9 @@ abstract class ThemesiaSource extends HttpSourceBase {
     }
 
     final lower = text.toLowerCase();
-    final numbers = RegExp(r'\d+')
-        .allMatches(lower)
-        .map((m) => int.parse(m.group(0)!))
-        .toList();
+    final numbers = RegExp(
+      r'\d+',
+    ).allMatches(lower).map((m) => int.parse(m.group(0)!)).toList();
     for (final entry in _months.entries) {
       if (!lower.contains(entry.key)) continue;
       final year = numbers.where((n) => n > 1900).firstOrNull;

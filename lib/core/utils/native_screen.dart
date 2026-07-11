@@ -4,8 +4,9 @@ import 'package:flutter/services.dart';
 /// (Mihon "Keep screen on") and screen brightness ("Custom brightness").
 /// Every call is best-effort — platforms without the channel just no-op.
 abstract final class NativeScreen {
-  static const _channel = MethodChannel('mihonx/native');
+  static const _channel = MethodChannel('hondana/native');
 
+  /// Toggles the OS keep-awake flag so the display never sleeps while reading.
   static Future<void> keepScreenOn(bool on) async {
     try {
       await _channel.invokeMethod<void>('keepScreenOn', {'on': on});
@@ -19,9 +20,7 @@ abstract final class NativeScreen {
   /// 0.0–1.0 sets brightness; null restores the system value.
   static Future<void> setBrightness(double? value) async {
     try {
-      await _channel.invokeMethod<void>('setBrightness', {
-        'value': value,
-      });
+      await _channel.invokeMethod<void>('setBrightness', {'value': value});
     } on PlatformException {
       // Best-effort.
     } on MissingPluginException {

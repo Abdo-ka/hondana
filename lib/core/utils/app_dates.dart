@@ -1,7 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 
-import 'package:mihonx/core/config/app_settings.dart';
-import 'package:mihonx/core/di/di_container.dart';
+import 'package:hondana/core/config/app_settings.dart';
+import 'package:hondana/core/di/di_container.dart';
 
 /// Formats [date] for display per the Appearance settings (Mihon parity):
 /// "Today"/"Yesterday" when relative timestamps are on and the date is within

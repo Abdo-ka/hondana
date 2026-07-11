@@ -4,9 +4,9 @@ import 'package:dio/dio.dart';
 import 'package:html/dom.dart';
 import 'package:html/parser.dart' as html_parser;
 
-import 'package:mihonx/features/browse/data/source/themesia/themesia_source.dart';
-import 'package:mihonx/features/browse/domain/source/model/manga_page.dart';
-import 'package:mihonx/features/browse/domain/source/model/s_chapter.dart';
+import 'package:hondana/features/browse/data/source/themesia/themesia_source.dart';
+import 'package:hondana/features/browse/domain/source/model/manga_page.dart';
+import 'package:hondana/features/browse/domain/source/model/s_chapter.dart';
 
 /// Concrete MangaThemesia sites, ported from keiyoushi `src/ar/*` overrides.
 /// Source ids are the keiyoushi index ids so the extensions catalog marks
@@ -141,8 +141,7 @@ class AriaMangaSource extends ThemesiaSource {
     if (status != 'unlocked') return const [];
     final content = data['content'] as String? ?? '';
     final imgs = html_parser.parse(content).querySelectorAll('img');
-    final urls =
-        imgs.map(imgSrc).nonNulls.where((u) => u.isNotEmpty).toList();
+    final urls = imgs.map(imgSrc).nonNulls.where((u) => u.isNotEmpty).toList();
     return List.generate(urls.length, (i) {
       return MangaPage(index: i, imageUrl: urls[i]);
     });
@@ -223,19 +222,19 @@ class LavaScansSource extends ThemesiaSource {
 /// chapters (keiyoushi stitches them with a bitmap interceptor); those pages
 /// are returned unstitched here.
 List<ThemesiaSource> themesiaSources() => [
-      AriaMangaSource(),
-      _ThemesiaSite(
-        id: 241593018172482505,
-        name: 'Area Scans',
-        lang: 'ar',
-        defaultBaseUrl: 'https://ar.areascans.org',
-      ),
-      DespairMangaSource(),
-      _ThemesiaSite(
-        id: 917436262447415426,
-        name: 'Hijala',
-        lang: 'ar',
-        defaultBaseUrl: 'https://hijala.com',
-      ),
-      LavaScansSource(),
-    ];
+  AriaMangaSource(),
+  _ThemesiaSite(
+    id: 241593018172482505,
+    name: 'Area Scans',
+    lang: 'ar',
+    defaultBaseUrl: 'https://ar.areascans.org',
+  ),
+  DespairMangaSource(),
+  _ThemesiaSite(
+    id: 917436262447415426,
+    name: 'Hijala',
+    lang: 'ar',
+    defaultBaseUrl: 'https://hijala.com',
+  ),
+  LavaScansSource(),
+];

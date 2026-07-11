@@ -9,7 +9,7 @@ import 'package:injectable/injectable.dart';
 /// don't spam ActivityKit.
 @lazySingleton
 class LiveActivityService {
-  static const _channel = MethodChannel('mihonx/live_activity');
+  static const _channel = MethodChannel('hondana/live_activity');
 
   String _lastPayload = '';
 

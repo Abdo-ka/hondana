@@ -4,18 +4,19 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/core/utils/native_screen.dart';
-import 'package:mihonx/core/widgets/app_text.dart';
-import 'package:mihonx/features/reader/domain/reader_preferences.dart';
-import 'package:mihonx/features/reader/presentation/bloc/reader_bloc.dart';
-import 'package:mihonx/features/reader/presentation/bloc/reader_event.dart';
-import 'package:mihonx/features/reader/presentation/bloc/reader_item.dart';
-import 'package:mihonx/features/reader/presentation/bloc/reader_state.dart';
-import 'package:mihonx/features/reader/presentation/widgets/reader_image.dart';
-import 'package:mihonx/features/reader/presentation/widgets/reader_overlay.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/core/utils/native_screen.dart';
+import 'package:hondana/core/widgets/app_text.dart';
+import 'package:hondana/features/reader/domain/reader_preferences.dart';
+import 'package:hondana/features/reader/presentation/bloc/reader_bloc.dart';
+import 'package:hondana/features/reader/presentation/bloc/reader_event.dart';
+import 'package:hondana/features/reader/presentation/bloc/reader_item.dart';
+import 'package:hondana/features/reader/presentation/bloc/reader_state.dart';
+import 'package:hondana/features/reader/presentation/widgets/reader_image.dart';
+import 'package:hondana/features/reader/presentation/widgets/reader_overlay.dart';
 
 @RoutePage()
 class ReaderPage extends StatelessWidget {
@@ -125,7 +126,7 @@ class _ReaderViewState extends State<_ReaderView> {
   void _applyScreenPrefs() {
     NativeScreen.keepScreenOn(_prefs.keepScreenOn);
     // Positive custom brightness drives the real screen; negative dims via
-    // the overlay in [_filtered]; 0/off restores the system value.
+    // the overlay in [_FilteredReader]; 0/off restores the system value.
     NativeScreen.setBrightness(
       _prefs.customBrightness && _prefs.brightnessValue > 0
           ? _prefs.brightnessValue / 100
@@ -160,61 +161,6 @@ class _ReaderViewState extends State<_ReaderView> {
           : Colors.white,
   };
 
-  static const List<double> _grayscaleMatrix = [
-    0.2126, 0.7152, 0.0722, 0, 0, //
-    0.2126, 0.7152, 0.0722, 0, 0, //
-    0.2126, 0.7152, 0.0722, 0, 0, //
-    0, 0, 0, 1, 0,
-  ];
-
-  static const List<double> _invertMatrix = [
-    -1, 0, 0, 0, 255, //
-    0, -1, 0, 0, 255, //
-    0, 0, -1, 0, 255, //
-    0, 0, 0, 1, 0,
-  ];
-
-  static const Map<ReaderBlendMode, BlendMode> _blendModes = {
-    ReaderBlendMode.defaultBlend: BlendMode.srcOver,
-    ReaderBlendMode.multiply: BlendMode.multiply,
-    ReaderBlendMode.screen: BlendMode.screen,
-    ReaderBlendMode.overlay: BlendMode.overlay,
-    ReaderBlendMode.lighten: BlendMode.lighten,
-    ReaderBlendMode.darken: BlendMode.darken,
-  };
-
-  /// Mihon's custom filter stack: color filter, grayscale, inversion.
-  Widget _filtered(Widget reader) {
-    var result = reader;
-    if (_prefs.colorFilter) {
-      result = ColorFiltered(
-        colorFilter: ColorFilter.mode(
-          Color.fromARGB(
-            _prefs.filterAlpha,
-            _prefs.filterRed,
-            _prefs.filterGreen,
-            _prefs.filterBlue,
-          ),
-          _blendModes[_prefs.filterBlend]!,
-        ),
-        child: result,
-      );
-    }
-    if (_prefs.grayscale) {
-      result = ColorFiltered(
-        colorFilter: const ColorFilter.matrix(_grayscaleMatrix),
-        child: result,
-      );
-    }
-    if (_prefs.invertedColors) {
-      result = ColorFiltered(
-        colorFilter: const ColorFilter.matrix(_invertMatrix),
-        child: result,
-      );
-    }
-    return result;
-  }
-
   @override
   Widget build(BuildContext context) {
     return BlocListener<ReaderBloc, ReaderState>(
@@ -238,8 +184,9 @@ class _ReaderViewState extends State<_ReaderView> {
                 success: () => Stack(
                   children: [
                     Positioned.fill(
-                      child: _filtered(
-                        state.readingMode.isPaged
+                      child: _FilteredReader(
+                        prefs: _prefs,
+                        child: state.readingMode.isPaged
                             ? const _PagedReader()
                             : const _WebtoonReader(),
                       ),
@@ -254,11 +201,11 @@ class _ReaderViewState extends State<_ReaderView> {
                       ),
                     // Mihon keeps a small page indicator visible at all times.
                     if (_prefs.showPageNumber)
-                      const Positioned(
-                        bottom: 4,
+                      Positioned(
+                        bottom: 4.h,
                         left: 0,
                         right: 0,
-                        child: _PageIndicator(),
+                        child: const _PageIndicator(),
                       ),
                     if (_prefs.showReadingMode) const _ModeBanner(),
                     if (state.showOverlay) const ReaderTopBar(),
@@ -272,6 +219,66 @@ class _ReaderViewState extends State<_ReaderView> {
       ),
     );
   }
+}
+
+/// Applies Mihon's reader filter stack around the page [child]: an optional
+/// color tint (with a user-chosen blend mode), grayscale, then inversion. Each
+/// enabled filter adds a [ColorFiltered] layer, folded from innermost (tint) to
+/// outermost (inversion) so the ordering matches Mihon.
+class _FilteredReader extends StatelessWidget {
+  const _FilteredReader({required this.prefs, required this.child});
+
+  /// Reactive source of the enabled filters and their parameters.
+  final ReaderPreferences prefs;
+
+  /// The reader surface being filtered (paged or webtoon).
+  final Widget child;
+
+  /// Rec. 709 luminance weights that collapse RGB to gray.
+  static const List<double> _grayscaleMatrix = [
+    0.2126, 0.7152, 0.0722, 0, 0, //
+    0.2126, 0.7152, 0.0722, 0, 0, //
+    0.2126, 0.7152, 0.0722, 0, 0, //
+    0, 0, 0, 1, 0,
+  ];
+
+  /// Negates each color channel to invert the image.
+  static const List<double> _invertMatrix = [
+    -1, 0, 0, 0, 255, //
+    0, -1, 0, 0, 255, //
+    0, 0, -1, 0, 255, //
+    0, 0, 0, 1, 0,
+  ];
+
+  /// Maps the user's blend choice to a Flutter [BlendMode].
+  static const Map<ReaderBlendMode, BlendMode> _blendModes = {
+    ReaderBlendMode.defaultBlend: BlendMode.srcOver,
+    ReaderBlendMode.multiply: BlendMode.multiply,
+    ReaderBlendMode.screen: BlendMode.screen,
+    ReaderBlendMode.overlay: BlendMode.overlay,
+    ReaderBlendMode.lighten: BlendMode.lighten,
+    ReaderBlendMode.darken: BlendMode.darken,
+  };
+
+  @override
+  Widget build(BuildContext context) =>
+      <ColorFilter>[
+        if (prefs.colorFilter)
+          ColorFilter.mode(
+            Color.fromARGB(
+              prefs.filterAlpha,
+              prefs.filterRed,
+              prefs.filterGreen,
+              prefs.filterBlue,
+            ),
+            _blendModes[prefs.filterBlend]!,
+          ),
+        if (prefs.grayscale) const ColorFilter.matrix(_grayscaleMatrix),
+        if (prefs.invertedColors) const ColorFilter.matrix(_invertMatrix),
+      ].fold<Widget>(
+        child,
+        (wrapped, filter) => ColorFiltered(colorFilter: filter, child: wrapped),
+      );
 }
 
 /// Always-visible "current / total" pill at the bottom of the screen.
@@ -289,16 +296,13 @@ class _PageIndicator extends StatelessWidget {
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: Colors.black54,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(12.r),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
                   child: Text(
                     '${state.currentPage + 1}/${state.pageCount}',
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    style: TextStyle(color: Colors.white, fontSize: 12.sp),
                   ),
                 ),
               ),
@@ -347,10 +351,10 @@ class _ModeBannerState extends State<_ModeBanner> {
           child: DecoratedBox(
             decoration: BoxDecoration(
               color: Colors.black54,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(16.r),
             ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
               child: BlocBuilder<ReaderBloc, ReaderState>(
                 buildWhen: (a, b) => a.readingMode != b.readingMode,
                 builder: (context, state) => AppText.bodyMedium(
@@ -710,7 +714,7 @@ class _WebtoonReaderState extends State<_WebtoonReader> {
               a.readingMode != b.readingMode,
           builder: (context, state) {
             final gap = state.readingMode == ReadingMode.webtoonGaps
-                ? _pageGap
+                ? _pageGap.h
                 : 0.0;
             return GestureDetector(
               behavior: HitTestBehavior.opaque,
@@ -777,14 +781,14 @@ class _ChapterTransitionView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+      padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 24.h),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const AppText.labelMedium('reader.finished', color: Colors.white70),
           AppText.bodyLarge(item.fromChapterName, color: Colors.white),
-          const SizedBox(height: 24),
+          SizedBox(height: 24.h),
           if (item.toChapterName != null) ...[
             const AppText.labelMedium('reader.next', color: Colors.white70),
             AppText.bodyLarge(item.toChapterName!, color: Colors.white),

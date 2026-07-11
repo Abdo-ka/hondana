@@ -3,15 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/core/extensions/context_ext.dart';
-import 'package:mihonx/core/widgets/app_text.dart';
-import 'package:mihonx/features/browse/domain/source/model/manga_status.dart';
-import 'package:mihonx/features/browse/domain/source/source_manager.dart';
-import 'package:mihonx/features/library/presentation/widgets/manga_cover.dart';
-import 'package:mihonx/features/manga/presentation/bloc/manga_details_bloc.dart';
-import 'package:mihonx/features/manga/presentation/bloc/manga_details_event.dart';
-import 'package:mihonx/features/manga/presentation/bloc/manga_details_state.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/core/extensions/context_ext.dart';
+import 'package:hondana/core/widgets/app_text.dart';
+import 'package:hondana/features/browse/domain/source/model/manga_status.dart';
+import 'package:hondana/features/browse/domain/source/source_manager.dart';
+import 'package:hondana/features/library/presentation/widgets/manga_cover.dart';
+import 'package:hondana/features/manga/presentation/bloc/manga_details_bloc.dart';
+import 'package:hondana/features/manga/presentation/bloc/manga_details_event.dart';
+import 'package:hondana/features/manga/presentation/bloc/manga_details_state.dart';
 
 /// Mihon-style details header: the cover doubles as a faded backdrop behind
 /// the info block; below it an action row, expandable description and genre
@@ -96,6 +96,7 @@ class _Backdrop extends StatelessWidget {
   }
 }
 
+/// Cover thumbnail beside the title, author, status, and source name.
 class _InfoRow extends StatelessWidget {
   const _InfoRow({required this.state});
 
@@ -187,12 +188,13 @@ class _ActionRow extends StatelessWidget {
         Expanded(
           child: _ActionButton(
             icon: state.isFavorite ? Icons.favorite : Icons.favorite_border,
-            label:
-                state.isFavorite ? 'manga.in_library' : 'manga.add_to_library',
+            label: state.isFavorite
+                ? 'manga.in_library'
+                : 'manga.add_to_library',
             active: state.isFavorite,
-            onTap: () => context
-                .read<MangaDetailsBloc>()
-                .add(const MangaFavoriteToggled()),
+            onTap: () => context.read<MangaDetailsBloc>().add(
+              const MangaFavoriteToggled(),
+            ),
           ),
         ),
         Expanded(
@@ -200,9 +202,9 @@ class _ActionRow extends StatelessWidget {
             icon: Icons.refresh,
             label: 'manga.refresh',
             active: false,
-            onTap: () => context
-                .read<MangaDetailsBloc>()
-                .add(const MangaChaptersRefreshed()),
+            onTap: () => context.read<MangaDetailsBloc>().add(
+              const MangaChaptersRefreshed(),
+            ),
           ),
         ),
       ],
@@ -210,6 +212,7 @@ class _ActionRow extends StatelessWidget {
   }
 }
 
+/// A single stacked icon+label action in the [_ActionRow], tinted when active.
 class _ActionButton extends StatelessWidget {
   const _ActionButton({
     required this.icon,
@@ -347,10 +350,12 @@ class _ExpandableDescriptionState extends State<_ExpandableDescription> {
                     child: ListView(
                       scrollDirection: Axis.horizontal,
                       children: widget.genres
-                          .map((g) => Padding(
-                                padding: EdgeInsetsDirectional.only(end: 6.w),
-                                child: _GenreChip(label: g),
-                              ))
+                          .map(
+                            (g) => Padding(
+                              padding: EdgeInsetsDirectional.only(end: 6.w),
+                              child: _GenreChip(label: g),
+                            ),
+                          )
                           .toList(),
                     ),
                   ),
@@ -361,6 +366,7 @@ class _ExpandableDescriptionState extends State<_ExpandableDescription> {
   }
 }
 
+/// A single genre tag chip.
 class _GenreChip extends StatelessWidget {
   const _GenreChip({required this.label});
 

@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:mihonx/core/core.dart';
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/features/downloads/presentation/bloc/downloads_bloc.dart';
-import 'package:mihonx/features/downloads/presentation/bloc/downloads_event.dart';
-import 'package:mihonx/features/downloads/presentation/bloc/downloads_state.dart';
+import 'package:hondana/core/core.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/features/downloads/presentation/bloc/downloads_bloc.dart';
+import 'package:hondana/features/downloads/presentation/bloc/downloads_event.dart';
+import 'package:hondana/features/downloads/presentation/bloc/downloads_state.dart';
 
+/// Downloads screen — the reorderable download queue with a pause/resume FAB
+/// and per-tile cancel/retry (Mihon's Download queue page).
 @RoutePage()
 class DownloadsPage extends StatelessWidget {
   const DownloadsPage({super.key});
@@ -25,6 +27,7 @@ class DownloadsPage extends StatelessWidget {
   }
 }
 
+/// Overflow-menu actions for the whole queue.
 enum _QueueAction { cancelAll, clearFinished }
 
 class _DownloadsView extends StatelessWidget {
@@ -37,12 +40,11 @@ class _DownloadsView extends StatelessWidget {
         title: 'downloads.title',
         actions: [
           PopupMenuButton<_QueueAction>(
-            onSelected: (action) => context.read<DownloadsBloc>().add(
-                  switch (action) {
-                    _QueueAction.cancelAll => const DownloadsCancelAll(),
-                    _QueueAction.clearFinished => const DownloadsClearFinished(),
-                  },
-                ),
+            onSelected: (action) =>
+                context.read<DownloadsBloc>().add(switch (action) {
+                  _QueueAction.cancelAll => const DownloadsCancelAll(),
+                  _QueueAction.clearFinished => const DownloadsClearFinished(),
+                }),
             itemBuilder: (context) => [
               PopupMenuItem(
                 value: _QueueAction.cancelAll,
@@ -89,8 +91,7 @@ class _PauseResumeFab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<DownloadsBloc, DownloadsState>(
-      buildWhen: (a, b) =>
-          a.paused != b.paused || a.hasActive != b.hasActive,
+      buildWhen: (a, b) => a.paused != b.paused || a.hasActive != b.hasActive,
       builder: (context, state) {
         if (!state.hasActive && !state.paused) return const SizedBox.shrink();
         return FloatingActionButton.extended(
@@ -106,6 +107,8 @@ class _PauseResumeFab extends StatelessWidget {
   }
 }
 
+/// One queue row: drag handle (active only), title/chapter, a progress bar
+/// while downloading else a status line, and a cancel/retry trailing button.
 class _DownloadTile extends StatelessWidget {
   const _DownloadTile({required this.task, required this.index, super.key});
 
@@ -154,19 +157,18 @@ class _DownloadTile extends StatelessWidget {
       ),
       trailing: switch (task.status) {
         DownloadTaskStatus.queued ||
-        DownloadTaskStatus.downloading =>
-          IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: () => context
-                .read<DownloadsBloc>()
-                .add(DownloadCancelRequested(task.chapterId)),
+        DownloadTaskStatus.downloading => IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => context.read<DownloadsBloc>().add(
+            DownloadCancelRequested(task.chapterId),
           ),
+        ),
         DownloadTaskStatus.failed => IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => context
-                .read<DownloadsBloc>()
-                .add(DownloadRetryRequested(task.chapterId)),
+          icon: const Icon(Icons.refresh),
+          onPressed: () => context.read<DownloadsBloc>().add(
+            DownloadRetryRequested(task.chapterId),
           ),
+        ),
         _ => null,
       },
     );

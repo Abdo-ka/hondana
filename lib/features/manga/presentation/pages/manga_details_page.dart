@@ -4,21 +4,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:mihonx/core/core.dart';
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/core/routing/app_router.gr.dart';
-import 'package:mihonx/features/browse/data/source/http_source_base.dart';
-import 'package:mihonx/features/browse/data/source/local_source.dart';
-import 'package:mihonx/features/browse/domain/source/model/s_manga.dart';
-import 'package:mihonx/features/browse/domain/source/source_manager.dart';
-import 'package:mihonx/features/downloads/presentation/bloc/downloads_bloc.dart';
-import 'package:mihonx/features/downloads/presentation/bloc/downloads_event.dart';
-import 'package:mihonx/features/manga/presentation/bloc/manga_details_bloc.dart';
-import 'package:mihonx/features/manga/presentation/bloc/manga_details_event.dart';
-import 'package:mihonx/features/manga/presentation/bloc/manga_details_state.dart';
-import 'package:mihonx/features/manga/presentation/widgets/manga_chapter_tile.dart';
-import 'package:mihonx/features/manga/presentation/widgets/manga_info_header.dart';
+import 'package:hondana/core/core.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/core/routing/app_router.gr.dart';
+import 'package:hondana/features/browse/data/source/http_source_base.dart';
+import 'package:hondana/features/browse/data/source/local_source.dart';
+import 'package:hondana/features/browse/domain/source/model/s_manga.dart';
+import 'package:hondana/features/browse/domain/source/source_manager.dart';
+import 'package:hondana/features/downloads/presentation/bloc/downloads_bloc.dart';
+import 'package:hondana/features/downloads/presentation/bloc/downloads_event.dart';
+import 'package:hondana/features/manga/presentation/bloc/manga_details_bloc.dart';
+import 'package:hondana/features/manga/presentation/bloc/manga_details_event.dart';
+import 'package:hondana/features/manga/presentation/bloc/manga_details_state.dart';
+import 'package:hondana/features/manga/presentation/widgets/manga_chapter_tile.dart';
+import 'package:hondana/features/manga/presentation/widgets/manga_info_header.dart';
 
+/// Details screen for one manga: header, chapter list, download menu, and a
+/// "start reading" FAB. Provides the [MangaDetailsBloc] and [DownloadsBloc].
 @RoutePage()
 class MangaDetailsPage extends StatelessWidget {
   const MangaDetailsPage({
@@ -63,13 +65,13 @@ class _DetailsView extends StatelessWidget {
         actions: const [_MangaWebViewAction()],
       ),
       floatingActionButton: const _StartReadingFab(),
-      body: const CustomScrollView(
+      body: CustomScrollView(
         slivers: [
-          SliverToBoxAdapter(child: MangaInfoHeader()),
-          SliverToBoxAdapter(child: _ChaptersHeader()),
-          _ChaptersSliver(),
+          const SliverToBoxAdapter(child: MangaInfoHeader()),
+          const SliverToBoxAdapter(child: _ChaptersHeader()),
+          const _ChaptersSliver(),
           // Keep the FAB from covering the last chapter row.
-          SliverToBoxAdapter(child: SizedBox(height: 76)),
+          SliverToBoxAdapter(child: SizedBox(height: 76.h)),
         ],
       ),
     );
@@ -83,8 +85,9 @@ class _MangaWebViewAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final source =
-        getIt<SourceManager>().get(context.read<MangaDetailsBloc>().sourceId);
+    final source = getIt<SourceManager>().get(
+      context.read<MangaDetailsBloc>().sourceId,
+    );
     if (source is! HttpSourceBase) return const SizedBox.shrink();
     return IconButton(
       icon: const Icon(Icons.public),
@@ -106,6 +109,9 @@ class _MangaWebViewAction extends StatelessWidget {
   }
 }
 
+/// FAB that jumps into the reader at [MangaDetailsState.nextUnread]; label
+/// reads "Resume" once any chapter is read, else "Start reading". Hidden when
+/// there are no chapters.
 class _StartReadingFab extends StatelessWidget {
   const _StartReadingFab();
 
@@ -146,6 +152,8 @@ enum _DownloadChoice {
   final int? count;
 }
 
+/// Row above the chapter list: chapter count, the download menu, and the
+/// ascending/descending sort toggle.
 class _ChaptersHeader extends StatelessWidget {
   const _ChaptersHeader();
 
@@ -160,16 +168,18 @@ class _ChaptersHeader extends StatelessWidget {
       _ => details.unreadAscending.take(choice.count!),
     };
     for (final chapter in chapters) {
-      downloads.add(DownloadEnqueued(
-        chapterId: chapter.id,
-        mangaId: chapter.mangaId,
-        mangaTitle: details.title,
-        chapterName: chapter.name,
-      ));
+      downloads.add(
+        DownloadEnqueued(
+          chapterId: chapter.id,
+          mangaId: chapter.mangaId,
+          mangaTitle: details.title,
+          chapterName: chapter.name,
+        ),
+      );
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('manga.download_queued'.tr())),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('manga.download_queued'.tr())));
   }
 
   @override
@@ -205,9 +215,9 @@ class _ChaptersHeader extends StatelessWidget {
                     ? Icons.arrow_downward
                     : Icons.arrow_upward,
               ),
-              onPressed: () => context
-                  .read<MangaDetailsBloc>()
-                  .add(const MangaChapterSortToggled()),
+              onPressed: () => context.read<MangaDetailsBloc>().add(
+                const MangaChapterSortToggled(),
+              ),
             ),
           ],
         ),
@@ -216,6 +226,7 @@ class _ChaptersHeader extends StatelessWidget {
   }
 }
 
+/// The chapter list itself, or an empty-state message when there are none.
 class _ChaptersSliver extends StatelessWidget {
   const _ChaptersSliver();
 

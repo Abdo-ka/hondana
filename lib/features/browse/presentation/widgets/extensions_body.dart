@@ -4,15 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/core/extensions/context_ext.dart';
-import 'package:mihonx/core/widgets/app_text.dart';
-import 'package:mihonx/core/widgets/feedback_indicators.dart';
-import 'package:mihonx/features/browse/domain/extension_info.dart';
-import 'package:mihonx/features/browse/domain/source/source.dart';
-import 'package:mihonx/features/browse/domain/source/source_manager.dart';
-import 'package:mihonx/features/browse/domain/source_preferences.dart';
-import 'package:mihonx/features/browse/presentation/bloc/extensions_bloc.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/core/extensions/context_ext.dart';
+import 'package:hondana/core/widgets/app_text.dart';
+import 'package:hondana/core/widgets/feedback_indicators.dart';
+import 'package:hondana/features/browse/domain/extension_info.dart';
+import 'package:hondana/features/browse/domain/source/source.dart';
+import 'package:hondana/features/browse/domain/source/source_manager.dart';
+import 'package:hondana/features/browse/domain/source_preferences.dart';
+import 'package:hondana/features/browse/presentation/bloc/extensions_bloc.dart';
 
 /// Extensions content: search + built-in Dart sources (toggleable) + the full
 /// keiyoushi catalog (ar/en/multi, 18+ filtered). Embedded in the Browse tab
@@ -71,9 +71,9 @@ class _LangFilterChips extends StatelessWidget {
                 child: ChoiceChip(
                   label: AppText.labelMedium(label),
                   selected: state.langFilter == lang,
-                  onSelected: (_) => context
-                      .read<ExtensionsBloc>()
-                      .add(ExtensionsLangChanged(lang)),
+                  onSelected: (_) => context.read<ExtensionsBloc>().add(
+                    ExtensionsLangChanged(lang),
+                  ),
                 ),
               ),
           ],
@@ -83,6 +83,8 @@ class _LangFilterChips extends StatelessWidget {
   }
 }
 
+/// The scrollable body: built-in sources section then the fetched catalog
+/// (with its own loading/failure/list states).
 class _ExtensionsList extends StatelessWidget {
   const _ExtensionsList();
 
@@ -95,34 +97,37 @@ class _ExtensionsList extends StatelessWidget {
           const _BuiltinSourcesSection(),
           const _SectionHeader('extensions.catalog'),
           ...state.loadStatus.isLoadingOrInitial
-              ? const [
+              ? [
                   Padding(
-                    padding: EdgeInsets.all(24),
-                    child: AppLoadingIndicator(),
+                    padding: EdgeInsets.all(24.r),
+                    child: const AppLoadingIndicator(),
                   ),
                 ]
               : state.loadStatus.isFailure()
-                  ? [
-                      AppFailureIndicator(
-                        message: 'extensions.load_failed'.tr(),
-                        onRetry: () => context
-                            .read<ExtensionsBloc>()
-                            .add(const ExtensionsFetched()),
-                        retryLabel: 'common.retry'.tr(),
+              ? [
+                  AppFailureIndicator(
+                    message: 'extensions.load_failed'.tr(),
+                    onRetry: () => context.read<ExtensionsBloc>().add(
+                      const ExtensionsFetched(),
+                    ),
+                    retryLabel: 'common.retry'.tr(),
+                  ),
+                ]
+              : state.filtered
+                    .map(
+                      (e) => _CatalogTile(
+                        info: e,
+                        implemented: state.isImplemented(e),
                       ),
-                    ]
-                  : state.filtered
-                      .map((e) => _CatalogTile(
-                            info: e,
-                            implemented: state.isImplemented(e),
-                          ))
-                      .toList(),
+                    )
+                    .toList(),
         ],
       ),
     );
   }
 }
 
+/// Primary-coloured heading separating the built-in and catalog sections.
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader(this.title);
 
@@ -137,6 +142,8 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
+/// Toggle list for the app's built-in Dart sources; each switch enables or
+/// disables the source via [SourcePreferences].
 class _BuiltinSourcesSection extends StatefulWidget {
   const _BuiltinSourcesSection();
 
@@ -145,11 +152,12 @@ class _BuiltinSourcesSection extends StatefulWidget {
 }
 
 class _BuiltinSourcesSectionState extends State<_BuiltinSourcesSection> {
-  final List<CatalogueSource> _sources =
-      getIt<SourceManager>().getCatalogueSources();
+  final List<CatalogueSource> _sources = getIt<SourceManager>()
+      .getCatalogueSources();
   final SourcePreferences _prefs = getIt<SourcePreferences>();
-  late final ValueNotifier<Set<int>> _disabled =
-      ValueNotifier(_prefs.disabledIds);
+  late final ValueNotifier<Set<int>> _disabled = ValueNotifier(
+    _prefs.disabledIds,
+  );
 
   @override
   void dispose() {
@@ -157,6 +165,7 @@ class _BuiltinSourcesSectionState extends State<_BuiltinSourcesSection> {
     super.dispose();
   }
 
+  /// Enables/disables a source, updating both the local notifier and prefs.
   void _toggle(int id, bool enabled) {
     final next = Set<int>.from(_disabled.value);
     enabled ? next.remove(id) : next.add(id);
@@ -187,6 +196,8 @@ class _BuiltinSourcesSectionState extends State<_BuiltinSourcesSection> {
   }
 }
 
+/// One keiyoushi catalog entry. Ported ("installed") sources are inert; the
+/// rest are shown as "not ported" and surface a hint on tap.
 class _CatalogTile extends StatelessWidget {
   const _CatalogTile({required this.info, required this.implemented});
 
@@ -233,8 +244,8 @@ class _CatalogTile extends StatelessWidget {
       onTap: implemented
           ? null
           : () => ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('extensions.not_ported_hint'.tr())),
-              ),
+              SnackBar(content: Text('extensions.not_ported_hint'.tr())),
+            ),
     );
   }
 }

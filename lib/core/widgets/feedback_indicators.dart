@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:mihonx/core/extensions/context_ext.dart';
-import 'package:mihonx/core/widgets/app_text.dart';
+import 'package:hondana/core/extensions/context_ext.dart';
+import 'package:hondana/core/widgets/app_text.dart';
 
 /// The one sanctioned spinner. Standalone [CircularProgressIndicator] is banned;
 /// use this instead.
@@ -18,7 +18,10 @@ class AppLoadingIndicator extends StatelessWidget {
 class AppEmptyIndicator extends StatelessWidget {
   const AppEmptyIndicator({required this.message, this.icon, super.key});
 
+  /// LocaleKey (or text) explaining the empty state.
   final String message;
+
+  /// Optional glyph; defaults to an inbox icon.
   final IconData? icon;
 
   @override
@@ -56,8 +59,13 @@ class AppFailureIndicator extends StatelessWidget {
     super.key,
   });
 
+  /// LocaleKey (or text) describing the failure.
   final String message;
+
+  /// Retry callback; the button is hidden when null.
   final VoidCallback? onRetry;
+
+  /// LocaleKey for the retry button; defaults to 'Retry'.
   final String? retryLabel;
 
   @override

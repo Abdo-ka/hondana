@@ -2,17 +2,17 @@ import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import 'package:mihonx/core/config/advanced_preferences.dart';
-import 'package:mihonx/core/core.dart';
-import 'package:mihonx/core/database/app_database.dart';
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/core/network/app_http.dart';
-import 'package:mihonx/features/browse/domain/source/source_manager.dart';
-import 'package:mihonx/features/downloads/domain/download_service.dart';
-import 'package:mihonx/features/downloads/presentation/bloc/downloads_bloc.dart';
-import 'package:mihonx/features/downloads/presentation/bloc/downloads_event.dart';
-import 'package:mihonx/features/more/data/maintenance_service.dart';
-import 'package:mihonx/features/more/presentation/widgets/settings_widgets.dart';
+import 'package:hondana/core/config/advanced_preferences.dart';
+import 'package:hondana/core/core.dart';
+import 'package:hondana/core/database/app_database.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/core/network/app_http.dart';
+import 'package:hondana/features/browse/domain/source/source_manager.dart';
+import 'package:hondana/features/downloads/domain/download_service.dart';
+import 'package:hondana/features/downloads/presentation/bloc/downloads_bloc.dart';
+import 'package:hondana/features/downloads/presentation/bloc/downloads_event.dart';
+import 'package:hondana/features/more/data/maintenance_service.dart';
+import 'package:hondana/features/more/presentation/widgets/settings_widgets.dart';
 
 /// Settings > Data and storage (Mihon SettingsDataScreen minus the deferred
 /// backup system): storage usage, chapter-cache maintenance, download wipe.
@@ -43,10 +43,11 @@ class _DataStorageViewState extends State<_DataStorageView> {
   );
 
   final ValueNotifier<({int totalBytes, int mangaCount, int chapterCount})?>
-      _usage = ValueNotifier(null);
+  _usage = ValueNotifier(null);
   final ValueNotifier<int?> _cacheBytes = ValueNotifier(null);
-  late final ValueNotifier<bool> _clearOnLaunch =
-      ValueNotifier(_advanced.clearCacheOnLaunch);
+  late final ValueNotifier<bool> _clearOnLaunch = ValueNotifier(
+    _advanced.clearCacheOnLaunch,
+  );
 
   @override
   void initState() {
@@ -81,8 +82,9 @@ class _DataStorageViewState extends State<_DataStorageView> {
   }
 
   void _toast(String key) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(key.tr())));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(key.tr())));
   }
 
   Future<void> _clearCache() async {
@@ -97,8 +99,9 @@ class _DataStorageViewState extends State<_DataStorageView> {
       context: context,
       builder: (context) => AlertDialog(
         title: const AppText.titleMedium('settings.delete_all_downloads'),
-        content:
-            const AppText.bodyMedium('settings.delete_all_downloads_confirm'),
+        content: const AppText.bodyMedium(
+          'settings.delete_all_downloads_confirm',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -128,7 +131,8 @@ class _DataStorageViewState extends State<_DataStorageView> {
         children: [
           const SettingsSectionHeader('settings.storage_usage'),
           ValueListenableBuilder<
-              ({int totalBytes, int mangaCount, int chapterCount})?>(
+            ({int totalBytes, int mangaCount, int chapterCount})?
+          >(
             valueListenable: _usage,
             builder: (context, usage, _) => ListTile(
               leading: const Icon(Icons.storage_outlined),
@@ -159,8 +163,9 @@ class _DataStorageViewState extends State<_DataStorageView> {
               leading: const Icon(Icons.cached_outlined),
               title: const AppText.bodyLarge('settings.clear_chapter_cache'),
               subtitle: AppText.bodySmall(
-                'settings.cache_used'
-                    .tr(args: [bytes == null ? '…' : _formatBytes(bytes)]),
+                'settings.cache_used'.tr(
+                  args: [bytes == null ? '…' : _formatBytes(bytes)],
+                ),
                 color: context.colorScheme.onSurfaceVariant,
               ),
               onTap: _clearCache,
@@ -174,8 +179,7 @@ class _DataStorageViewState extends State<_DataStorageView> {
                 _clearOnLaunch.value = v;
                 _advanced.setClearCacheOnLaunch(v);
               },
-              title:
-                  const AppText.bodyLarge('settings.clear_cache_on_launch'),
+              title: const AppText.bodyLarge('settings.clear_cache_on_launch'),
             ),
           ),
         ],

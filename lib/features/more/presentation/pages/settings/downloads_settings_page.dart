@@ -2,14 +2,14 @@ import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import 'package:mihonx/core/core.dart';
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/features/downloads/domain/download_preferences.dart';
-import 'package:mihonx/features/downloads/presentation/bloc/downloads_bloc.dart';
-import 'package:mihonx/features/downloads/presentation/bloc/downloads_event.dart';
-import 'package:mihonx/features/library/domain/category.dart';
-import 'package:mihonx/features/library/domain/library_repository.dart';
-import 'package:mihonx/features/more/presentation/widgets/settings_widgets.dart';
+import 'package:hondana/core/core.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/features/downloads/domain/download_preferences.dart';
+import 'package:hondana/features/downloads/presentation/bloc/downloads_bloc.dart';
+import 'package:hondana/features/downloads/presentation/bloc/downloads_event.dart';
+import 'package:hondana/features/library/domain/category.dart';
+import 'package:hondana/features/library/domain/library_repository.dart';
+import 'package:hondana/features/more/presentation/widgets/settings_widgets.dart';
 
 /// Settings > Downloads (Mihon SettingsDownloadScreen parity for the ported
 /// preference set).
@@ -34,25 +34,29 @@ class _DownloadsSettingsViewState extends State<_DownloadsSettingsView> {
 
   // Read-through page-local notifiers (library settings pattern).
   late final ValueNotifier<bool> _wifiOnly = ValueNotifier(_prefs.wifiOnly);
-  late final ValueNotifier<bool> _removeAfterMarkedRead =
-      ValueNotifier(_prefs.removeAfterMarkedRead);
-  late final ValueNotifier<int> _removeSlots =
-      ValueNotifier(_prefs.removeAfterReadSlots);
-  late final ValueNotifier<bool> _removeBookmarked =
-      ValueNotifier(_prefs.removeBookmarked);
-  late final ValueNotifier<Set<int>> _removeExclude =
-      ValueNotifier(_prefs.removeExcludeCategoryIds);
-  late final ValueNotifier<bool> _downloadNew =
-      ValueNotifier(_prefs.downloadNewChapters);
-  late final ValueNotifier<(Set<int>, Set<int>)> _downloadNewCategories =
-      ValueNotifier(
-    (
-      _prefs.downloadNewIncludeCategoryIds,
-      _prefs.downloadNewExcludeCategoryIds,
-    ),
+  late final ValueNotifier<bool> _removeAfterMarkedRead = ValueNotifier(
+    _prefs.removeAfterMarkedRead,
   );
-  late final ValueNotifier<int> _downloadAhead =
-      ValueNotifier(_prefs.downloadAheadAmount);
+  late final ValueNotifier<int> _removeSlots = ValueNotifier(
+    _prefs.removeAfterReadSlots,
+  );
+  late final ValueNotifier<bool> _removeBookmarked = ValueNotifier(
+    _prefs.removeBookmarked,
+  );
+  late final ValueNotifier<Set<int>> _removeExclude = ValueNotifier(
+    _prefs.removeExcludeCategoryIds,
+  );
+  late final ValueNotifier<bool> _downloadNew = ValueNotifier(
+    _prefs.downloadNewChapters,
+  );
+  late final ValueNotifier<(Set<int>, Set<int>)> _downloadNewCategories =
+      ValueNotifier((
+        _prefs.downloadNewIncludeCategoryIds,
+        _prefs.downloadNewExcludeCategoryIds,
+      ));
+  late final ValueNotifier<int> _downloadAhead = ValueNotifier(
+    _prefs.downloadAheadAmount,
+  );
 
   @override
   void dispose() {
@@ -72,8 +76,9 @@ class _DownloadsSettingsViewState extends State<_DownloadsSettingsView> {
     Set<int> ids,
     String emptyKey,
   ) {
-    final names =
-        categories.where((c) => ids.contains(c.id)).map((c) => c.name);
+    final names = categories
+        .where((c) => ids.contains(c.id))
+        .map((c) => c.name);
     return names.isEmpty ? emptyKey.tr() : names.join(', ');
   }
 
@@ -122,17 +127,18 @@ class _DownloadsSettingsViewState extends State<_DownloadsSettingsView> {
                     _removeSlotKey(slots),
                     color: context.colorScheme.onSurfaceVariant,
                   ),
-                  onTap: () => OptionPickerSheet.show<int>(
-                    context,
-                    values: const [-1, 0, 1, 2, 3, 4],
-                    selected: slots,
-                    labelKey: _removeSlotKey,
-                  ).then((picked) {
-                    if (picked != null) {
-                      _removeSlots.value = picked;
-                      _prefs.setRemoveAfterReadSlots(picked);
-                    }
-                  }),
+                  onTap: () =>
+                      OptionPickerSheet.show<int>(
+                        context,
+                        values: const [-1, 0, 1, 2, 3, 4],
+                        selected: slots,
+                        labelKey: _removeSlotKey,
+                      ).then((picked) {
+                        if (picked != null) {
+                          _removeSlots.value = picked;
+                          _prefs.setRemoveAfterReadSlots(picked);
+                        }
+                      }),
                 ),
               ),
               ValueListenableBuilder<bool>(
@@ -143,8 +149,7 @@ class _DownloadsSettingsViewState extends State<_DownloadsSettingsView> {
                     _removeBookmarked.value = v;
                     _prefs.setRemoveBookmarked(v);
                   },
-                  title:
-                      const AppText.bodyLarge('settings.remove_bookmarked'),
+                  title: const AppText.bodyLarge('settings.remove_bookmarked'),
                 ),
               ),
               ValueListenableBuilder<Set<int>>(
@@ -157,18 +162,19 @@ class _DownloadsSettingsViewState extends State<_DownloadsSettingsView> {
                     _categoryNames(categories, ids, 'settings.none'),
                     color: context.colorScheme.onSurfaceVariant,
                   ),
-                  onTap: () => MultiPickerSheet.show<int>(
-                    context,
-                    values: categories.map((c) => c.id).toList(),
-                    selected: ids,
-                    label: (id) =>
-                        categories.firstWhere((c) => c.id == id).name,
-                  ).then((picked) {
-                    if (picked != null) {
-                      _removeExclude.value = picked;
-                      _prefs.setRemoveExcludeCategoryIds(picked);
-                    }
-                  }),
+                  onTap: () =>
+                      MultiPickerSheet.show<int>(
+                        context,
+                        values: categories.map((c) => c.id).toList(),
+                        selected: ids,
+                        label: (id) =>
+                            categories.firstWhere((c) => c.id == id).name,
+                      ).then((picked) {
+                        if (picked != null) {
+                          _removeExclude.value = picked;
+                          _prefs.setRemoveExcludeCategoryIds(picked);
+                        }
+                      }),
                 ),
               ),
               const SettingsSectionHeader('settings.section_auto_download'),
@@ -187,51 +193,61 @@ class _DownloadsSettingsViewState extends State<_DownloadsSettingsView> {
                 valueListenable: _downloadNew,
                 builder: (context, enabled, _) =>
                     ValueListenableBuilder<(Set<int>, Set<int>)>(
-                  valueListenable: _downloadNewCategories,
-                  builder: (context, sets, _) {
-                    final (include, exclude) = sets;
-                    final summary = [
-                      'settings.include'.tr(
-                        args: [
-                          _categoryNames(categories, include, 'library.all'),
-                        ],
-                      ),
-                      'settings.exclude'.tr(
-                        args: [
-                          _categoryNames(categories, exclude, 'settings.none'),
-                        ],
-                      ),
-                    ].join('\n');
-                    return ListTile(
-                      enabled: enabled,
-                      title: const AppText.bodyLarge('categories.title'),
-                      subtitle: AppText.bodySmall(
-                        summary,
-                        color: context.colorScheme.onSurfaceVariant,
-                      ),
-                      onTap: enabled
-                          ? () => TriStateSheet.show(
-                                context,
-                                items: {
-                                  for (final c in categories) c.id: c.name,
-                                },
-                                include: include,
-                                exclude: exclude,
-                              ).then((picked) {
-                                if (picked != null) {
-                                  _downloadNewCategories.value = picked;
-                                  _prefs.setDownloadNewIncludeCategoryIds(
-                                    picked.$1,
-                                  );
-                                  _prefs.setDownloadNewExcludeCategoryIds(
-                                    picked.$2,
-                                  );
-                                }
-                              })
-                          : null,
-                    );
-                  },
-                ),
+                      valueListenable: _downloadNewCategories,
+                      builder: (context, sets, _) {
+                        final (include, exclude) = sets;
+                        final summary = [
+                          'settings.include'.tr(
+                            args: [
+                              _categoryNames(
+                                categories,
+                                include,
+                                'library.all',
+                              ),
+                            ],
+                          ),
+                          'settings.exclude'.tr(
+                            args: [
+                              _categoryNames(
+                                categories,
+                                exclude,
+                                'settings.none',
+                              ),
+                            ],
+                          ),
+                        ].join('\n');
+                        return ListTile(
+                          enabled: enabled,
+                          title: const AppText.bodyLarge('categories.title'),
+                          subtitle: AppText.bodySmall(
+                            summary,
+                            color: context.colorScheme.onSurfaceVariant,
+                          ),
+                          onTap: enabled
+                              ? () =>
+                                    TriStateSheet.show(
+                                      context,
+                                      items: {
+                                        for (final c in categories)
+                                          c.id: c.name,
+                                      },
+                                      include: include,
+                                      exclude: exclude,
+                                    ).then((picked) {
+                                      if (picked != null) {
+                                        _downloadNewCategories.value = picked;
+                                        _prefs.setDownloadNewIncludeCategoryIds(
+                                          picked.$1,
+                                        );
+                                        _prefs.setDownloadNewExcludeCategoryIds(
+                                          picked.$2,
+                                        );
+                                      }
+                                    })
+                              : null,
+                        );
+                      },
+                    ),
               ),
               const SettingsSectionHeader('settings.section_download_ahead'),
               ValueListenableBuilder<int>(
@@ -242,17 +258,18 @@ class _DownloadsSettingsViewState extends State<_DownloadsSettingsView> {
                     'settings.download_ahead_$amount',
                     color: context.colorScheme.onSurfaceVariant,
                   ),
-                  onTap: () => OptionPickerSheet.show<int>(
-                    context,
-                    values: const [0, 2, 3, 5, 10],
-                    selected: amount,
-                    labelKey: (v) => 'settings.download_ahead_$v',
-                  ).then((picked) {
-                    if (picked != null) {
-                      _downloadAhead.value = picked;
-                      _prefs.setDownloadAheadAmount(picked);
-                    }
-                  }),
+                  onTap: () =>
+                      OptionPickerSheet.show<int>(
+                        context,
+                        values: const [0, 2, 3, 5, 10],
+                        selected: amount,
+                        labelKey: (v) => 'settings.download_ahead_$v',
+                      ).then((picked) {
+                        if (picked != null) {
+                          _downloadAhead.value = picked;
+                          _prefs.setDownloadAheadAmount(picked);
+                        }
+                      }),
                 ),
               ),
             ],

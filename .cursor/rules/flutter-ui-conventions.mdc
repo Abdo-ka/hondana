@@ -1,0 +1,52 @@
+---
+description: Core widgets, sizing, theming, and localization conventions for Hondana
+globs: lib/**/*.dart
+alwaysApply: true
+---
+
+# UI Conventions
+
+## Use core widgets, not raw Material
+
+Import from `package:hondana/core/core.dart`:
+
+- `AppScaffold` not `Scaffold`, `AppAppBar` not `AppBar`,
+  `AppText.<style>('key')` not `Text`.
+- Load states: `AppLoadingIndicator`, `AppEmptyIndicator(message:)`,
+  `AppFailureIndicator(message:, onRetry:)`.
+- `PageLayoutBuilder(mobile: ...)` wraps a page's responsive content.
+
+## Pages are thin compositions
+
+A page provides its Bloc and returns `AppScaffold(appBar:, body:)` whose body is
+a composition of **extracted widget classes** from `presentation/widgets/`.
+Extract a section to its own class when reused, substantial (own layout/state),
+or needed for readability — otherwise keep it a private `_Widget` in the same
+file. Don't explode a screen into dozens of micro-widget files.
+
+## Theming
+
+Colors come from `context.colorScheme.*` — never hardcoded hex in shared widgets.
+Text styles from `AppText.<style>` / `context.textTheme`. Dark mode has a
+pure-black variant (`AppTheme.dark(pureBlack:)`) driven by
+`AppSettings.pureBlackNotifier`. RTL via `context.isRtl`.
+
+## Sizing — flutter_screenutil
+
+Every length scaled: `16.w`, `16.h`, `12.r`, `12.sp`, `16.verticalSpace`. No raw
+size literals (see `flutter-guardrails.mdc`). Never `double.infinity` — use
+`context.width` / `context.height`.
+
+## Localization — no hardcoded strings
+
+Route every user-facing string through `easy_localization` with a nested dotted
+key in `assets/translations/en.json`:
+
+```dart
+Text('nav.library'.tr())
+AppText.titleLarge('nav.library')          // translates its key internally
+'library.removed'.tr(namedArgs: {'count': '$n'})
+```
+
+No generated `LocaleKeys` — keys resolve at runtime. Proper nouns (source names)
+are not translated.

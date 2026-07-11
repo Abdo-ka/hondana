@@ -1,17 +1,17 @@
 import 'package:drift/drift.dart';
 import 'package:injectable/injectable.dart';
 
-import 'package:mihonx/core/config/advanced_preferences.dart';
-import 'package:mihonx/core/database/app_database.dart';
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/features/browse/data/source/local_source.dart';
-import 'package:mihonx/features/browse/domain/source/model/manga_status.dart';
-import 'package:mihonx/features/browse/domain/source/model/s_manga.dart';
-import 'package:mihonx/features/browse/domain/source/source_manager.dart';
-import 'package:mihonx/features/downloads/domain/download_preferences.dart';
-import 'package:mihonx/features/downloads/presentation/bloc/downloads_bloc.dart';
-import 'package:mihonx/features/downloads/presentation/bloc/downloads_event.dart';
-import 'package:mihonx/features/library/domain/library_preferences.dart';
+import 'package:hondana/core/config/advanced_preferences.dart';
+import 'package:hondana/core/database/app_database.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/features/browse/data/source/local_source.dart';
+import 'package:hondana/features/browse/domain/source/model/manga_status.dart';
+import 'package:hondana/features/browse/domain/source/model/s_manga.dart';
+import 'package:hondana/features/browse/domain/source/source_manager.dart';
+import 'package:hondana/features/downloads/domain/download_preferences.dart';
+import 'package:hondana/features/downloads/presentation/bloc/downloads_bloc.dart';
+import 'package:hondana/features/downloads/presentation/bloc/downloads_event.dart';
+import 'package:hondana/features/library/domain/library_preferences.dart';
 
 /// Refreshes chapter lists for every favorite via its [Source], honoring the
 /// Settings > Library global-update knobs (category include/exclude, smart
@@ -25,6 +25,8 @@ class LibraryUpdateService {
   final AppDatabase _db;
   final SourceManager _sources;
 
+  /// Runs one global-update pass over all favorites and returns the total
+  /// count of newly-inserted chapters. See the class doc for the honored knobs.
   Future<int> refreshAll() async {
     final libPrefs = getIt<LibraryPreferences>();
     final dlPrefs = getIt<DownloadPreferences>();
@@ -38,9 +40,9 @@ class LibraryUpdateService {
     final dlInclude = dlPrefs.downloadNewIncludeCategoryIds;
     final dlExclude = dlPrefs.downloadNewExcludeCategoryIds;
 
-    final favorites = await (_db.select(_db.mangas)
-          ..where((m) => m.favorite.equals(true)))
-        .get();
+    final favorites = await (_db.select(
+      _db.mangas,
+    )..where((m) => m.favorite.equals(true))).get();
     final categoriesOf = await _mangaCategories();
 
     var newChapters = 0;
@@ -55,9 +57,9 @@ class LibraryUpdateService {
       final source = _sources.get(m.source);
       if (source == null) continue;
       try {
-        final existing = await (_db.select(_db.chapters)
-              ..where((c) => c.mangaId.equals(m.id)))
-            .get();
+        final existing = await (_db.select(
+          _db.chapters,
+        )..where((c) => c.mangaId.equals(m.id))).get();
         // Smart update: unread / unstarted skips only apply once the entry
         // has chapters — an empty entry still needs its initial fetch.
         if (existing.isNotEmpty) {
@@ -84,7 +86,9 @@ class LibraryUpdateService {
           final ch = chapters[i];
           final prev = byUrl[ch.url];
           if (prev == null) {
-            final id = await _db.into(_db.chapters).insert(
+            final id = await _db
+                .into(_db.chapters)
+                .insert(
                   ChaptersCompanion.insert(
                     mangaId: m.id,
                     url: ch.url,
@@ -132,12 +136,14 @@ class LibraryUpdateService {
             // Enqueue in reading order (chapter 1 first — Mihon behavior).
             added.sort((a, b) => b.order.compareTo(a.order));
             for (final c in added) {
-              downloads.add(DownloadEnqueued(
-                chapterId: c.id,
-                mangaId: m.id,
-                mangaTitle: m.title,
-                chapterName: c.name,
-              ));
+              downloads.add(
+                DownloadEnqueued(
+                  chapterId: c.id,
+                  mangaId: m.id,
+                  mangaTitle: m.title,
+                  chapterName: c.name,
+                ),
+              );
             }
           }
         }
@@ -147,23 +153,33 @@ class LibraryUpdateService {
         // columns it owns.
         if (refreshMetadata || refreshTitles) {
           final details = await source.getMangaDetails(sManga);
-          await (_db.update(_db.mangas)..where((row) => row.id.equals(m.id)))
-              .write(MangasCompanion(
-            title: refreshTitles && details.title.isNotEmpty
-                ? Value(details.title)
-                : const Value.absent(),
-            author: refreshMetadata ? Value(details.author) : const Value.absent(),
-            artist: refreshMetadata ? Value(details.artist) : const Value.absent(),
-            description:
-                refreshMetadata ? Value(details.description) : const Value.absent(),
-            genre: refreshMetadata
-                ? Value(details.genre.join(', '))
-                : const Value.absent(),
-            status:
-                refreshMetadata ? Value(details.status.index) : const Value.absent(),
-            thumbnailUrl:
-                refreshMetadata ? Value(details.thumbnailUrl) : const Value.absent(),
-          ));
+          await (_db.update(
+            _db.mangas,
+          )..where((row) => row.id.equals(m.id))).write(
+            MangasCompanion(
+              title: refreshTitles && details.title.isNotEmpty
+                  ? Value(details.title)
+                  : const Value.absent(),
+              author: refreshMetadata
+                  ? Value(details.author)
+                  : const Value.absent(),
+              artist: refreshMetadata
+                  ? Value(details.artist)
+                  : const Value.absent(),
+              description: refreshMetadata
+                  ? Value(details.description)
+                  : const Value.absent(),
+              genre: refreshMetadata
+                  ? Value(details.genre.join(', '))
+                  : const Value.absent(),
+              status: refreshMetadata
+                  ? Value(details.status.index)
+                  : const Value.absent(),
+              thumbnailUrl: refreshMetadata
+                  ? Value(details.thumbnailUrl)
+                  : const Value.absent(),
+            ),
+          );
         }
       } catch (_) {
         // skip this source for this run

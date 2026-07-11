@@ -15,7 +15,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Mihonx</string>
+	<string>Hondana</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -23,7 +23,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>mihonx</string>
+	<string>hondana</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -36,7 +36,7 @@
 	<true/>
 	<!-- App lock (Settings > Security > Require unlock). -->
 	<key>NSFaceIDUsageDescription</key>
-	<string>Unlock Mihonx with Face ID.</string>
+	<string>Unlock Hondana with Face ID.</string>
 	<!-- Download progress Live Activity (Dynamic Island / lock screen). -->
 	<key>NSSupportsLiveActivities</key>
 	<true/>

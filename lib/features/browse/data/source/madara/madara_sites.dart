@@ -1,4 +1,4 @@
-import 'package:mihonx/features/browse/data/source/madara/madara_source.dart';
+import 'package:hondana/features/browse/data/source/madara/madara_source.dart';
 
 /// Concrete Madara sites, live-verified 2026-07. Source ids are the keiyoushi
 /// index ids so the extensions catalog marks these as installed and future

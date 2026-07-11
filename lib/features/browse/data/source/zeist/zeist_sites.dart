@@ -1,7 +1,7 @@
 import 'package:html/parser.dart' as html_parser;
 
-import 'package:mihonx/features/browse/data/source/zeist/zeist_source.dart';
-import 'package:mihonx/features/browse/domain/source/model/s_chapter.dart';
+import 'package:hondana/features/browse/data/source/zeist/zeist_source.dart';
+import 'package:hondana/features/browse/domain/source/model/s_chapter.dart';
 
 /// Concrete ZeistManga sites, ported from keiyoushi `src/ar/*` overrides.
 /// Source ids are the keiyoushi index ids so the extensions catalog marks
@@ -112,14 +112,13 @@ class YokaiSource extends ZeistSource {
   bool get preferChapterUpdatedDate => true;
 
   static final _arabicChapterRegex = RegExp(r'الفصل\s*(\d+(?:\.\d+)?)');
-  static final _englishChapterRegex =
-      RegExp(r'^Chapter\s*(\S+)', caseSensitive: false);
+  static final _englishChapterRegex = RegExp(
+    r'^Chapter\s*(\S+)',
+    caseSensitive: false,
+  );
 
   @override
-  List<SChapter> postProcessChapters(
-    String htmlBody,
-    List<SChapter> chapters,
-  ) {
+  List<SChapter> postProcessChapters(String htmlBody, List<SChapter> chapters) {
     final renamed = chapters.map((chapter) {
       String? numberText;
       var name = chapter.name;
@@ -143,51 +142,54 @@ class YokaiSource extends ZeistSource {
         .parse(htmlBody)
         .querySelectorAll('div#download > div.index-list > a')
         .map((a) {
-      final href = a.attributes['href'];
-      if (href == null || href.isEmpty) return null;
-      final text = a.text.trim();
-      return SChapter(
-        url: href.startsWith(baseUrl) ? href.substring(baseUrl.length) : href,
-        name: text,
-        chapterNumber:
-            double.tryParse(text.split(' ').first) ?? 1,
-      );
-    }).nonNulls;
+          final href = a.attributes['href'];
+          if (href == null || href.isEmpty) return null;
+          final text = a.text.trim();
+          return SChapter(
+            url: href.startsWith(baseUrl)
+                ? href.substring(baseUrl.length)
+                : href,
+            name: text,
+            chapterNumber: double.tryParse(text.split(' ').first) ?? 1,
+          );
+        })
+        .nonNulls;
 
     final seen = <String>{};
-    return [...renamed, ...extras]
-        .where((c) => seen.add(c.url.split('?').first))
-        .toList();
+    return [
+      ...renamed,
+      ...extras,
+    ].where((c) => seen.add(c.url.split('?').first)).toList();
   }
 }
 
 /// All registered ZeistManga sources (Arabic).
 List<ZeistSource> zeistSources() => [
-      ComicVerseSource(),
-      _ZeistSite(
-        id: 323105186892383931,
-        name: 'Loner Translations',
-        lang: 'ar',
-        defaultBaseUrl: 'https://loner-tl.blogspot.com',
-      ),
-      MangaAiLandSource(),
-      _ZeistSite(
-        id: 743599002989616408,
-        name: 'Manhatok',
-        lang: 'ar',
-        defaultBaseUrl: 'https://manhatok.blogspot.com',
-      ),
-      // Murim has no popular widget either (keiyoushi mirrors latest).
-      _MurimSource(),
-      _ZeistSite(
-        id: 5634203247016722993,
-        name: 'Orca Manga',
-        lang: 'ar',
-        defaultBaseUrl: 'https://infinity896.blogspot.com',
-      ),
-      XSanoMangaSource(),
-      YokaiSource(),
-    ];
+  ComicVerseSource(),
+  _ZeistSite(
+    id: 323105186892383931,
+    name: 'Loner Translations',
+    lang: 'ar',
+    defaultBaseUrl: 'https://loner-tl.blogspot.com',
+  ),
+  MangaAiLandSource(),
+  _ZeistSite(
+    id: 743599002989616408,
+    name: 'Manhatok',
+    lang: 'ar',
+    defaultBaseUrl: 'https://manhatok.blogspot.com',
+  ),
+  // Murim has no popular widget either (keiyoushi mirrors latest).
+  _MurimSource(),
+  _ZeistSite(
+    id: 5634203247016722993,
+    name: 'Orca Manga',
+    lang: 'ar',
+    defaultBaseUrl: 'https://infinity896.blogspot.com',
+  ),
+  XSanoMangaSource(),
+  YokaiSource(),
+];
 
 class _MurimSource extends ZeistSource {
   @override

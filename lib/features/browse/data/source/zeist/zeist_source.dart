@@ -3,13 +3,13 @@ import 'dart:convert';
 import 'package:html/dom.dart';
 import 'package:html/parser.dart' as html_parser;
 
-import 'package:mihonx/features/browse/data/source/http_source_base.dart';
-import 'package:mihonx/features/browse/domain/source/model/filter.dart';
-import 'package:mihonx/features/browse/domain/source/model/manga_page.dart';
-import 'package:mihonx/features/browse/domain/source/model/manga_status.dart';
-import 'package:mihonx/features/browse/domain/source/model/mangas_page.dart';
-import 'package:mihonx/features/browse/domain/source/model/s_chapter.dart';
-import 'package:mihonx/features/browse/domain/source/model/s_manga.dart';
+import 'package:hondana/features/browse/data/source/http_source_base.dart';
+import 'package:hondana/features/browse/domain/source/model/filter.dart';
+import 'package:hondana/features/browse/domain/source/model/manga_page.dart';
+import 'package:hondana/features/browse/domain/source/model/manga_status.dart';
+import 'package:hondana/features/browse/domain/source/model/mangas_page.dart';
+import 'package:hondana/features/browse/domain/source/model/s_chapter.dart';
+import 'package:hondana/features/browse/domain/source/model/s_manga.dart';
 
 /// Dart port of keiyoushi's `ZeistManga` multisrc theme — Blogger/Blogspot
 /// manga blogs driven by the Blogger JSON feed API
@@ -35,6 +35,7 @@ abstract class ZeistSource extends HttpSourceBase {
   /// Blogger label marking chapter posts.
   String get chapterCategory => 'Chapter';
 
+  /// Blogger labels to drop from series listings (e.g. anime cross-posts).
   List<String> get excludedCategories => const ['Anime'];
 
   /// Sites without a homepage "popular" widget list latest instead
@@ -49,7 +50,10 @@ abstract class ZeistSource extends HttpSourceBase {
 
   // ── Popular (homepage widget) ─────────────────────────────────────────────
 
+  /// Homepage popular-widget item selector.
   String get popularMangaSelector => 'div.PopularPosts div.grid > figure';
+
+  /// Title anchor within a [popularMangaSelector] item.
   String get popularMangaSelectorTitle => 'figcaption > a';
 
   @override
@@ -62,17 +66,21 @@ abstract class ZeistSource extends HttpSourceBase {
   /// Parses the homepage popular widget. Exposed for testing.
   MangasPage parsePopularPage(String htmlBody) {
     final doc = html_parser.parse(htmlBody);
-    final mangas = doc.querySelectorAll(popularMangaSelector).map((el) {
-      final a = el.querySelector(popularMangaSelectorTitle);
-      final href = a?.attributes['href'];
-      final title = a?.text.trim() ?? '';
-      if (href == null || title.isEmpty) return null;
-      return SManga(
-        url: _relative(href),
-        title: title,
-        thumbnailUrl: el.querySelector('img')?.attributes['src'],
-      );
-    }).nonNulls.toList();
+    final mangas = doc
+        .querySelectorAll(popularMangaSelector)
+        .map((el) {
+          final a = el.querySelector(popularMangaSelectorTitle);
+          final href = a?.attributes['href'];
+          final title = a?.text.trim() ?? '';
+          if (href == null || title.isEmpty) return null;
+          return SManga(
+            url: _relative(href),
+            title: title,
+            thumbnailUrl: el.querySelector('img')?.attributes['src'],
+          );
+        })
+        .nonNulls
+        .toList();
     return MangasPage(mangas: mangas);
   }
 
@@ -94,12 +102,17 @@ abstract class ZeistSource extends HttpSourceBase {
   }
 
   @override
-  Future<MangasPage> getSearchManga(int page, String query, FilterList _) async {
+  Future<MangasPage> getSearchManga(
+    int page,
+    String query,
+    FilterList _,
+  ) async {
     if (query.trim().isEmpty) return getLatestUpdates(page);
     final startIndex = maxMangaResults * (page - 1) + 1;
     // Blogger full-text search restricted to the series label:
     // `q=label:Series+<query>` — built by hand because the `+` is literal.
-    final url = '${_feedUrl(mangaCategory)}?alt=json'
+    final url =
+        '${_feedUrl(mangaCategory)}?alt=json'
         '&max-results=${maxMangaResults + 1}&start-index=$startIndex'
         '&q=label:${Uri.encodeQueryComponent(mangaCategory)}'
         '+${Uri.encodeQueryComponent(query)}';
@@ -155,16 +168,21 @@ abstract class ZeistSource extends HttpSourceBase {
 
   // ── Details ────────────────────────────────────────────────────────────────
 
+  /// Root of the series-detail profile block; skins override this and the
+  /// selectors below to match their markup.
   String get mangaDetailsSelector => '.grid.gtc-235fr';
   String get mangaDetailsSelectorDescription => '#synopsis';
   String get mangaDetailsSelectorGenres => 'div.mt-15 > a[rel=tag]';
   String get mangaDetailsSelectorAuthor => 'span#author';
   String get mangaDetailsSelectorArtist => 'span#artist';
   String get mangaDetailsSelectorStatus => 'span[data-status]';
+
+  /// Container of the label/value info rows scanned via [statusKeywords] etc.
   String get mangaDetailsSelectorInfo => '.y6x11p';
   String get mangaDetailsSelectorInfoTitle => 'strong';
   String get mangaDetailsSelectorInfoDescription => 'span.dt';
 
+  /// Info-row labels identifying the status / author / artist values.
   List<String> get statusKeywords => const ['Status', 'الحالة'];
   List<String> get authorKeywords => const ['Author', 'الكاتب', 'المؤلف'];
   List<String> get artistKeywords => const ['Artist', 'الرسام'];
@@ -183,19 +201,23 @@ abstract class ZeistSource extends HttpSourceBase {
 
     var author = profile.querySelector(mangaDetailsSelectorAuthor)?.text.trim();
     var artist = profile.querySelector(mangaDetailsSelectorArtist)?.text.trim();
-    var status =
-        parseStatus(profile.querySelector(mangaDetailsSelectorStatus)?.text);
+    var status = parseStatus(
+      profile.querySelector(mangaDetailsSelectorStatus)?.text,
+    );
 
     for (final info in profile.querySelectorAll(mangaDetailsSelectorInfo)) {
       var label = _ownText(info);
       if (label.isEmpty) {
         label =
             info.querySelector(mangaDetailsSelectorInfoTitle)?.text.trim() ??
-                '';
+            '';
       }
       final value =
-          info.querySelector(mangaDetailsSelectorInfoDescription)?.text.trim() ??
-              '';
+          info
+              .querySelector(mangaDetailsSelectorInfoDescription)
+              ?.text
+              .trim() ??
+          '';
       if (value.isEmpty) continue;
       if (statusKeywords.any(label.contains)) {
         status = parseStatus(value);
@@ -206,8 +228,10 @@ abstract class ZeistSource extends HttpSourceBase {
       }
     }
 
-    final description =
-        profile.querySelector(mangaDetailsSelectorDescription)?.text.trim();
+    final description = profile
+        .querySelector(mangaDetailsSelectorDescription)
+        ?.text
+        .trim();
     final genres = profile
         .querySelectorAll(mangaDetailsSelectorGenres)
         .map((e) => e.text.trim())
@@ -254,20 +278,26 @@ abstract class ZeistSource extends HttpSourceBase {
 
     final entries = <Map<String, dynamic>>[];
     final probe = await _fetchChapterFeed(feedUrl, 1, 0);
-    final total = int.tryParse(
+    final total =
+        int.tryParse(
           _blogText(probe[r'openSearch$totalResults']) ??
-              _blogText((probe['feed'] as Map<String, dynamic>?)
-                      ?[r'openSearch$totalResults']) ??
+              _blogText(
+                (probe['feed']
+                    as Map<String, dynamic>?)?[r'openSearch$totalResults'],
+              ) ??
               '',
         ) ??
         maxChapterResults;
 
     var startIndex = 1;
     while (entries.length < total) {
-      final result =
-          await _fetchChapterFeed(feedUrl, startIndex, maxChapterResults);
-      final page = ((result['feed'] as Map<String, dynamic>?)?['entry']
-                  as List?)
+      final result = await _fetchChapterFeed(
+        feedUrl,
+        startIndex,
+        maxChapterResults,
+      );
+      final page =
+          ((result['feed'] as Map<String, dynamic>?)?['entry'] as List?)
               ?.cast<Map<String, dynamic>>() ??
           const [];
       if (page.isEmpty) break;
@@ -285,11 +315,13 @@ abstract class ZeistSource extends HttpSourceBase {
     int maxResults,
   ) async {
     final uri = Uri.parse(feedUrl);
-    final url = uri.replace(queryParameters: {
-      ...uri.queryParameters,
-      'start-index': '$startIndex',
-      'max-results': '$maxResults',
-    });
+    final url = uri.replace(
+      queryParameters: {
+        ...uri.queryParameters,
+        'start-index': '$startIndex',
+        'max-results': '$maxResults',
+      },
+    );
     final res = await client.get<String>(url.toString());
     return jsonDecode(res.data ?? '{}') as Map<String, dynamic>;
   }
@@ -329,24 +361,28 @@ abstract class ZeistSource extends HttpSourceBase {
   /// Maps chapter feed entries to chapters. Exposed for testing via
   /// [parseChapterFeed].
   List<SChapter> parseChapterEntries(List<Map<String, dynamic>> entries) {
-    return entries.where((e) {
-      return _entryCategories(e).contains(chapterCategory);
-    }).map((e) {
-      final name = _blogText(e['title']) ?? '';
-      final href = _alternateLink(e);
-      if (name.isEmpty || href == null) return null;
-      final published = _blogText(e['published'])?.trim();
-      final updated = _blogText(e['updated'])?.trim();
-      final dateText = preferChapterUpdatedDate
-          ? (updated ?? published)
-          : (published ?? updated);
-      return SChapter(
-        url: _relative(href),
-        name: name,
-        dateUpload: dateText == null ? null : DateTime.tryParse(dateText),
-        chapterNumber: _chapterNumber(name),
-      );
-    }).nonNulls.toList();
+    return entries
+        .where((e) {
+          return _entryCategories(e).contains(chapterCategory);
+        })
+        .map((e) {
+          final name = _blogText(e['title']) ?? '';
+          final href = _alternateLink(e);
+          if (name.isEmpty || href == null) return null;
+          final published = _blogText(e['published'])?.trim();
+          final updated = _blogText(e['updated'])?.trim();
+          final dateText = preferChapterUpdatedDate
+              ? (updated ?? published)
+              : (published ?? updated);
+          return SChapter(
+            url: _relative(href),
+            name: name,
+            dateUpload: dateText == null ? null : DateTime.tryParse(dateText),
+            chapterNumber: _chapterNumber(name),
+          );
+        })
+        .nonNulls
+        .toList();
   }
 
   /// Parses a raw chapter feed JSON document. Exposed for testing.
@@ -355,11 +391,14 @@ abstract class ZeistSource extends HttpSourceBase {
 
   /// Hook for sites that rewrite names or append extra chapters scraped from
   /// the series page (keiyoushi Yokai).
-  List<SChapter> postProcessChapters(String htmlBody, List<SChapter> chapters) =>
-      chapters;
+  List<SChapter> postProcessChapters(
+    String htmlBody,
+    List<SChapter> chapters,
+  ) => chapters;
 
   // ── Pages ──────────────────────────────────────────────────────────────────
 
+  /// Reader-image container selector; skins override.
   String get pageListSelector => 'div.check-box div.separator';
 
   @override

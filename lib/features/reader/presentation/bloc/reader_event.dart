@@ -1,9 +1,11 @@
-import 'package:mihonx/features/reader/domain/reader_preferences.dart';
+import 'package:hondana/features/reader/domain/reader_preferences.dart';
 
+/// Base type for everything the reader UI dispatches to [ReaderBloc].
 sealed class ReaderEvent {
   const ReaderEvent();
 }
 
+/// Fired once when the reader opens — kicks off the initial chapter load.
 final class ReaderStarted extends ReaderEvent {
   const ReaderStarted();
 }
@@ -20,6 +22,7 @@ final class ReaderItemChanged extends ReaderEvent {
   final int index;
 }
 
+/// Show/hide the reader menu overlay (tapped the menu zone or the app bar).
 final class ReaderOverlayToggled extends ReaderEvent {
   const ReaderOverlayToggled();
 }
@@ -31,10 +34,12 @@ final class ReaderModeChanged extends ReaderEvent {
   final ReadingMode? mode;
 }
 
+/// Jump to the next chapter (bottom-bar button); honors skip-read/duplicate.
 final class ReaderNextChapter extends ReaderEvent {
   const ReaderNextChapter();
 }
 
+/// Jump to the previous chapter (bottom-bar button); always allowed to go back.
 final class ReaderPrevChapter extends ReaderEvent {
   const ReaderPrevChapter();
 }

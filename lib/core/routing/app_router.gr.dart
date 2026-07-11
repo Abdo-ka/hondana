@@ -11,53 +11,55 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:auto_route/auto_route.dart' as _i25;
 import 'package:flutter/material.dart' as _i26;
-import 'package:mihonx/features/browse/domain/source/model/s_manga.dart'
+import 'package:hondana/features/browse/domain/source/model/s_manga.dart'
     as _i27;
-import 'package:mihonx/features/browse/presentation/pages/browse_page.dart'
+import 'package:hondana/features/browse/presentation/pages/browse_page.dart'
     as _i4;
-import 'package:mihonx/features/browse/presentation/pages/extensions_page.dart'
+import 'package:hondana/features/browse/presentation/pages/extensions_page.dart'
     as _i10;
-import 'package:mihonx/features/browse/presentation/pages/global_search_page.dart'
+import 'package:hondana/features/browse/presentation/pages/global_search_page.dart'
     as _i11;
-import 'package:mihonx/features/browse/presentation/pages/source_catalogue_page.dart'
+import 'package:hondana/features/browse/presentation/pages/source_catalogue_page.dart'
     as _i22;
-import 'package:mihonx/features/browse/presentation/pages/source_webview_page.dart'
+import 'package:hondana/features/browse/presentation/pages/source_webview_page.dart'
     as _i23;
-import 'package:mihonx/features/downloads/presentation/pages/downloads_page.dart'
+import 'package:hondana/features/downloads/presentation/pages/downloads_page.dart'
     as _i8;
-import 'package:mihonx/features/history/presentation/pages/history_page.dart'
+import 'package:hondana/features/history/presentation/pages/history_page.dart'
     as _i12;
-import 'package:mihonx/features/library/presentation/pages/categories_page.dart'
+import 'package:hondana/features/library/presentation/pages/categories_page.dart'
     as _i6;
-import 'package:mihonx/features/library/presentation/pages/library_page.dart'
+import 'package:hondana/features/library/presentation/pages/library_page.dart'
     as _i13;
-import 'package:mihonx/features/main/presentation/pages/main_page.dart' as _i15;
-import 'package:mihonx/features/manga/presentation/pages/manga_details_page.dart'
+import 'package:hondana/features/main/presentation/pages/main_page.dart'
+    as _i15;
+import 'package:hondana/features/manga/presentation/pages/manga_details_page.dart'
     as _i16;
-import 'package:mihonx/features/more/presentation/pages/more_page.dart' as _i17;
-import 'package:mihonx/features/more/presentation/pages/settings/about_page.dart'
+import 'package:hondana/features/more/presentation/pages/more_page.dart'
+    as _i17;
+import 'package:hondana/features/more/presentation/pages/settings/about_page.dart'
     as _i1;
-import 'package:mihonx/features/more/presentation/pages/settings/advanced_settings_page.dart'
+import 'package:hondana/features/more/presentation/pages/settings/advanced_settings_page.dart'
     as _i2;
-import 'package:mihonx/features/more/presentation/pages/settings/appearance_settings_page.dart'
+import 'package:hondana/features/more/presentation/pages/settings/appearance_settings_page.dart'
     as _i3;
-import 'package:mihonx/features/more/presentation/pages/settings/browse_settings_page.dart'
+import 'package:hondana/features/more/presentation/pages/settings/browse_settings_page.dart'
     as _i5;
-import 'package:mihonx/features/more/presentation/pages/settings/data_storage_settings_page.dart'
+import 'package:hondana/features/more/presentation/pages/settings/data_storage_settings_page.dart'
     as _i7;
-import 'package:mihonx/features/more/presentation/pages/settings/downloads_settings_page.dart'
+import 'package:hondana/features/more/presentation/pages/settings/downloads_settings_page.dart'
     as _i9;
-import 'package:mihonx/features/more/presentation/pages/settings/library_settings_page.dart'
+import 'package:hondana/features/more/presentation/pages/settings/library_settings_page.dart'
     as _i14;
-import 'package:mihonx/features/more/presentation/pages/settings/reader_settings_page.dart'
+import 'package:hondana/features/more/presentation/pages/settings/reader_settings_page.dart'
     as _i19;
-import 'package:mihonx/features/more/presentation/pages/settings/security_settings_page.dart'
+import 'package:hondana/features/more/presentation/pages/settings/security_settings_page.dart'
     as _i20;
-import 'package:mihonx/features/more/presentation/pages/settings_page.dart'
+import 'package:hondana/features/more/presentation/pages/settings_page.dart'
     as _i21;
-import 'package:mihonx/features/reader/presentation/pages/reader_page.dart'
+import 'package:hondana/features/reader/presentation/pages/reader_page.dart'
     as _i18;
-import 'package:mihonx/features/updates/presentation/pages/updates_page.dart'
+import 'package:hondana/features/updates/presentation/pages/updates_page.dart'
     as _i24;
 
 /// generated route for

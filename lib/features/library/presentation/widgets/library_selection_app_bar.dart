@@ -2,11 +2,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:mihonx/core/extensions/context_ext.dart';
-import 'package:mihonx/core/widgets/app_text.dart';
-import 'package:mihonx/features/library/domain/category.dart';
-import 'package:mihonx/features/library/presentation/bloc/library_bloc.dart';
-import 'package:mihonx/features/library/presentation/bloc/library_event.dart';
+import 'package:hondana/core/extensions/context_ext.dart';
+import 'package:hondana/core/widgets/app_text.dart';
+import 'package:hondana/features/library/domain/category.dart';
+import 'package:hondana/features/library/presentation/bloc/library_bloc.dart';
+import 'package:hondana/features/library/presentation/bloc/library_event.dart';
 
 /// Contextual app bar shown while items are selected.
 class LibrarySelectionAppBar extends StatelessWidget
@@ -37,16 +37,16 @@ class LibrarySelectionAppBar extends StatelessWidget
         IconButton(
           tooltip: 'library.mark_read'.tr(),
           icon: const Icon(Icons.done_all),
-          onPressed: () => context
-              .read<LibraryBloc>()
-              .add(const LibrarySelectedMarkedRead(true)),
+          onPressed: () => context.read<LibraryBloc>().add(
+            const LibrarySelectedMarkedRead(true),
+          ),
         ),
         IconButton(
           tooltip: 'library.mark_unread'.tr(),
           icon: const Icon(Icons.remove_done),
-          onPressed: () => context
-              .read<LibraryBloc>()
-              .add(const LibrarySelectedMarkedRead(false)),
+          onPressed: () => context.read<LibraryBloc>().add(
+            const LibrarySelectedMarkedRead(false),
+          ),
         ),
         IconButton(
           tooltip: 'library.set_categories'.tr(),
@@ -77,6 +77,8 @@ class _CategorySelectDialog extends StatelessWidget {
 
   final List<Category> categories;
 
+  /// Opens the picker and resolves to the chosen category ids, or null if
+  /// dismissed without confirming.
   static Future<List<int>?> show(
     BuildContext context,
     List<Category> categories,
@@ -98,6 +100,7 @@ class _CategorySelectDialog extends StatelessWidget {
   }
 }
 
+/// Checkbox list tracking the picked category ids until OK is pressed.
 class _CategoryChecklist extends StatefulWidget {
   const _CategoryChecklist({required this.categories});
 

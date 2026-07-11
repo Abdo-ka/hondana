@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:mihonx/core/core.dart';
+import 'package:hondana/core/core.dart';
 
 /// Shared building blocks for the settings screens.
 
@@ -8,12 +9,13 @@ import 'package:mihonx/core/core.dart';
 class SettingsSectionHeader extends StatelessWidget {
   const SettingsSectionHeader(this.labelKey, {super.key});
 
+  /// Translation key for the section title.
   final String labelKey;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 4.h),
       child: AppText.labelMedium(labelKey, color: context.colorScheme.primary),
     );
   }
@@ -30,8 +32,12 @@ class OptionPickerSheet<T> extends StatelessWidget {
 
   final List<T> values;
   final T selected;
+
+  /// Translation key (or already-translated label) per option.
   final String Function(T) labelKey;
 
+  /// Presents the sheet and completes with the chosen value, or null if
+  /// dismissed.
   static Future<T?> show<T>(
     BuildContext context, {
     required List<T> values,
@@ -89,6 +95,8 @@ class MultiPickerSheet<T> extends StatefulWidget {
   /// flow through AppText.tr() unchanged).
   final String Function(T) label;
 
+  /// Presents the sheet and completes with the new selection, or null if
+  /// dismissed.
   static Future<Set<T>?> show<T>(
     BuildContext context, {
     required List<T> values,
@@ -98,11 +106,8 @@ class MultiPickerSheet<T> extends StatefulWidget {
     return showModalBottomSheet<Set<T>>(
       context: context,
       showDragHandle: true,
-      builder: (_) => MultiPickerSheet<T>(
-        values: values,
-        selected: selected,
-        label: label,
-      ),
+      builder: (_) =>
+          MultiPickerSheet<T>(values: values, selected: selected, label: label),
     );
   }
 
@@ -111,8 +116,9 @@ class MultiPickerSheet<T> extends StatefulWidget {
 }
 
 class _MultiPickerSheetState<T> extends State<MultiPickerSheet<T>> {
-  late final ValueNotifier<Set<T>> _selection =
-      ValueNotifier({...widget.selected});
+  late final ValueNotifier<Set<T>> _selection = ValueNotifier({
+    ...widget.selected,
+  });
 
   @override
   void dispose() {
@@ -150,7 +156,7 @@ class _MultiPickerSheetState<T> extends State<MultiPickerSheet<T>> {
             Align(
               alignment: AlignmentDirectional.centerEnd,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
                 child: TextButton(
                   onPressed: () => Navigator.of(context).pop(_selection.value),
                   child: const AppText.bodyMedium('common.ok'),
@@ -179,6 +185,8 @@ class TriStateSheet extends StatefulWidget {
   final Set<int> include;
   final Set<int> exclude;
 
+  /// Presents the sheet and completes with the new (include, exclude) id sets,
+  /// or null if dismissed.
   static Future<(Set<int>, Set<int>)?> show(
     BuildContext context, {
     required Map<int, String> items,
@@ -199,8 +207,10 @@ class TriStateSheet extends StatefulWidget {
 
 class _TriStateSheetState extends State<TriStateSheet> {
   /// (include, exclude) — one notifier so a cycle updates both atomically.
-  late final ValueNotifier<(Set<int>, Set<int>)> _state =
-      ValueNotifier(({...widget.include}, {...widget.exclude}));
+  late final ValueNotifier<(Set<int>, Set<int>)> _state = ValueNotifier((
+    {...widget.include},
+    {...widget.exclude},
+  ));
 
   @override
   void dispose() {
@@ -240,13 +250,13 @@ class _TriStateSheetState extends State<TriStateSheet> {
                               include.contains(e.key)
                                   ? Icons.check_box
                                   : exclude.contains(e.key)
-                                      ? Icons.disabled_by_default
-                                      : Icons.check_box_outline_blank,
+                                  ? Icons.disabled_by_default
+                                  : Icons.check_box_outline_blank,
                               color: include.contains(e.key)
                                   ? context.colorScheme.primary
                                   : exclude.contains(e.key)
-                                      ? context.colorScheme.error
-                                      : null,
+                                  ? context.colorScheme.error
+                                  : null,
                             ),
                             title: AppText.bodyMedium(e.value),
                             onTap: () => _cycle(e.key),
@@ -259,7 +269,7 @@ class _TriStateSheetState extends State<TriStateSheet> {
               Align(
                 alignment: AlignmentDirectional.centerEnd,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
                   child: TextButton(
                     onPressed: () => Navigator.of(context).pop(state),
                     child: const AppText.bodyMedium('common.ok'),

@@ -1,0 +1,57 @@
+---
+description: Flutter widget/build guardrails for Hondana
+globs: lib/**/*.dart
+alwaysApply: true
+---
+
+# Flutter Widget/Build Guardrails
+
+Mandatory rules for all UI code. Full detail in `.github/copilot-instructions.md`.
+
+## Never create functions that return widgets
+
+```dart
+// ❌ WRONG
+Widget _buildHeader() => Container(...);
+
+// ✅ CORRECT
+class HeaderWidget extends StatelessWidget {
+  const HeaderWidget({super.key});
+  @override
+  Widget build(BuildContext context) => Container(...);
+}
+```
+
+Always widget classes with `const` constructors — including wrapper/filter
+helpers (`Widget _filtered(Widget child)` → a widget class taking `child`).
+
+## Never declare variables or run logic inside build()
+
+Class fields / constructor params instead. Only context reads used in the
+returned tree are allowed inside `build` (`Theme.of(context)`,
+`context.colorScheme`, `context.width`), plus `LayoutBuilder` constraints in
+their own callback.
+
+## Never compute data inside builder callbacks
+
+`itemBuilder`, `BlocBuilder.builder`, `ValueListenableBuilder.builder`, etc. take
+inline expressions only. Pre-compute sorted/filtered data in the Bloc state or a
+`ValueNotifier` (see `LibraryBloc._pipeline`).
+
+## Never use setState
+
+`ValueNotifier` + `ValueListenableBuilder` / `ListenableBuilder` for local state;
+Bloc for feature state.
+
+## Never use double.infinity for sizing
+
+Use `context.width` / `context.height`.
+
+## All sizes go through flutter_screenutil
+
+`16.w`, `16.h`, `12.r`, `12.sp`, `16.verticalSpace`. Banned raw literals:
+`SizedBox(height: 16)`, `EdgeInsets.all(12)`, `BorderRadius.circular(12)`,
+`fontSize: 12`. Permitted unscaled: `0`, hairline `1`, and non-length integers
+(`maxLines: 1`, `Duration(...)`). Converting a literal to `.h`/`.w`/`.r`/`.sp`
+drops `const` and needs
+`import 'package:flutter_screenutil/flutter_screenutil.dart';`.

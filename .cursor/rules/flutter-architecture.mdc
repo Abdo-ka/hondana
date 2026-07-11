@@ -1,0 +1,44 @@
+---
+description: Clean Architecture + feature-first layout for Hondana
+globs: lib/**/*.dart
+alwaysApply: true
+---
+
+# Architecture — Clean Architecture, Feature-First
+
+```
+lib/
+├── main.dart / app.dart / initialization.dart
+├── core/            # DI, config, database (drift), network, routing, state, theme, widgets
+└── features/<feature>/
+    ├── data/         # sources, repository implementations, services
+    ├── domain/       # entities, models, repository interfaces, preference stores
+    └── presentation/ # bloc/, pages/ (@RoutePage), widgets/
+```
+
+Shared UI/utilities live in `lib/core/`, imported via
+`package:hondana/core/core.dart`. No `packages/` monorepo, no Firebase.
+
+## Layer boundaries
+
+- **Pages hold no business logic.** They compose a Bloc + UI. Orchestration
+  (downloads, app-lock, library updates, source resolution) lives in
+  `data/`/`domain/` services and is driven through the Bloc.
+- **No network or database access in presentation.** Sources/repositories fetch
+  and expose `Stream`s / result types; Blocs call them; pages render state.
+- **Keep drift types out of `domain/`.** Map rows to domain entities at the data
+  boundary (`Manga.fromData(...)`).
+- **Repositories** expose intent-level methods and `Stream`s; concrete sources /
+  drift live behind them.
+
+## Features
+
+`browse` (sources / extensions / global search), `library`, `manga` (details),
+`reader`, `downloads`, `history`, `updates`, `more` (settings), `main` (shell).
+
+## Sources & extensions
+
+Mihon's source system is ported under `features/browse/`: `domain/source/`
+(the `Source` abstraction + `SManga`/`SChapter`/`MangasPage`/`Filter` models),
+`data/source/` (`HttpSource` base, `LocalSource`, and site families). Resolve by
+id via `SourceManager`.

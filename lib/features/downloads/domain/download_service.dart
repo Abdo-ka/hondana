@@ -40,13 +40,14 @@ class DownloadService {
   Future<List<String>?> localPages(int mangaId, int chapterId) async {
     final dir = await chapterDir(mangaId, chapterId);
     if (!File(p.join(dir.path, '.done')).existsSync()) return null;
-    final pages = dir
-        .listSync()
-        .whereType<File>()
-        .where((f) => p.basename(f.path) != '.done')
-        .map((f) => f.path)
-        .toList()
-      ..sort();
+    final pages =
+        dir
+            .listSync()
+            .whereType<File>()
+            .where((f) => p.basename(f.path) != '.done')
+            .map((f) => f.path)
+            .toList()
+          ..sort();
     return pages;
   }
 

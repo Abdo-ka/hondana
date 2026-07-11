@@ -3,18 +3,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:mihonx/core/core.dart';
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/core/routing/app_router.gr.dart';
-import 'package:mihonx/core/utils/app_dates.dart';
-import 'package:mihonx/features/downloads/presentation/bloc/downloads_bloc.dart';
-import 'package:mihonx/features/downloads/presentation/widgets/chapter_download_button.dart';
-import 'package:mihonx/features/library/presentation/widgets/manga_cover.dart';
-import 'package:mihonx/features/updates/domain/updates_repository.dart';
-import 'package:mihonx/features/updates/presentation/bloc/updates_bloc.dart';
-import 'package:mihonx/features/updates/presentation/bloc/updates_event.dart';
-import 'package:mihonx/features/updates/presentation/bloc/updates_state.dart';
+import 'package:hondana/core/core.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/core/routing/app_router.gr.dart';
+import 'package:hondana/core/utils/app_dates.dart';
+import 'package:hondana/features/downloads/presentation/bloc/downloads_bloc.dart';
+import 'package:hondana/features/downloads/presentation/widgets/chapter_download_button.dart';
+import 'package:hondana/features/library/presentation/widgets/manga_cover.dart';
+import 'package:hondana/features/updates/domain/updates_repository.dart';
+import 'package:hondana/features/updates/presentation/bloc/updates_bloc.dart';
+import 'package:hondana/features/updates/presentation/bloc/updates_event.dart';
+import 'package:hondana/features/updates/presentation/bloc/updates_state.dart';
 
+/// The Updates tab: recent chapters across the user's favorited library.
+///
+/// Wires up the [UpdatesBloc] (subscribing on mount) alongside the shared
+/// [DownloadsBloc] used by per-row download buttons.
 @RoutePage()
 class UpdatesPage extends StatelessWidget {
   const UpdatesPage({super.key});
@@ -69,6 +73,8 @@ class _UpdatesView extends StatelessWidget {
 class _UpdatesList extends StatelessWidget {
   const _UpdatesList();
 
+  /// Interleaves day-label strings before each run of same-day items, yielding
+  /// a flat list of `String` headers and [UpdateItem] rows for the list view.
   static List<Object> _grouped(List<UpdateItem> items) {
     return items.fold(<Object>[], (acc, item) {
       final label = _dayLabel(item.dateUpload);

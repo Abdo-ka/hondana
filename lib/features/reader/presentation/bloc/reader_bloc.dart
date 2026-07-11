@@ -2,23 +2,26 @@ import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
-import 'package:mihonx/core/config/app_settings.dart';
-import 'package:mihonx/core/database/app_database.dart';
-import 'package:mihonx/core/error/app_exception.dart';
-import 'package:mihonx/core/state/bloc_status.dart';
-import 'package:mihonx/features/browse/data/source/http_source_base.dart';
-import 'package:mihonx/features/browse/domain/source/model/manga_page.dart';
-import 'package:mihonx/features/browse/domain/source/model/s_chapter.dart';
-import 'package:mihonx/features/browse/domain/source/source.dart';
-import 'package:mihonx/features/browse/domain/source/source_manager.dart';
-import 'package:mihonx/features/downloads/domain/download_service.dart';
-import 'package:mihonx/features/history/domain/history_repository.dart';
-import 'package:mihonx/features/manga/domain/manga_repository.dart';
-import 'package:mihonx/features/reader/domain/reader_preferences.dart';
-import 'package:mihonx/features/reader/presentation/bloc/reader_event.dart';
-import 'package:mihonx/features/reader/presentation/bloc/reader_item.dart';
-import 'package:mihonx/features/reader/presentation/bloc/reader_state.dart';
+import 'package:hondana/core/config/app_settings.dart';
+import 'package:hondana/core/database/app_database.dart';
+import 'package:hondana/core/error/app_exception.dart';
+import 'package:hondana/core/state/bloc_status.dart';
+import 'package:hondana/features/browse/data/source/http_source_base.dart';
+import 'package:hondana/features/browse/domain/source/model/manga_page.dart';
+import 'package:hondana/features/browse/domain/source/model/s_chapter.dart';
+import 'package:hondana/features/browse/domain/source/source.dart';
+import 'package:hondana/features/browse/domain/source/source_manager.dart';
+import 'package:hondana/features/downloads/domain/download_service.dart';
+import 'package:hondana/features/history/domain/history_repository.dart';
+import 'package:hondana/features/manga/domain/manga_repository.dart';
+import 'package:hondana/features/reader/domain/reader_preferences.dart';
+import 'package:hondana/features/reader/presentation/bloc/reader_event.dart';
+import 'package:hondana/features/reader/presentation/bloc/reader_item.dart';
+import 'package:hondana/features/reader/presentation/bloc/reader_state.dart';
 
+/// Drives the reader: loads a chapter's pages, preloads the next chapter into
+/// one continuous item list, tracks the reading position, and marks chapters
+/// read as they scroll past (Mihon's viewer/preload model).
 @injectable
 class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
   ReaderBloc(
@@ -29,8 +32,8 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
     this._settings,
     ReaderPreferences prefs,
     @factoryParam this._chapterId,
-  )   : _prefs = prefs,
-        super(ReaderState(readingMode: prefs.readingMode)) {
+  ) : _prefs = prefs,
+      super(ReaderState(readingMode: prefs.readingMode)) {
     on<ReaderStarted>((e, emit) => _load(_chapterId, emit));
     // Sequential so a fast fling's backlog of reports cannot interleave at
     // the awaits and write lastPageRead out of order.
@@ -72,22 +75,27 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
   /// chapter can't append pages onto a freshly-loaded one.
   int _loadGeneration = 0;
 
+  /// Loads [chapterId] fresh: fetches its pages, resets the item list to that
+  /// chapter plus a trailing transition, seeks to the last-read page, and
+  /// records history. Guards against a newer load superseding this one.
   Future<void> _load(int chapterId, Emitter<ReaderState> emit) async {
     final generation = ++_loadGeneration;
     emit(state.copyWith(status: const BlocStatus.loading()));
     try {
       final chapter = await _repo.getChapter(chapterId);
-      final manga = chapter == null ? null : await _repo.getManga(chapter.mangaId);
-      _source = manga == null ? null : _sources.get(manga.source);
-      final pages = chapter == null
+      final manga = chapter == null
           ? null
-          : await _pagesFor(chapter);
+          : await _repo.getManga(chapter.mangaId);
+      _source = manga == null ? null : _sources.get(manga.source);
+      final pages = chapter == null ? null : await _pagesFor(chapter);
       if (chapter == null || pages == null) {
-        emit(state.copyWith(
-          status: const BlocStatus.failure(
-            AppException(message: 'Chapter unavailable'),
+        emit(
+          state.copyWith(
+            status: const BlocStatus.failure(
+              AppException(message: 'Chapter unavailable'),
+            ),
           ),
-        ));
+        );
         return;
       }
       // A newer _load (e.g. a second next-tap) superseded this one while its
@@ -112,29 +120,32 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
       final mode = flags > 0 && flags <= ReadingMode.values.length
           ? ReadingMode.values[flags - 1]
           : _prefs.readingMode;
-      final initialPage =
-          pages.isEmpty ? 0 : chapter.lastPageRead.clamp(0, pages.length - 1);
-      emit(state.copyWith(
-        status: pages.isEmpty
-            ? const BlocStatus.empty()
-            : const BlocStatus.success(),
-        items: items,
-        readingMode: mode,
-        // For the first loaded chapter, item index == page index.
-        currentItem: initialPage,
-        // A load is an explicit seek: readers must jump to the new position.
-        seek: state.seek + 1,
-        currentPage: initialPage,
-        pageCount: pages.length,
-        chapterId: chapterId,
-        chapterName: chapter.name,
-        mangaId: chapter.mangaId,
-        imageHeaders: _source is HttpSourceBase
-            ? (_source! as HttpSourceBase).imageHeaders
-            : const {},
-        hasPrev: _index > 0,
-        hasNext: _index >= 0 && _nextIndexFrom(_index) != -1,
-      ));
+      final initialPage = pages.isEmpty
+          ? 0
+          : chapter.lastPageRead.clamp(0, pages.length - 1);
+      emit(
+        state.copyWith(
+          status: pages.isEmpty
+              ? const BlocStatus.empty()
+              : const BlocStatus.success(),
+          items: items,
+          readingMode: mode,
+          // For the first loaded chapter, item index == page index.
+          currentItem: initialPage,
+          // A load is an explicit seek: readers must jump to the new position.
+          seek: state.seek + 1,
+          currentPage: initialPage,
+          pageCount: pages.length,
+          chapterId: chapterId,
+          chapterName: chapter.name,
+          mangaId: chapter.mangaId,
+          imageHeaders: _source is HttpSourceBase
+              ? (_source! as HttpSourceBase).imageHeaders
+              : const {},
+          hasPrev: _index > 0,
+          hasNext: _index >= 0 && _nextIndexFrom(_index) != -1,
+        ),
+      );
       // Incognito reading leaves no history trail.
       if (!_settings.incognito) await _history.upsert(chapterId);
       // Short chapters can open already within preload range of the end.
@@ -142,7 +153,9 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
         await _maybeLoadNext(emit);
       }
     } catch (e, st) {
-      emit(state.copyWith(status: BlocStatus.failure(AppException.from(e, st))));
+      emit(
+        state.copyWith(status: BlocStatus.failure(AppException.from(e, st))),
+      );
     }
   }
 
@@ -165,17 +178,16 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
     int chapterId,
     String chapterName,
     List<MangaPage> pages,
-  ) =>
-      [
-        for (var i = 0; i < pages.length; i++)
-          ReaderPageItem(
-            chapterId: chapterId,
-            chapterName: chapterName,
-            pageIndex: i,
-            pageCount: pages.length,
-            page: pages[i],
-          ),
-      ];
+  ) => [
+    for (var i = 0; i < pages.length; i++)
+      ReaderPageItem(
+        chapterId: chapterId,
+        chapterName: chapterName,
+        pageIndex: i,
+        pageCount: pages.length,
+        page: pages[i],
+      ),
+  ];
 
   String? _nameAt(int index) =>
       index >= 0 && index < _siblings.length ? _siblings[index].name : null;
@@ -201,6 +213,9 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
     return -1;
   }
 
+  /// Handles the visible item advancing: marks passed chapters read, switches
+  /// the "current chapter" when a boundary is crossed, persists lastPageRead,
+  /// and triggers a preload when nearing the end.
   Future<void> _onItemChanged(
     ReaderItemChanged event,
     Emitter<ReaderState> emit,
@@ -234,15 +249,17 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
           _chapterId = item.chapterId;
           _index = newIndex;
         }
-        emit(state.copyWith(
-          currentItem: index,
-          currentPage: item.pageIndex,
-          pageCount: item.pageCount,
-          chapterId: item.chapterId,
-          chapterName: item.chapterName,
-          hasPrev: _index > 0,
-          hasNext: _index >= 0 && _nextIndexFrom(_index) != -1,
-        ));
+        emit(
+          state.copyWith(
+            currentItem: index,
+            currentPage: item.pageIndex,
+            pageCount: item.pageCount,
+            chapterId: item.chapterId,
+            chapterName: item.chapterName,
+            hasPrev: _index > 0,
+            hasNext: _index >= 0 && _nextIndexFrom(_index) != -1,
+          ),
+        );
         if (switched && !_settings.incognito) {
           await _history.upsert(item.chapterId);
         }
@@ -286,15 +303,19 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
         return;
       }
       _loadedThrough = nextIndex;
-      emit(state.copyWith(items: [
-        ...state.items,
-        ..._pageItems(chapter.id, chapter.name, pages),
-        ReaderTransitionItem(
-          fromChapterId: chapter.id,
-          fromChapterName: chapter.name,
-          toChapterName: _nameAt(_nextIndexFrom(nextIndex)),
+      emit(
+        state.copyWith(
+          items: [
+            ...state.items,
+            ..._pageItems(chapter.id, chapter.name, pages),
+            ReaderTransitionItem(
+              fromChapterId: chapter.id,
+              fromChapterName: chapter.name,
+              toChapterName: _nameAt(_nextIndexFrom(nextIndex)),
+            ),
+          ],
         ),
-      ]));
+      );
     } on Exception {
       // Keep the transition; a later scroll near the end retries the load.
     } finally {
@@ -334,6 +355,7 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
     emit(state.copyWith(readingMode: event.mode ?? _prefs.readingMode));
   }
 
+  /// Chapter button navigation: +1 next (skip-aware), -1 previous (unfiltered).
   Future<void> _navigate(int delta, Emitter<ReaderState> emit) async {
     final target = delta > 0 ? _nextIndexFrom(_index) : _index - 1;
     if (target < 0 || target >= _siblings.length) return;

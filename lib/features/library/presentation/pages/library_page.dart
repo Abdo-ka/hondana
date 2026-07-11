@@ -2,16 +2,20 @@ import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:mihonx/core/core.dart';
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/features/library/presentation/bloc/library_bloc.dart';
-import 'package:mihonx/features/library/presentation/bloc/library_event.dart';
-import 'package:mihonx/features/library/presentation/bloc/library_state.dart';
-import 'package:mihonx/features/library/presentation/widgets/library_body.dart';
-import 'package:mihonx/features/library/presentation/widgets/library_options_sheet.dart';
-import 'package:mihonx/features/library/presentation/widgets/library_selection_app_bar.dart';
+import 'package:hondana/core/core.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/features/library/presentation/bloc/library_bloc.dart';
+import 'package:hondana/features/library/presentation/bloc/library_event.dart';
+import 'package:hondana/features/library/presentation/bloc/library_state.dart';
+import 'package:hondana/features/library/presentation/widgets/library_body.dart';
+import 'package:hondana/features/library/presentation/widgets/library_options_sheet.dart';
+import 'package:hondana/features/library/presentation/widgets/library_selection_app_bar.dart';
 
+/// Library screen — the user's saved manga, with search, filters, and
+/// multi-select. Hosts the grid/list body and swaps between the default and
+/// selection app bars.
 @RoutePage()
 class LibraryPage extends StatelessWidget {
   const LibraryPage({super.key});
@@ -126,7 +130,7 @@ class _LibraryAppBar extends StatelessWidget implements PreferredSizeWidget {
           IconButton(
             icon: Badge(
               isLabelVisible: hasActiveFilters,
-              smallSize: 8,
+              smallSize: 8.r,
               child: const Icon(Icons.filter_list),
             ),
             onPressed: () => LibraryOptionsSheet.show(context),

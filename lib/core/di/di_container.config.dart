@@ -10,72 +10,72 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:get_it/get_it.dart' as _i174;
+import 'package:hondana/core/config/advanced_preferences.dart' as _i3;
+import 'package:hondana/core/config/app_settings.dart' as _i763;
+import 'package:hondana/core/database/app_database.dart' as _i306;
+import 'package:hondana/core/di/di_container.dart' as _i854;
+import 'package:hondana/core/network/app_http.dart' as _i301;
+import 'package:hondana/core/routing/app_router.dart' as _i84;
+import 'package:hondana/features/browse/data/extensions_index_repository.dart'
+    as _i768;
+import 'package:hondana/features/browse/data/source/builtin_source_manager.dart'
+    as _i1001;
+import 'package:hondana/features/browse/domain/source/model/s_manga.dart'
+    as _i444;
+import 'package:hondana/features/browse/domain/source/source_manager.dart'
+    as _i893;
+import 'package:hondana/features/browse/domain/source_preferences.dart' as _i82;
+import 'package:hondana/features/browse/presentation/bloc/extensions_bloc.dart'
+    as _i372;
+import 'package:hondana/features/browse/presentation/bloc/global_search_bloc.dart'
+    as _i674;
+import 'package:hondana/features/browse/presentation/bloc/source_catalogue_bloc.dart'
+    as _i915;
+import 'package:hondana/features/downloads/domain/download_preferences.dart'
+    as _i638;
+import 'package:hondana/features/downloads/domain/download_queue_store.dart'
+    as _i536;
+import 'package:hondana/features/downloads/domain/download_service.dart'
+    as _i170;
+import 'package:hondana/features/downloads/domain/live_activity_service.dart'
+    as _i264;
+import 'package:hondana/features/downloads/presentation/bloc/downloads_bloc.dart'
+    as _i778;
+import 'package:hondana/features/history/data/history_repository_impl.dart'
+    as _i484;
+import 'package:hondana/features/history/domain/history_repository.dart'
+    as _i622;
+import 'package:hondana/features/history/presentation/bloc/history_bloc.dart'
+    as _i1032;
+import 'package:hondana/features/library/data/library_repository_impl.dart'
+    as _i417;
+import 'package:hondana/features/library/data/library_update_service.dart'
+    as _i901;
+import 'package:hondana/features/library/domain/library_preferences.dart'
+    as _i791;
+import 'package:hondana/features/library/domain/library_repository.dart'
+    as _i161;
+import 'package:hondana/features/library/presentation/bloc/categories_bloc.dart'
+    as _i608;
+import 'package:hondana/features/library/presentation/bloc/library_bloc.dart'
+    as _i900;
+import 'package:hondana/features/manga/data/manga_repository_impl.dart'
+    as _i153;
+import 'package:hondana/features/manga/domain/manga_repository.dart' as _i944;
+import 'package:hondana/features/manga/presentation/bloc/manga_details_bloc.dart'
+    as _i672;
+import 'package:hondana/features/more/domain/security_preferences.dart' as _i14;
+import 'package:hondana/features/reader/domain/reader_preferences.dart'
+    as _i959;
+import 'package:hondana/features/reader/presentation/bloc/reader_bloc.dart'
+    as _i425;
+import 'package:hondana/features/updates/data/updates_repository_impl.dart'
+    as _i933;
+import 'package:hondana/features/updates/domain/updates_repository.dart'
+    as _i746;
+import 'package:hondana/features/updates/presentation/bloc/updates_bloc.dart'
+    as _i861;
 import 'package:injectable/injectable.dart' as _i526;
-import 'package:mihonx/core/config/advanced_preferences.dart' as _i62;
-import 'package:mihonx/core/config/app_settings.dart' as _i826;
-import 'package:mihonx/core/database/app_database.dart' as _i390;
-import 'package:mihonx/core/di/di_container.dart' as _i459;
-import 'package:mihonx/core/network/app_http.dart' as _i475;
-import 'package:mihonx/core/routing/app_router.dart' as _i636;
-import 'package:mihonx/features/browse/data/extensions_index_repository.dart'
-    as _i448;
-import 'package:mihonx/features/browse/data/source/builtin_source_manager.dart'
-    as _i999;
-import 'package:mihonx/features/browse/domain/source/model/s_manga.dart'
-    as _i664;
-import 'package:mihonx/features/browse/domain/source/source_manager.dart'
-    as _i598;
-import 'package:mihonx/features/browse/domain/source_preferences.dart' as _i733;
-import 'package:mihonx/features/browse/presentation/bloc/extensions_bloc.dart'
-    as _i652;
-import 'package:mihonx/features/browse/presentation/bloc/global_search_bloc.dart'
-    as _i919;
-import 'package:mihonx/features/browse/presentation/bloc/source_catalogue_bloc.dart'
-    as _i14;
-import 'package:mihonx/features/downloads/domain/download_preferences.dart'
-    as _i978;
-import 'package:mihonx/features/downloads/domain/download_queue_store.dart'
-    as _i755;
-import 'package:mihonx/features/downloads/domain/download_service.dart'
-    as _i158;
-import 'package:mihonx/features/downloads/domain/live_activity_service.dart'
-    as _i817;
-import 'package:mihonx/features/downloads/presentation/bloc/downloads_bloc.dart'
-    as _i409;
-import 'package:mihonx/features/history/data/history_repository_impl.dart'
-    as _i640;
-import 'package:mihonx/features/history/domain/history_repository.dart'
-    as _i286;
-import 'package:mihonx/features/history/presentation/bloc/history_bloc.dart'
-    as _i270;
-import 'package:mihonx/features/library/data/library_repository_impl.dart'
-    as _i282;
-import 'package:mihonx/features/library/data/library_update_service.dart'
-    as _i789;
-import 'package:mihonx/features/library/domain/library_preferences.dart'
-    as _i26;
-import 'package:mihonx/features/library/domain/library_repository.dart'
-    as _i196;
-import 'package:mihonx/features/library/presentation/bloc/categories_bloc.dart'
-    as _i1046;
-import 'package:mihonx/features/library/presentation/bloc/library_bloc.dart'
-    as _i509;
-import 'package:mihonx/features/manga/data/manga_repository_impl.dart'
-    as _i1026;
-import 'package:mihonx/features/manga/domain/manga_repository.dart' as _i484;
-import 'package:mihonx/features/manga/presentation/bloc/manga_details_bloc.dart'
-    as _i862;
-import 'package:mihonx/features/more/domain/security_preferences.dart'
-    as _i1039;
-import 'package:mihonx/features/reader/domain/reader_preferences.dart' as _i334;
-import 'package:mihonx/features/reader/presentation/bloc/reader_bloc.dart'
-    as _i934;
-import 'package:mihonx/features/updates/data/updates_repository_impl.dart'
-    as _i245;
-import 'package:mihonx/features/updates/domain/updates_repository.dart'
-    as _i404;
-import 'package:mihonx/features/updates/presentation/bloc/updates_bloc.dart'
-    as _i101;
 import 'package:shared_preferences/shared_preferences.dart' as _i460;
 
 extension GetItInjectableX on _i174.GetIt {
@@ -90,132 +90,132 @@ extension GetItInjectableX on _i174.GetIt {
       () => registerModule.prefs,
       preResolve: true,
     );
-    gh.singleton<_i636.AppRouter>(() => registerModule.router);
-    gh.lazySingleton<_i390.AppDatabase>(() => registerModule.database);
-    gh.lazySingleton<_i448.ExtensionsIndexRepository>(
-      () => _i448.ExtensionsIndexRepository(),
+    gh.singleton<_i84.AppRouter>(() => registerModule.router);
+    gh.lazySingleton<_i306.AppDatabase>(() => registerModule.database);
+    gh.lazySingleton<_i768.ExtensionsIndexRepository>(
+      () => _i768.ExtensionsIndexRepository(),
     );
-    gh.lazySingleton<_i158.DownloadService>(() => _i158.DownloadService());
-    gh.lazySingleton<_i817.LiveActivityService>(
-      () => _i817.LiveActivityService(),
+    gh.lazySingleton<_i170.DownloadService>(() => _i170.DownloadService());
+    gh.lazySingleton<_i264.LiveActivityService>(
+      () => _i264.LiveActivityService(),
     );
-    gh.lazySingleton<_i598.SourceManager>(() => _i999.BuiltinSourceManager());
-    gh.lazySingleton<_i196.LibraryRepository>(
-      () => _i282.LibraryRepositoryImpl(
-        gh<_i390.AppDatabase>(),
-        gh<_i158.DownloadService>(),
-      ),
+    gh.lazySingleton<_i746.UpdatesRepository>(
+      () => _i933.UpdatesRepositoryImpl(gh<_i306.AppDatabase>()),
     );
-    gh.lazySingleton<_i484.MangaRepository>(
-      () => _i1026.MangaRepositoryImpl(gh<_i390.AppDatabase>()),
+    gh.lazySingleton<_i622.HistoryRepository>(
+      () => _i484.HistoryRepositoryImpl(gh<_i306.AppDatabase>()),
     );
-    gh.lazySingleton<_i62.AdvancedPreferences>(
-      () => _i62.AdvancedPreferences(gh<_i460.SharedPreferences>()),
+    gh.factory<_i1032.HistoryBloc>(
+      () => _i1032.HistoryBloc(gh<_i622.HistoryRepository>()),
     );
-    gh.lazySingleton<_i826.AppSettings>(
-      () => _i826.AppSettings(gh<_i460.SharedPreferences>()),
+    gh.lazySingleton<_i944.MangaRepository>(
+      () => _i153.MangaRepositoryImpl(gh<_i306.AppDatabase>()),
     );
-    gh.lazySingleton<_i475.WebCookieStore>(
-      () => _i475.WebCookieStore(gh<_i460.SharedPreferences>()),
-    );
-    gh.lazySingleton<_i733.SourcePreferences>(
-      () => _i733.SourcePreferences(gh<_i460.SharedPreferences>()),
-    );
-    gh.lazySingleton<_i978.DownloadPreferences>(
-      () => _i978.DownloadPreferences(gh<_i460.SharedPreferences>()),
-    );
-    gh.lazySingleton<_i755.DownloadQueueStore>(
-      () => _i755.DownloadQueueStore(gh<_i460.SharedPreferences>()),
-    );
-    gh.lazySingleton<_i26.LibraryPreferences>(
-      () => _i26.LibraryPreferences(gh<_i460.SharedPreferences>()),
-    );
-    gh.lazySingleton<_i1039.SecurityPreferences>(
-      () => _i1039.SecurityPreferences(gh<_i460.SharedPreferences>()),
-    );
-    gh.lazySingleton<_i334.ReaderPreferences>(
-      () => _i334.ReaderPreferences(gh<_i460.SharedPreferences>()),
-    );
-    gh.lazySingleton<_i286.HistoryRepository>(
-      () => _i640.HistoryRepositoryImpl(gh<_i390.AppDatabase>()),
-    );
-    gh.factory<_i270.HistoryBloc>(
-      () => _i270.HistoryBloc(gh<_i286.HistoryRepository>()),
-    );
-    gh.factory<_i919.GlobalSearchBloc>(
-      () => _i919.GlobalSearchBloc(
-        gh<_i598.SourceManager>(),
-        gh<_i733.SourcePreferences>(),
-      ),
-    );
-    gh.lazySingleton<_i404.UpdatesRepository>(
-      () => _i245.UpdatesRepositoryImpl(gh<_i390.AppDatabase>()),
-    );
-    gh.factory<_i652.ExtensionsBloc>(
-      () => _i652.ExtensionsBloc(
-        gh<_i448.ExtensionsIndexRepository>(),
-        gh<_i598.SourceManager>(),
-      ),
-    );
-    gh.factoryParam<_i14.SourceCatalogueBloc, int, dynamic>(
-      (sourceId, _) =>
-          _i14.SourceCatalogueBloc(gh<_i598.SourceManager>(), sourceId),
-    );
-    gh.factory<_i1046.CategoriesBloc>(
-      () => _i1046.CategoriesBloc(gh<_i196.LibraryRepository>()),
-    );
-    gh.lazySingleton<_i789.LibraryUpdateService>(
-      () => _i789.LibraryUpdateService(
-        gh<_i390.AppDatabase>(),
-        gh<_i598.SourceManager>(),
-      ),
-    );
-    gh.lazySingleton<_i409.DownloadsBloc>(
-      () => _i409.DownloadsBloc(
-        gh<_i158.DownloadService>(),
-        gh<_i484.MangaRepository>(),
-        gh<_i598.SourceManager>(),
-        gh<_i755.DownloadQueueStore>(),
-        gh<_i978.DownloadPreferences>(),
-        gh<_i1039.SecurityPreferences>(),
-        gh<_i817.LiveActivityService>(),
-      ),
-    );
-    gh.factoryParam<_i862.MangaDetailsBloc, int, _i664.SManga>(
-      (sourceId, initial) => _i862.MangaDetailsBloc(
-        gh<_i484.MangaRepository>(),
-        gh<_i598.SourceManager>(),
+    gh.lazySingleton<_i893.SourceManager>(() => _i1001.BuiltinSourceManager());
+    gh.factoryParam<_i672.MangaDetailsBloc, int, _i444.SManga>(
+      (sourceId, initial) => _i672.MangaDetailsBloc(
+        gh<_i944.MangaRepository>(),
+        gh<_i893.SourceManager>(),
         sourceId,
         initial,
       ),
     );
-    gh.factory<_i509.LibraryBloc>(
-      () => _i509.LibraryBloc(
-        gh<_i196.LibraryRepository>(),
-        gh<_i26.LibraryPreferences>(),
-        gh<_i789.LibraryUpdateService>(),
-        gh<_i826.AppSettings>(),
-      ),
+    gh.lazySingleton<_i3.AdvancedPreferences>(
+      () => _i3.AdvancedPreferences(gh<_i460.SharedPreferences>()),
     );
-    gh.factoryParam<_i934.ReaderBloc, int, dynamic>(
-      (_chapterId, _) => _i934.ReaderBloc(
-        gh<_i484.MangaRepository>(),
-        gh<_i598.SourceManager>(),
-        gh<_i286.HistoryRepository>(),
-        gh<_i158.DownloadService>(),
-        gh<_i826.AppSettings>(),
-        gh<_i334.ReaderPreferences>(),
+    gh.lazySingleton<_i763.AppSettings>(
+      () => _i763.AppSettings(gh<_i460.SharedPreferences>()),
+    );
+    gh.lazySingleton<_i301.WebCookieStore>(
+      () => _i301.WebCookieStore(gh<_i460.SharedPreferences>()),
+    );
+    gh.lazySingleton<_i82.SourcePreferences>(
+      () => _i82.SourcePreferences(gh<_i460.SharedPreferences>()),
+    );
+    gh.lazySingleton<_i638.DownloadPreferences>(
+      () => _i638.DownloadPreferences(gh<_i460.SharedPreferences>()),
+    );
+    gh.lazySingleton<_i536.DownloadQueueStore>(
+      () => _i536.DownloadQueueStore(gh<_i460.SharedPreferences>()),
+    );
+    gh.lazySingleton<_i791.LibraryPreferences>(
+      () => _i791.LibraryPreferences(gh<_i460.SharedPreferences>()),
+    );
+    gh.lazySingleton<_i14.SecurityPreferences>(
+      () => _i14.SecurityPreferences(gh<_i460.SharedPreferences>()),
+    );
+    gh.lazySingleton<_i959.ReaderPreferences>(
+      () => _i959.ReaderPreferences(gh<_i460.SharedPreferences>()),
+    );
+    gh.factoryParam<_i425.ReaderBloc, int, dynamic>(
+      (_chapterId, _) => _i425.ReaderBloc(
+        gh<_i944.MangaRepository>(),
+        gh<_i893.SourceManager>(),
+        gh<_i622.HistoryRepository>(),
+        gh<_i170.DownloadService>(),
+        gh<_i763.AppSettings>(),
+        gh<_i959.ReaderPreferences>(),
         _chapterId,
       ),
     );
-    gh.factory<_i101.UpdatesBloc>(
-      () => _i101.UpdatesBloc(
-        gh<_i404.UpdatesRepository>(),
-        gh<_i789.LibraryUpdateService>(),
+    gh.lazySingleton<_i161.LibraryRepository>(
+      () => _i417.LibraryRepositoryImpl(
+        gh<_i306.AppDatabase>(),
+        gh<_i170.DownloadService>(),
+      ),
+    );
+    gh.factory<_i674.GlobalSearchBloc>(
+      () => _i674.GlobalSearchBloc(
+        gh<_i893.SourceManager>(),
+        gh<_i82.SourcePreferences>(),
+      ),
+    );
+    gh.factory<_i372.ExtensionsBloc>(
+      () => _i372.ExtensionsBloc(
+        gh<_i768.ExtensionsIndexRepository>(),
+        gh<_i893.SourceManager>(),
+      ),
+    );
+    gh.lazySingleton<_i778.DownloadsBloc>(
+      () => _i778.DownloadsBloc(
+        gh<_i170.DownloadService>(),
+        gh<_i944.MangaRepository>(),
+        gh<_i893.SourceManager>(),
+        gh<_i536.DownloadQueueStore>(),
+        gh<_i638.DownloadPreferences>(),
+        gh<_i14.SecurityPreferences>(),
+        gh<_i264.LiveActivityService>(),
+      ),
+    );
+    gh.factoryParam<_i915.SourceCatalogueBloc, int, dynamic>(
+      (sourceId, _) =>
+          _i915.SourceCatalogueBloc(gh<_i893.SourceManager>(), sourceId),
+    );
+    gh.lazySingleton<_i901.LibraryUpdateService>(
+      () => _i901.LibraryUpdateService(
+        gh<_i306.AppDatabase>(),
+        gh<_i893.SourceManager>(),
+      ),
+    );
+    gh.factory<_i608.CategoriesBloc>(
+      () => _i608.CategoriesBloc(gh<_i161.LibraryRepository>()),
+    );
+    gh.factory<_i900.LibraryBloc>(
+      () => _i900.LibraryBloc(
+        gh<_i161.LibraryRepository>(),
+        gh<_i791.LibraryPreferences>(),
+        gh<_i901.LibraryUpdateService>(),
+        gh<_i763.AppSettings>(),
+      ),
+    );
+    gh.factory<_i861.UpdatesBloc>(
+      () => _i861.UpdatesBloc(
+        gh<_i746.UpdatesRepository>(),
+        gh<_i901.LibraryUpdateService>(),
       ),
     );
     return this;
   }
 }
 
-class _$RegisterModule extends _i459.RegisterModule {}
+class _$RegisterModule extends _i854.RegisterModule {}

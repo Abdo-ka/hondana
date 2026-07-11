@@ -1,10 +1,10 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
-import 'package:mihonx/core/core.dart';
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/features/browse/domain/source_preferences.dart';
-import 'package:mihonx/features/more/presentation/widgets/settings_widgets.dart';
+import 'package:hondana/core/core.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/features/browse/domain/source_preferences.dart';
+import 'package:hondana/features/more/presentation/widgets/settings_widgets.dart';
 
 /// Settings > Browse (Mihon's SettingsBrowseScreen, minus the deferred
 /// extension-repo manager).
@@ -14,11 +14,11 @@ class BrowseSettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => PageLayoutBuilder(
-        mobile: (context) => const AppScaffold(
-          appBar: AppAppBar(title: 'settings.browse'),
-          body: _BrowseSettingsList(),
-        ),
-      );
+    mobile: (context) => const AppScaffold(
+      appBar: AppAppBar(title: 'settings.browse'),
+      body: _BrowseSettingsList(),
+    ),
+  );
 }
 
 class _BrowseSettingsList extends StatelessWidget {

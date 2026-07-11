@@ -1,10 +1,10 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
-import 'package:mihonx/core/core.dart';
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/features/more/presentation/widgets/settings_widgets.dart';
-import 'package:mihonx/features/reader/domain/reader_preferences.dart';
+import 'package:hondana/core/core.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/features/more/presentation/widgets/settings_widgets.dart';
+import 'package:hondana/features/reader/domain/reader_preferences.dart';
 
 /// Settings > Reader (Mihon SettingsReaderScreen parity for the ported
 /// preference set). [ReaderPreferences] is a ChangeNotifier, so the list
@@ -15,11 +15,11 @@ class ReaderSettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => PageLayoutBuilder(
-        mobile: (context) => const AppScaffold(
-          appBar: AppAppBar(title: 'settings.reader'),
-          body: _ReaderSettingsList(),
-        ),
-      );
+    mobile: (context) => const AppScaffold(
+      appBar: AppAppBar(title: 'settings.reader'),
+      body: _ReaderSettingsList(),
+    ),
+  );
 }
 
 class _ReaderSettingsList extends StatelessWidget {
@@ -229,6 +229,7 @@ class _ReaderSettingsList extends StatelessWidget {
   }
 }
 
+/// Boolean pref row backed by a [SwitchListTile].
 class _SwitchTile extends StatelessWidget {
   const _SwitchTile({
     required this.titleKey,
@@ -244,18 +245,19 @@ class _SwitchTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SwitchListTile(
-        value: value,
-        onChanged: onChanged,
-        title: AppText.bodyLarge(titleKey),
-        subtitle: subtitleKey == null
-            ? null
-            : AppText.bodySmall(
-                subtitleKey!,
-                color: context.colorScheme.onSurfaceVariant,
-              ),
-      );
+    value: value,
+    onChanged: onChanged,
+    title: AppText.bodyLarge(titleKey),
+    subtitle: subtitleKey == null
+        ? null
+        : AppText.bodySmall(
+            subtitleKey!,
+            color: context.colorScheme.onSurfaceVariant,
+          ),
+  );
 }
 
+/// Enum pref row that opens an [OptionPickerSheet] to choose one of [values].
 class _PickerTile<T> extends StatelessWidget {
   const _PickerTile({
     required this.titleKey,
@@ -275,25 +277,27 @@ class _PickerTile<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListTile(
-        enabled: enabled,
-        title: AppText.bodyLarge(titleKey),
-        subtitle: AppText.bodySmall(
-          labelKey(value),
-          color: context.colorScheme.onSurfaceVariant,
-        ),
-        onTap: enabled
-            ? () => OptionPickerSheet.show<T>(
-                  context,
-                  values: values,
-                  selected: value,
-                  labelKey: labelKey,
-                ).then((picked) {
-                  if (picked != null) onChanged(picked);
-                })
-            : null,
-      );
+    enabled: enabled,
+    title: AppText.bodyLarge(titleKey),
+    subtitle: AppText.bodySmall(
+      labelKey(value),
+      color: context.colorScheme.onSurfaceVariant,
+    ),
+    onTap: enabled
+        ? () =>
+              OptionPickerSheet.show<T>(
+                context,
+                values: values,
+                selected: value,
+                labelKey: labelKey,
+              ).then((picked) {
+                if (picked != null) onChanged(picked);
+              })
+        : null,
+  );
 }
 
+/// Integer pref row with a live value label and a clamped [Slider].
 class _SliderTile extends StatelessWidget {
   const _SliderTile({
     required this.titleKey,
@@ -313,23 +317,23 @@ class _SliderTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListTile(
-        enabled: enabled,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            AppText.bodyLarge(titleKey),
-            AppText.bodyMedium(
-              '$value',
-              color: context.colorScheme.onSurfaceVariant,
-            ),
-          ],
+    enabled: enabled,
+    title: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        AppText.bodyLarge(titleKey),
+        AppText.bodyMedium(
+          '$value',
+          color: context.colorScheme.onSurfaceVariant,
         ),
-        subtitle: Slider(
-          value: value.clamp(min, max).toDouble(),
-          min: min.toDouble(),
-          max: max.toDouble(),
-          divisions: max - min,
-          onChanged: enabled ? (v) => onChanged(v.round()) : null,
-        ),
-      );
+      ],
+    ),
+    subtitle: Slider(
+      value: value.clamp(min, max).toDouble(),
+      min: min.toDouble(),
+      max: max.toDouble(),
+      divisions: max - min,
+      onChanged: enabled ? (v) => onChanged(v.round()) : null,
+    ),
+  );
 }

@@ -3,12 +3,12 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-import 'package:mihonx/features/browse/domain/source/model/filter.dart';
-import 'package:mihonx/features/browse/domain/source/model/manga_page.dart';
-import 'package:mihonx/features/browse/domain/source/model/mangas_page.dart';
-import 'package:mihonx/features/browse/domain/source/model/s_chapter.dart';
-import 'package:mihonx/features/browse/domain/source/model/s_manga.dart';
-import 'package:mihonx/features/browse/domain/source/source.dart';
+import 'package:hondana/features/browse/domain/source/model/filter.dart';
+import 'package:hondana/features/browse/domain/source/model/manga_page.dart';
+import 'package:hondana/features/browse/domain/source/model/mangas_page.dart';
+import 'package:hondana/features/browse/domain/source/model/s_chapter.dart';
+import 'package:hondana/features/browse/domain/source/model/s_manga.dart';
+import 'package:hondana/features/browse/domain/source/source.dart';
 
 /// A real, network-free source reading manga from `<appDocuments>/local/`.
 ///
@@ -17,6 +17,7 @@ import 'package:mihonx/features/browse/domain/source/source.dart';
 /// first image found. This lets the library/reader/downloads be exercised in
 /// phase 1 with no extension runtime.
 class LocalSource implements CatalogueSource {
+  /// Fixed source id `0` — Mihon reserves id 0 for the built-in local source.
   static const int localSourceId = 0;
 
   @override
@@ -29,7 +30,13 @@ class LocalSource implements CatalogueSource {
   bool get supportsLatest => true;
 
   static const _imageExts = {
-    '.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif', '.bmp',
+    '.jpg',
+    '.jpeg',
+    '.png',
+    '.webp',
+    '.gif',
+    '.avif',
+    '.bmp',
   };
 
   Directory? _baseDir;
@@ -49,7 +56,9 @@ class LocalSource implements CatalogueSource {
     final entries = mangaDir.listSync();
     final cover = entries
         .whereType<File>()
-        .where((f) => p.basenameWithoutExtension(f.path).toLowerCase() == 'cover')
+        .where(
+          (f) => p.basenameWithoutExtension(f.path).toLowerCase() == 'cover',
+        )
         .firstOrNull;
     if (cover != null) return cover.path;
     // else first image anywhere one level down
@@ -68,12 +77,14 @@ class LocalSource implements CatalogueSource {
     return base
         .listSync()
         .whereType<Directory>()
-        .map((d) => SManga(
-              url: p.basename(d.path),
-              title: p.basename(d.path),
-              thumbnailUrl: _findCover(d),
-              initialized: true,
-            ))
+        .map(
+          (d) => SManga(
+            url: p.basename(d.path),
+            title: p.basename(d.path),
+            thumbnailUrl: _findCover(d),
+            initialized: true,
+          ),
+        )
         .toList();
   }
 
@@ -90,10 +101,11 @@ class LocalSource implements CatalogueSource {
   Future<MangasPage> getLatestUpdates(int page) async {
     await _base();
     final list = await _listManga()
-      ..sort((a, b) => _mangaDir(b.url)
-          .statSync()
-          .modified
-          .compareTo(_mangaDir(a.url).statSync().modified));
+      ..sort(
+        (a, b) => _mangaDir(
+          b.url,
+        ).statSync().modified.compareTo(_mangaDir(a.url).statSync().modified),
+      );
     return MangasPage(mangas: list);
   }
 

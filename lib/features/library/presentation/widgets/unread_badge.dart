@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:mihonx/core/extensions/context_ext.dart';
-import 'package:mihonx/core/widgets/app_text.dart';
+import 'package:hondana/core/extensions/context_ext.dart';
+import 'package:hondana/core/widgets/app_text.dart';
 
 /// Mihon-style joined cover badge: download count (tertiary) and unread count
 /// (primary) fused into one rounded pill at the cover's top-start corner.
 class CoverBadges extends StatelessWidget {
-  const CoverBadges({
-    required this.unread,
-    this.downloads = 0,
-    super.key,
-  });
+  const CoverBadges({required this.unread, this.downloads = 0, super.key});
 
   final int unread;
   final int downloads;

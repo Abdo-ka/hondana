@@ -1,0 +1,45 @@
+name: "💡 Feature request"
+description: Suggest an idea or improvement for Hondana.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion! Describe the problem you're trying to solve —
+        that helps us find the best solution, which may differ from the one you
+        have in mind.
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight checklist
+      options:
+        - label: I searched existing issues and this is not a duplicate.
+          required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: What are you trying to do that's currently hard or impossible?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe what you'd like to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: mihon
+    attributes:
+      label: How does Mihon handle this? (if applicable)
+      description: Hondana is a port of Mihon — noting Mihon's behavior helps.
+    validations:
+      required: false
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false

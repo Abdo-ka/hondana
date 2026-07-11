@@ -1,26 +1,33 @@
 import 'package:drift/drift.dart';
 import 'package:injectable/injectable.dart';
 
-import 'package:mihonx/core/database/app_database.dart';
-import 'package:mihonx/features/browse/domain/source/model/s_chapter.dart';
-import 'package:mihonx/features/browse/domain/source/model/s_manga.dart';
-import 'package:mihonx/features/library/domain/manga.dart';
-import 'package:mihonx/features/manga/domain/manga_repository.dart';
+import 'package:hondana/core/database/app_database.dart';
+import 'package:hondana/features/browse/domain/source/model/s_chapter.dart';
+import 'package:hondana/features/browse/domain/source/model/s_manga.dart';
+import 'package:hondana/features/library/domain/manga.dart';
+import 'package:hondana/features/manga/domain/manga_repository.dart';
 
+/// Drift-backed [MangaRepository]: all reads and writes hit the local database,
+/// so streams re-emit whenever a row changes.
 @LazySingleton(as: MangaRepository)
 class MangaRepositoryImpl implements MangaRepository {
   MangaRepositoryImpl(this._db);
 
   final AppDatabase _db;
 
+  /// Returns the existing row's id for this (source, url), else inserts a new
+  /// non-favorite row and returns its id.
   @override
   Future<int> resolveManga(int sourceId, SManga s) async {
-    final existing = await (_db.select(_db.mangas)
-          ..where((m) => m.source.equals(sourceId) & m.url.equals(s.url))
-          ..limit(1))
-        .getSingleOrNull();
+    final existing =
+        await (_db.select(_db.mangas)
+              ..where((m) => m.source.equals(sourceId) & m.url.equals(s.url))
+              ..limit(1))
+            .getSingleOrNull();
     if (existing != null) return existing.id;
-    return _db.into(_db.mangas).insert(
+    return _db
+        .into(_db.mangas)
+        .insert(
           MangasCompanion.insert(
             source: sourceId,
             url: s.url,
@@ -35,6 +42,7 @@ class MangaRepositoryImpl implements MangaRepository {
         );
   }
 
+  /// Streams the manga row (null until [resolveManga] has inserted it).
   @override
   Stream<Manga?> watchManga(int mangaId) {
     return (_db.select(_db.mangas)..where((m) => m.id.equals(mangaId)))
@@ -52,6 +60,7 @@ class MangaRepositoryImpl implements MangaRepository {
         .watch();
   }
 
+  /// Toggles the library flag; stamps [dateAdded] on add, clears it on remove.
   @override
   Future<void> setFavorite(int mangaId, bool favorite) async {
     await (_db.update(_db.mangas)..where((m) => m.id.equals(mangaId))).write(
@@ -62,6 +71,7 @@ class MangaRepositoryImpl implements MangaRepository {
     );
   }
 
+  /// Overwrites cached metadata from a fresh source fetch (favorite untouched).
   @override
   Future<void> updateDetails(int mangaId, SManga d) async {
     await (_db.update(_db.mangas)..where((m) => m.id.equals(mangaId))).write(
@@ -77,11 +87,14 @@ class MangaRepositoryImpl implements MangaRepository {
     );
   }
 
+  /// Upserts the source chapter list by url in one batch: new urls are
+  /// inserted, known ones updated, and [sourceOrder] rewritten to the new
+  /// index so display order tracks the source. Existing read state survives.
   @override
   Future<void> syncChapters(int mangaId, List<SChapter> chapters) async {
-    final existing = await (_db.select(_db.chapters)
-          ..where((c) => c.mangaId.equals(mangaId)))
-        .get();
+    final existing = await (_db.select(
+      _db.chapters,
+    )..where((c) => c.mangaId.equals(mangaId))).get();
     final byUrl = {for (final c in existing) c.url: c};
     await _db.batch((batch) {
       for (var i = 0; i < chapters.length; i++) {
@@ -117,21 +130,24 @@ class MangaRepositoryImpl implements MangaRepository {
     });
   }
 
+  /// Marks a single chapter read/unread.
   @override
   Future<void> setChapterRead(int chapterId, bool read) async {
     await (_db.update(_db.chapters)..where((c) => c.id.equals(chapterId)))
         .write(ChaptersCompanion(read: Value(read)));
   }
 
+  /// One-shot fetch of the manga row (no stream) — for the reader/downloader.
   @override
-  Future<MangaData?> getManga(int mangaId) =>
-      (_db.select(_db.mangas)..where((m) => m.id.equals(mangaId)))
-          .getSingleOrNull();
+  Future<MangaData?> getManga(int mangaId) => (_db.select(
+    _db.mangas,
+  )..where((m) => m.id.equals(mangaId))).getSingleOrNull();
 
+  /// One-shot fetch of a single chapter row.
   @override
-  Future<ChapterData?> getChapter(int chapterId) =>
-      (_db.select(_db.chapters)..where((c) => c.id.equals(chapterId)))
-          .getSingleOrNull();
+  Future<ChapterData?> getChapter(int chapterId) => (_db.select(
+    _db.chapters,
+  )..where((c) => c.id.equals(chapterId))).getSingleOrNull();
 
   /// Reading order (oldest → newest): the reader's "next chapter" is the
   /// next element, matching Mihon.
@@ -141,28 +157,31 @@ class MangaRepositoryImpl implements MangaRepository {
             ..where((c) => c.mangaId.equals(mangaId))
             ..orderBy([
               (c) => OrderingTerm(
-                    expression: c.sourceOrder,
-                    mode: OrderingMode.desc,
-                  ),
+                expression: c.sourceOrder,
+                mode: OrderingMode.desc,
+              ),
             ]))
           .get();
 
+  /// Persists reading progress within a chapter (resume position).
   @override
   Future<void> setLastPageRead(int chapterId, int page) async {
     await (_db.update(_db.chapters)..where((c) => c.id.equals(chapterId)))
         .write(ChaptersCompanion(lastPageRead: Value(page)));
   }
 
+  /// Toggles the chapter bookmark flag.
   @override
   Future<void> setChapterBookmark(int chapterId, bool bookmark) async {
     await (_db.update(_db.chapters)..where((c) => c.id.equals(chapterId)))
         .write(ChaptersCompanion(bookmark: Value(bookmark)));
   }
 
+  /// Stores the per-series reading mode (Mihon's viewer_flags).
   @override
   Future<void> setViewerFlags(int mangaId, int flags) async {
-    await (_db.update(_db.mangas)..where((m) => m.id.equals(mangaId)))
-        .write(MangasCompanion(viewerFlags: Value(flags)));
+    await (_db.update(_db.mangas)..where((m) => m.id.equals(mangaId))).write(
+      MangasCompanion(viewerFlags: Value(flags)),
+    );
   }
 }
-

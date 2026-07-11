@@ -1,10 +1,10 @@
-import 'package:mihonx/features/browse/data/source/http_source_base.dart';
-import 'package:mihonx/features/browse/domain/source/model/filter.dart';
-import 'package:mihonx/features/browse/domain/source/model/manga_page.dart';
-import 'package:mihonx/features/browse/domain/source/model/manga_status.dart';
-import 'package:mihonx/features/browse/domain/source/model/mangas_page.dart';
-import 'package:mihonx/features/browse/domain/source/model/s_chapter.dart';
-import 'package:mihonx/features/browse/domain/source/model/s_manga.dart';
+import 'package:hondana/features/browse/data/source/http_source_base.dart';
+import 'package:hondana/features/browse/domain/source/model/filter.dart';
+import 'package:hondana/features/browse/domain/source/model/manga_page.dart';
+import 'package:hondana/features/browse/domain/source/model/manga_status.dart';
+import 'package:hondana/features/browse/domain/source/model/mangas_page.dart';
+import 'package:hondana/features/browse/domain/source/model/s_chapter.dart';
+import 'package:hondana/features/browse/domain/source/model/s_manga.dart';
 
 /// Native-Dart MangaDex source over the public JSON API. SFW only: content
 /// rating is pinned to safe + suggestive (erotica/pornographic excluded).
@@ -17,23 +17,26 @@ import 'package:mihonx/features/browse/domain/source/model/s_manga.dart';
 /// clients — their API rules require clients to identify themselves. So this
 /// source replaces the app-wide browser UA with a client UA everywhere.
 class MangaDexSource extends HttpSourceBase {
+  /// English MangaDex instance (keiyoushi `en` source id).
   MangaDexSource.en()
-      : id = 2499283573021220255, // keiyoushi en source id
-        lang = 'en' {
+    : id = 2499283573021220255, // keiyoushi en source id
+      lang = 'en' {
     client.options.headers['User-Agent'] = _clientUserAgent;
   }
 
+  /// Arabic MangaDex instance (keiyoushi `ar` source id).
   MangaDexSource.ar()
-      : id = 3339599426223341161, // keiyoushi ar source id
-        lang = 'ar' {
+    : id = 3339599426223341161, // keiyoushi ar source id
+      lang = 'ar' {
     client.options.headers['User-Agent'] = _clientUserAgent;
   }
 
-  static const _clientUserAgent = 'MihonX/1.0';
+  static const _clientUserAgent = 'Hondana/1.0';
 
   @override
-  Map<String, String> get imageHeaders =>
-      const {'User-Agent': _clientUserAgent};
+  Map<String, String> get imageHeaders => const {
+    'User-Agent': _clientUserAgent,
+  };
 
   /// [SManga.url] is the bare MangaDex UUID, not a site path.
   @override
@@ -106,17 +109,21 @@ class MangaDexSource extends HttpSourceBase {
       _mangaList(page, order: [const MapEntry('followedCount', 'desc')]);
 
   @override
-  Future<MangasPage> getLatestUpdates(int page) =>
-      _mangaList(page, order: [const MapEntry('latestUploadedChapter', 'desc')]);
+  Future<MangasPage> getLatestUpdates(int page) => _mangaList(
+    page,
+    order: [const MapEntry('latestUploadedChapter', 'desc')],
+  );
 
   @override
   Future<MangasPage> getSearchManga(
     int page,
     String query,
     FilterList filters,
-  ) =>
-      _mangaList(page,
-          title: query, order: [const MapEntry('relevance', 'desc')]);
+  ) => _mangaList(
+    page,
+    title: query,
+    order: [const MapEntry('relevance', 'desc')],
+  );
 
   // ── Details ──────────────────────────────────────────────────────────────
 
@@ -243,10 +250,10 @@ class MangaDexSource extends HttpSourceBase {
   }
 
   MangaStatus _status(String? s) => switch (s) {
-        'ongoing' => MangaStatus.ongoing,
-        'completed' => MangaStatus.completed,
-        'hiatus' => MangaStatus.onHiatus,
-        'cancelled' => MangaStatus.cancelled,
-        _ => MangaStatus.unknown,
-      };
+    'ongoing' => MangaStatus.ongoing,
+    'completed' => MangaStatus.completed,
+    'hiatus' => MangaStatus.onHiatus,
+    'cancelled' => MangaStatus.cancelled,
+    _ => MangaStatus.unknown,
+  };
 }

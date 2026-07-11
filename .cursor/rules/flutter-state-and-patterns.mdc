@@ -1,0 +1,54 @@
+---
+description: Bloc + BlocStatus + ValueNotifier patterns for Hondana
+globs: lib/**/*.dart
+alwaysApply: true
+---
+
+# State Management Patterns
+
+## One Bloc per feature, many actions
+
+Each async action owns a `BlocStatus` field on the state — not its own Bloc.
+State classes have `copyWith` + value equality; events are a `sealed`/`final`
+class hierarchy. Concurrency via `bloc_concurrency`: stream subscriptions →
+`restartable()`, pull-to-refresh / one-shot mutations → `droppable()`.
+
+## BlocStatus — per-action status
+
+`lib/core/state/bloc_status.dart` models `initial / loading / success / empty /
+failure`. Emit `BlocStatus.empty()` when a loaded list is empty so the UI shows
+an empty illustration. Wrap errors as `BlocStatus.failure(AppException.from(err,
+st))`.
+
+```dart
+emit(state.copyWith(loadStatus: const BlocStatus.loading()));
+await emit.forEach(
+  _repo.watchLibrary(),
+  onData: (list) => state.copyWith(
+    manga: list,
+    loadStatus: list.isEmpty ? const BlocStatus.empty() : const BlocStatus.success(),
+  ),
+  onError: (e, st) =>
+      state.copyWith(loadStatus: BlocStatus.failure(AppException.from(e, st))),
+);
+```
+
+## Rendering — prefer StatusBuilder
+
+```dart
+StatusBuilder<LibraryBloc, LibraryState>(
+  statusSelector: (s) => s.loadStatus,
+  emptyMessage: 'library.empty'.tr(),
+  onSuccess: (context) => const LibraryGrid(),
+)
+```
+
+Drop to `BlocBuilder` only for multi-status UI or when the builder needs state
+data. Use `BlocSelector`/`buildWhen` to keep rebuilds tight.
+
+## Local widget state — ValueNotifier
+
+Toggles, search fields, page indices, progress → `ValueNotifier` +
+`ValueListenableBuilder`; merge several with
+`Listenable.merge([...])` in a `ListenableBuilder`. Never `setState`. Always
+`dispose()` notifiers/controllers.

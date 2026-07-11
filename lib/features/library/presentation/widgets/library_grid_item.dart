@@ -3,15 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:mihonx/core/extensions/context_ext.dart';
-import 'package:mihonx/core/routing/app_router.gr.dart';
-import 'package:mihonx/core/widgets/app_text.dart';
-import 'package:mihonx/features/library/domain/library_manga.dart';
-import 'package:mihonx/features/library/domain/library_preferences.dart';
-import 'package:mihonx/features/library/presentation/bloc/library_bloc.dart';
-import 'package:mihonx/features/library/presentation/bloc/library_event.dart';
-import 'package:mihonx/features/library/presentation/widgets/manga_cover.dart';
-import 'package:mihonx/features/library/presentation/widgets/unread_badge.dart';
+import 'package:hondana/core/extensions/context_ext.dart';
+import 'package:hondana/core/routing/app_router.gr.dart';
+import 'package:hondana/core/widgets/app_text.dart';
+import 'package:hondana/features/library/domain/library_manga.dart';
+import 'package:hondana/features/library/domain/library_preferences.dart';
+import 'package:hondana/features/library/presentation/bloc/library_bloc.dart';
+import 'package:hondana/features/library/presentation/bloc/library_event.dart';
+import 'package:hondana/features/library/presentation/widgets/manga_cover.dart';
+import 'package:hondana/features/library/presentation/widgets/unread_badge.dart';
 
 /// Library grid cell, Mihon layouts:
 /// - compact grid: title overlaid on a bottom gradient scrim
@@ -35,14 +35,16 @@ class LibraryGridItem extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => _handleTap(context),
-      onLongPress: () => context
-          .read<LibraryBloc>()
-          .add(LibraryItemSelectionToggled(entry.manga.id)),
+      onLongPress: () => context.read<LibraryBloc>().add(
+        LibraryItemSelectionToggled(entry.manga.id),
+      ),
       child: mode == LibraryDisplayMode.comfortableGrid
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(child: _Cover(entry: entry, selected: selected)),
+                Expanded(
+                  child: _Cover(entry: entry, selected: selected),
+                ),
                 SizedBox(height: 4.h),
                 AppText.labelMedium(
                   entry.manga.title,
@@ -65,15 +67,22 @@ class LibraryGridItem extends StatelessWidget {
       bloc.add(LibraryItemSelectionToggled(entry.manga.id));
       return;
     }
-    context.router.push(MangaDetailsRoute(
-      sourceId: entry.manga.source,
-      initial: entry.manga.toSManga(),
-    ));
+    context.router.push(
+      MangaDetailsRoute(
+        sourceId: entry.manga.source,
+        initial: entry.manga.toSManga(),
+      ),
+    );
   }
 }
 
+/// Cover artwork with badges, optional overlaid title, and a selection tint.
 class _Cover extends StatelessWidget {
-  const _Cover({required this.entry, required this.selected, this.overlayTitle});
+  const _Cover({
+    required this.entry,
+    required this.selected,
+    this.overlayTitle,
+  });
 
   final LibraryManga entry;
   final bool selected;
@@ -134,8 +143,10 @@ class _Cover extends StatelessWidget {
                   width: 2,
                 ),
               ),
-              child:
-                  Icon(Icons.check_circle, color: context.colorScheme.onPrimary),
+              child: Icon(
+                Icons.check_circle,
+                color: context.colorScheme.onPrimary,
+              ),
             ),
           ),
       ],

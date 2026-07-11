@@ -2,10 +2,10 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:mihonx/core/config/app_settings.dart';
-import 'package:mihonx/core/core.dart';
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/core/routing/app_router.gr.dart';
+import 'package:hondana/core/config/app_settings.dart';
+import 'package:hondana/core/core.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/core/routing/app_router.gr.dart';
 
 /// More tab, Mihon layout: app mark header, the two global switches
 /// (Downloaded only / Incognito — both functional), then navigation rows.
@@ -17,7 +17,10 @@ class MorePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return PageLayoutBuilder(
       mobile: (context) => AppScaffold(
-        appBar: const AppAppBar(title: 'nav.more', showDefaultBackButton: false),
+        appBar: const AppAppBar(
+          title: 'nav.more',
+          showDefaultBackButton: false,
+        ),
         body: ListView(
           children: [
             Padding(
@@ -60,6 +63,8 @@ class MorePage extends StatelessWidget {
   }
 }
 
+/// Global "Downloaded only" toggle — restricts library/browse to local files.
+/// Bound to [AppSettings.downloadedOnlyNotifier] so every surface stays in sync.
 class _DownloadedOnlySwitch extends StatelessWidget {
   const _DownloadedOnlySwitch();
 
@@ -78,6 +83,8 @@ class _DownloadedOnlySwitch extends StatelessWidget {
   }
 }
 
+/// Global "Incognito" toggle — suppresses history/tracking while browsing.
+/// Bound to [AppSettings.incognitoNotifier].
 class _IncognitoSwitch extends StatelessWidget {
   const _IncognitoSwitch();
 

@@ -24,10 +24,13 @@ class SourcePreferences extends ChangeNotifier {
   Future<void> _save(String key, Set<int> ids) =>
       _prefs.setStringList(key, ids.map((e) => e.toString()).toList());
 
+  /// Source ids the user has turned off.
   Set<int> get disabledIds => _idSet(_kDisabled);
 
+  /// A source is enabled unless it appears in [disabledIds].
   bool isEnabled(int id) => !disabledIds.contains(id);
 
+  /// Toggles a source on/off and notifies listeners.
   Future<void> setEnabled(int id, bool enabled) async {
     final set = disabledIds;
     enabled ? set.remove(id) : set.add(id);
@@ -35,10 +38,12 @@ class SourcePreferences extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Source ids pinned to the top of the Sources list.
   Set<int> get pinnedIds => _idSet(_kPinned);
 
   bool isPinned(int id) => pinnedIds.contains(id);
 
+  /// Pins/unpins a source and notifies listeners.
   Future<void> setPinned(int id, bool pinned) async {
     final set = pinnedIds;
     pinned ? set.add(id) : set.remove(id);
@@ -77,6 +82,7 @@ class SourcePreferences extends ChangeNotifier {
     return Map<String, String>.from(jsonDecode(raw) as Map);
   }
 
+  /// User-set base URL for a source, or null to use its stock URL.
   String? urlOverride(int id) => _urlMap['$id'];
 
   /// Null or empty [url] removes the override (source reverts to its stock URL).

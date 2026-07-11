@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 
-import 'package:mihonx/core/core.dart';
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/features/more/domain/security_preferences.dart';
-import 'package:mihonx/features/more/presentation/widgets/settings_widgets.dart';
+import 'package:hondana/core/core.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/features/more/domain/security_preferences.dart';
+import 'package:hondana/features/more/presentation/widgets/settings_widgets.dart';
 
+/// Settings > Security (Mihon SettingsSecurityScreen parity where portable to
+/// iOS): biometric app lock, idle re-lock delay, and notification redaction.
 @RoutePage()
 class SecuritySettingsPage extends StatelessWidget {
   const SecuritySettingsPage({super.key});
@@ -29,12 +31,15 @@ class _SecuritySettingsViewState extends State<_SecuritySettingsView> {
   final SecurityPreferences _prefs = getIt<SecurityPreferences>();
   final LocalAuthentication _auth = LocalAuthentication();
 
-  late final ValueNotifier<bool> _requireUnlock =
-      ValueNotifier(_prefs.requireUnlock);
-  late final ValueNotifier<int> _lockAfterMinutes =
-      ValueNotifier(_prefs.lockAfterMinutes);
-  late final ValueNotifier<bool> _hideNotificationContent =
-      ValueNotifier(_prefs.hideNotificationContent);
+  late final ValueNotifier<bool> _requireUnlock = ValueNotifier(
+    _prefs.requireUnlock,
+  );
+  late final ValueNotifier<int> _lockAfterMinutes = ValueNotifier(
+    _prefs.lockAfterMinutes,
+  );
+  late final ValueNotifier<bool> _hideNotificationContent = ValueNotifier(
+    _prefs.hideNotificationContent,
+  );
 
   /// null while the capability check is still running.
   final ValueNotifier<bool?> _deviceSupported = ValueNotifier(null);
@@ -45,11 +50,14 @@ class _SecuritySettingsViewState extends State<_SecuritySettingsView> {
   @override
   void initState() {
     super.initState();
-    _auth.isDeviceSupported().then((supported) {
-      if (mounted) _deviceSupported.value = supported;
-    }).catchError((Object _) {
-      if (mounted) _deviceSupported.value = false;
-    });
+    _auth
+        .isDeviceSupported()
+        .then((supported) {
+          if (mounted) _deviceSupported.value = supported;
+        })
+        .catchError((Object _) {
+          if (mounted) _deviceSupported.value = false;
+        });
   }
 
   @override
@@ -62,10 +70,10 @@ class _SecuritySettingsViewState extends State<_SecuritySettingsView> {
   }
 
   static String _lockLabelKey(int minutes) => switch (minutes) {
-        0 => 'settings.lock_always',
-        -1 => 'settings.lock_never',
-        _ => 'settings.lock_after_$minutes',
-      };
+    0 => 'settings.lock_always',
+    -1 => 'settings.lock_never',
+    _ => 'settings.lock_after_$minutes',
+  };
 
   /// Mihon gates any change to these prefs behind a successful device auth.
   Future<bool> _authenticate() async {
@@ -128,8 +136,7 @@ class _SecuritySettingsViewState extends State<_SecuritySettingsView> {
           ),
           ValueListenableBuilder<bool>(
             valueListenable: _requireUnlock,
-            builder: (context, requireUnlock, _) =>
-                ValueListenableBuilder<int>(
+            builder: (context, requireUnlock, _) => ValueListenableBuilder<int>(
               valueListenable: _lockAfterMinutes,
               builder: (context, minutes, _) => ListTile(
                 enabled: requireUnlock,
@@ -149,8 +156,9 @@ class _SecuritySettingsViewState extends State<_SecuritySettingsView> {
             valueListenable: _hideNotificationContent,
             builder: (context, hide, _) => SwitchListTile(
               secondary: const Icon(Icons.visibility_off_outlined),
-              title:
-                  const AppText.bodyLarge('settings.hide_notification_content'),
+              title: const AppText.bodyLarge(
+                'settings.hide_notification_content',
+              ),
               value: hide,
               onChanged: _toggleHideNotificationContent,
             ),

@@ -3,13 +3,13 @@ import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import 'package:mihonx/core/core.dart';
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/core/routing/app_router.gr.dart';
-import 'package:mihonx/features/library/domain/category.dart';
-import 'package:mihonx/features/library/domain/library_preferences.dart';
-import 'package:mihonx/features/library/domain/library_repository.dart';
-import 'package:mihonx/features/more/presentation/widgets/settings_widgets.dart';
+import 'package:hondana/core/core.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/core/routing/app_router.gr.dart';
+import 'package:hondana/features/library/domain/category.dart';
+import 'package:hondana/features/library/domain/library_preferences.dart';
+import 'package:hondana/features/library/domain/library_repository.dart';
+import 'package:hondana/features/more/presentation/widgets/settings_widgets.dart';
 
 /// Settings > Library (Mihon SettingsLibraryScreen parity).
 @RoutePage()
@@ -32,30 +32,41 @@ class _LibrarySettingsViewState extends State<_LibrarySettingsView> {
   final LibraryPreferences _prefs = getIt<LibraryPreferences>();
 
   // Read-through page-local notifiers (settings_page.dart pattern).
-  late final ValueNotifier<int> _defaultCategory =
-      ValueNotifier(_prefs.defaultCategoryId);
-  late final ValueNotifier<int> _interval =
-      ValueNotifier(_prefs.updateIntervalHours);
-  late final ValueNotifier<bool> _wifiOnly =
-      ValueNotifier(_prefs.updateWifiOnly);
-  late final ValueNotifier<(Set<int>, Set<int>)> _updateCategories =
-      ValueNotifier(
-    (_prefs.updateIncludeCategoryIds, _prefs.updateExcludeCategoryIds),
+  late final ValueNotifier<int> _defaultCategory = ValueNotifier(
+    _prefs.defaultCategoryId,
   );
-  late final ValueNotifier<bool> _refreshMetadata =
-      ValueNotifier(_prefs.autoRefreshMetadata);
-  late final ValueNotifier<bool> _skipUnread =
-      ValueNotifier(_prefs.skipUpdateWithUnread);
-  late final ValueNotifier<bool> _skipUnstarted =
-      ValueNotifier(_prefs.skipUpdateUnstarted);
-  late final ValueNotifier<bool> _skipCompleted =
-      ValueNotifier(_prefs.skipUpdateCompleted);
-  late final ValueNotifier<ChapterSwipeAction> _swipeLeft =
-      ValueNotifier(_prefs.swipeLeftAction);
-  late final ValueNotifier<ChapterSwipeAction> _swipeRight =
-      ValueNotifier(_prefs.swipeRightAction);
-  late final ValueNotifier<bool> _showBadge =
-      ValueNotifier(_prefs.showUpdatesBadge);
+  late final ValueNotifier<int> _interval = ValueNotifier(
+    _prefs.updateIntervalHours,
+  );
+  late final ValueNotifier<bool> _wifiOnly = ValueNotifier(
+    _prefs.updateWifiOnly,
+  );
+  late final ValueNotifier<(Set<int>, Set<int>)> _updateCategories =
+      ValueNotifier((
+        _prefs.updateIncludeCategoryIds,
+        _prefs.updateExcludeCategoryIds,
+      ));
+  late final ValueNotifier<bool> _refreshMetadata = ValueNotifier(
+    _prefs.autoRefreshMetadata,
+  );
+  late final ValueNotifier<bool> _skipUnread = ValueNotifier(
+    _prefs.skipUpdateWithUnread,
+  );
+  late final ValueNotifier<bool> _skipUnstarted = ValueNotifier(
+    _prefs.skipUpdateUnstarted,
+  );
+  late final ValueNotifier<bool> _skipCompleted = ValueNotifier(
+    _prefs.skipUpdateCompleted,
+  );
+  late final ValueNotifier<ChapterSwipeAction> _swipeLeft = ValueNotifier(
+    _prefs.swipeLeftAction,
+  );
+  late final ValueNotifier<ChapterSwipeAction> _swipeRight = ValueNotifier(
+    _prefs.swipeRightAction,
+  );
+  late final ValueNotifier<bool> _showBadge = ValueNotifier(
+    _prefs.showUpdatesBadge,
+  );
 
   @override
   void dispose() {
@@ -189,6 +200,7 @@ class _LibrarySettingsViewState extends State<_LibrarySettingsView> {
   }
 }
 
+/// Row showing the category count; taps through to the category editor.
 class _EditCategoriesTile extends StatelessWidget {
   const _EditCategoriesTile({required this.count});
 
@@ -208,6 +220,7 @@ class _EditCategoriesTile extends StatelessWidget {
   }
 }
 
+/// Picks the category new library entries default into (-1 = always ask).
 class _DefaultCategoryTile extends StatelessWidget {
   const _DefaultCategoryTile({
     required this.categories,
@@ -233,19 +246,21 @@ class _DefaultCategoryTile extends StatelessWidget {
           _label(id),
           color: context.colorScheme.onSurfaceVariant,
         ),
-        onTap: () => OptionPickerSheet.show<int>(
-          context,
-          values: [-1, ...categories.map((c) => c.id)],
-          selected: categories.any((c) => c.id == id) ? id : -1,
-          labelKey: _label,
-        ).then((picked) {
-          if (picked != null) onChanged(picked);
-        }),
+        onTap: () =>
+            OptionPickerSheet.show<int>(
+              context,
+              values: [-1, ...categories.map((c) => c.id)],
+              selected: categories.any((c) => c.id == id) ? id : -1,
+              labelKey: _label,
+            ).then((picked) {
+              if (picked != null) onChanged(picked);
+            }),
       ),
     );
   }
 }
 
+/// Picks how often the global library update runs (0 = off).
 class _UpdateIntervalTile extends StatelessWidget {
   const _UpdateIntervalTile({required this.notifier, required this.onChanged});
 
@@ -265,19 +280,22 @@ class _UpdateIntervalTile extends StatelessWidget {
           'settings.update_interval_$hours',
           color: context.colorScheme.onSurfaceVariant,
         ),
-        onTap: () => OptionPickerSheet.show<int>(
-          context,
-          values: _intervals,
-          selected: hours,
-          labelKey: (h) => 'settings.update_interval_$h',
-        ).then((picked) {
-          if (picked != null) onChanged(picked);
-        }),
+        onTap: () =>
+            OptionPickerSheet.show<int>(
+              context,
+              values: _intervals,
+              selected: hours,
+              labelKey: (h) => 'settings.update_interval_$h',
+            ).then((picked) {
+              if (picked != null) onChanged(picked);
+            }),
       ),
     );
   }
 }
 
+/// Tri-state include/exclude filter of which categories the global update
+/// touches, via [TriStateSheet].
 class _UpdateCategoriesTile extends StatelessWidget {
   const _UpdateCategoriesTile({
     required this.categories,
@@ -290,8 +308,9 @@ class _UpdateCategoriesTile extends StatelessWidget {
   final ValueChanged<(Set<int>, Set<int>)> onChanged;
 
   String _names(Set<int> ids, String emptyKey) {
-    final names =
-        categories.where((c) => ids.contains(c.id)).map((c) => c.name);
+    final names = categories
+        .where((c) => ids.contains(c.id))
+        .map((c) => c.name);
     return names.isEmpty ? emptyKey.tr() : names.join(', ');
   }
 
@@ -311,20 +330,22 @@ class _UpdateCategoriesTile extends StatelessWidget {
             summary,
             color: context.colorScheme.onSurfaceVariant,
           ),
-          onTap: () => TriStateSheet.show(
-            context,
-            items: {for (final c in categories) c.id: c.name},
-            include: include,
-            exclude: exclude,
-          ).then((picked) {
-            if (picked != null) onChanged(picked);
-          }),
+          onTap: () =>
+              TriStateSheet.show(
+                context,
+                items: {for (final c in categories) c.id: c.name},
+                include: include,
+                exclude: exclude,
+              ).then((picked) {
+                if (picked != null) onChanged(picked);
+              }),
         );
       },
     );
   }
 }
 
+/// Picks the [ChapterSwipeAction] bound to a swipe direction in the library.
 class _SwipeActionTile extends StatelessWidget {
   const _SwipeActionTile({
     required this.titleKey,
@@ -346,19 +367,21 @@ class _SwipeActionTile extends StatelessWidget {
           'settings.swipe_action_${action.name}',
           color: context.colorScheme.onSurfaceVariant,
         ),
-        onTap: () => OptionPickerSheet.show<ChapterSwipeAction>(
-          context,
-          values: ChapterSwipeAction.values,
-          selected: action,
-          labelKey: (a) => 'settings.swipe_action_${a.name}',
-        ).then((picked) {
-          if (picked != null) onChanged(picked);
-        }),
+        onTap: () =>
+            OptionPickerSheet.show<ChapterSwipeAction>(
+              context,
+              values: ChapterSwipeAction.values,
+              selected: action,
+              labelKey: (a) => 'settings.swipe_action_${a.name}',
+            ).then((picked) {
+              if (picked != null) onChanged(picked);
+            }),
       ),
     );
   }
 }
 
+/// Boolean pref row driven by a [ValueNotifier], optionally disabled.
 class _SwitchTile extends StatelessWidget {
   const _SwitchTile({
     required this.titleKey,

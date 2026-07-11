@@ -3,16 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:mihonx/core/core.dart';
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/core/routing/app_router.gr.dart';
-import 'package:mihonx/core/utils/app_dates.dart';
-import 'package:mihonx/features/history/domain/history_repository.dart';
-import 'package:mihonx/features/history/presentation/bloc/history_bloc.dart';
-import 'package:mihonx/features/history/presentation/bloc/history_event.dart';
-import 'package:mihonx/features/history/presentation/bloc/history_state.dart';
-import 'package:mihonx/features/library/presentation/widgets/manga_cover.dart';
+import 'package:hondana/core/core.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/core/routing/app_router.gr.dart';
+import 'package:hondana/core/utils/app_dates.dart';
+import 'package:hondana/features/history/domain/history_repository.dart';
+import 'package:hondana/features/history/presentation/bloc/history_bloc.dart';
+import 'package:hondana/features/history/presentation/bloc/history_event.dart';
+import 'package:hondana/features/history/presentation/bloc/history_state.dart';
+import 'package:hondana/features/library/presentation/widgets/manga_cover.dart';
 
+/// Reading-history tab: provides [HistoryBloc] and renders the grouped feed.
 @RoutePage()
 class HistoryPage extends StatelessWidget {
   const HistoryPage({super.key});
@@ -107,7 +108,7 @@ class _HistoryTile extends StatelessWidget {
         child: MangaCover(
           url: item.thumbnailUrl,
           sourceId: item.sourceId,
-          radius: 4,
+          radius: 4.r,
         ),
       ),
       title: AppText.bodyMedium(
@@ -122,8 +123,9 @@ class _HistoryTile extends StatelessWidget {
       ),
       trailing: IconButton(
         icon: const Icon(Icons.delete_outline),
-        onPressed: () =>
-            context.read<HistoryBloc>().add(HistoryEntryRemoved(item.historyId)),
+        onPressed: () => context.read<HistoryBloc>().add(
+          HistoryEntryRemoved(item.historyId),
+        ),
       ),
       onTap: () => context.router.push(ReaderRoute(chapterId: item.chapterId)),
     );

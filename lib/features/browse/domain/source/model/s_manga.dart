@@ -1,4 +1,4 @@
-import 'package:mihonx/features/browse/domain/source/model/manga_status.dart';
+import 'package:hondana/features/browse/domain/source/model/manga_status.dart';
 
 /// Source-level manga model (the wire/parse shape a [Source] returns), distinct
 /// from the persisted library `Manga` row. `url` is the source-relative key.
@@ -15,6 +15,7 @@ class SManga {
     this.initialized = false,
   });
 
+  /// Source-relative key identifying the manga.
   final String url;
   final String title;
   final String? artist;
@@ -22,6 +23,8 @@ class SManga {
   final String? description;
   final List<String> genre;
   final MangaStatus status;
+
+  /// Cover image URL, when known.
   final String? thumbnailUrl;
 
   /// True once details have been fetched (avoids redundant network calls).

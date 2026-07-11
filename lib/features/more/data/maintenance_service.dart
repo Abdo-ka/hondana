@@ -6,12 +6,12 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-import 'package:mihonx/core/config/advanced_preferences.dart';
-import 'package:mihonx/core/database/app_database.dart';
-import 'package:mihonx/core/network/app_http.dart';
-import 'package:mihonx/features/browse/domain/source/model/s_manga.dart';
-import 'package:mihonx/features/browse/domain/source/source_manager.dart';
-import 'package:mihonx/features/downloads/domain/download_service.dart';
+import 'package:hondana/core/config/advanced_preferences.dart';
+import 'package:hondana/core/database/app_database.dart';
+import 'package:hondana/core/network/app_http.dart';
+import 'package:hondana/features/browse/domain/source/model/s_manga.dart';
+import 'package:hondana/features/browse/domain/source/source_manager.dart';
+import 'package:hondana/features/downloads/domain/download_service.dart';
 
 /// Disk/database/network housekeeping behind Settings > Data and storage and
 /// Settings > Advanced. Plain class — pages construct it with deps from getIt.
@@ -32,7 +32,7 @@ class MaintenanceService {
 
   /// Total bytes + entry/chapter counts under the downloads directory.
   Future<({int totalBytes, int mangaCount, int chapterCount})>
-      downloadsUsage() async {
+  downloadsUsage() async {
     final root = await downloads.root();
     var bytes = 0;
     var mangas = 0;
@@ -50,8 +50,9 @@ class MaintenanceService {
   /// Current size of the chapter-image cache on disk.
   Future<int> chapterCacheBytes() async {
     final tmp = await getTemporaryDirectory();
-    final dir =
-        Directory(p.join(tmp.path, AppImageCache.manager.config.cacheKey));
+    final dir = Directory(
+      p.join(tmp.path, AppImageCache.manager.config.cacheKey),
+    );
     if (!dir.existsSync()) return 0;
     return _dirBytes(dir);
   }
@@ -97,33 +98,32 @@ class MaintenanceService {
   /// Returns the number of entries deleted.
   Future<int> clearDatabase() {
     return db.transaction(() async {
-      final rows = await (db.select(db.mangas)
-            ..where((m) => m.favorite.equals(false)))
-          .get();
+      final rows = await (db.select(
+        db.mangas,
+      )..where((m) => m.favorite.equals(false))).get();
       if (rows.isEmpty) return 0;
       final ids = rows.map((m) => m.id).toList();
-      final chapterIds = (await (db.select(db.chapters)
-                ..where((c) => c.mangaId.isIn(ids)))
-              .get())
-          .map((c) => c.id)
-          .toList();
+      final chapterIds = (await (db.select(
+        db.chapters,
+      )..where((c) => c.mangaId.isIn(ids))).get()).map((c) => c.id).toList();
       if (chapterIds.isNotEmpty) {
-        await (db.delete(db.historyEntries)
-              ..where((h) => h.chapterId.isIn(chapterIds)))
-            .go();
+        await (db.delete(
+          db.historyEntries,
+        )..where((h) => h.chapterId.isIn(chapterIds))).go();
       }
       await (db.delete(db.chapters)..where((c) => c.mangaId.isIn(ids))).go();
-      await (db.delete(db.mangasCategories)
-            ..where((mc) => mc.mangaId.isIn(ids)))
-          .go();
+      await (db.delete(
+        db.mangasCategories,
+      )..where((mc) => mc.mangaId.isIn(ids))).go();
       return (db.delete(db.mangas)..where((m) => m.id.isIn(ids))).go();
     });
   }
 
   /// Mihon's ResetViewerFlags: every entry falls back to the default reader
   /// settings. Returns the number of entries touched.
-  Future<int> resetViewerFlags() => (db.update(db.mangas))
-      .write(const MangasCompanion(viewerFlags: Value(0)));
+  Future<int> resetViewerFlags() => (db.update(
+    db.mangas,
+  )).write(const MangasCompanion(viewerFlags: Value(0)));
 
   /// Clears cookies replayed onto Dio/image requests and the WebView's own jar.
   Future<void> clearCookies() async {
@@ -156,17 +156,18 @@ class MaintenanceService {
   /// refreshing covers and metadata (titles too when the Advanced pref is on).
   /// Returns how many entries were refreshed; per-entry errors are skipped.
   Future<int> refreshLibraryCovers() async {
-    final favorites = await (db.select(db.mangas)
-          ..where((m) => m.favorite.equals(true)))
-        .get();
+    final favorites = await (db.select(
+      db.mangas,
+    )..where((m) => m.favorite.equals(true))).get();
     final renameTitles = advanced.updateTitlesFromSource;
     var updated = 0;
     for (final m in favorites) {
       final source = sources.get(m.source);
       if (source == null) continue;
       try {
-        final details =
-            await source.getMangaDetails(SManga(url: m.url, title: m.title));
+        final details = await source.getMangaDetails(
+          SManga(url: m.url, title: m.title),
+        );
         await (db.update(db.mangas)..where((r) => r.id.equals(m.id))).write(
           MangasCompanion(
             title: renameTitles && details.title.isNotEmpty

@@ -1,11 +1,14 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 
-import 'package:mihonx/core/state/bloc_status.dart';
-import 'package:mihonx/features/browse/domain/source/model/s_manga.dart';
+import 'package:hondana/core/state/bloc_status.dart';
+import 'package:hondana/features/browse/domain/source/model/s_manga.dart';
 
+/// Which listing a source catalogue is showing: popular, latest, or search.
 enum CatalogueMode { popular, latest, search }
 
+/// State for a single source's browse screen: the current listing mode/query,
+/// the accumulated pages, and separate statuses for the initial load and paging.
 @immutable
 class SourceCatalogueState extends Equatable {
   const SourceCatalogueState({
@@ -18,12 +21,22 @@ class SourceCatalogueState extends Equatable {
     this.hasNext = false,
   });
 
+  /// Status of the initial / refreshed first-page load.
   final BlocStatus loadStatus;
+
+  /// Status of the most recent load-more page fetch, kept separate so paging
+  /// errors don't clobber the already-visible grid.
   final BlocStatus loadMoreStatus;
   final CatalogueMode mode;
   final String query;
+
+  /// Accumulated visible entries across all loaded pages.
   final List<SManga> manga;
+
+  /// Highest page number loaded so far.
   final int page;
+
+  /// Whether the source reports another page after [page].
   final bool hasNext;
 
   SourceCatalogueState copyWith({
@@ -47,6 +60,13 @@ class SourceCatalogueState extends Equatable {
   }
 
   @override
-  List<Object?> get props =>
-      [loadStatus, loadMoreStatus, mode, query, manga, page, hasNext];
+  List<Object?> get props => [
+    loadStatus,
+    loadMoreStatus,
+    mode,
+    query,
+    manga,
+    page,
+    hasNext,
+  ];
 }

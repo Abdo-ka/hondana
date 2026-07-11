@@ -1,0 +1,57 @@
+---
+description: Build, codegen, DI, routing, and persistence workflow for Hondana
+globs: **/*
+alwaysApply: true
+---
+
+# Development Workflow
+
+## Quality gate — before "done"
+
+```bash
+flutter pub get
+dart run build_runner build --delete-conflicting-outputs  # routes / DI / drift / annotations
+flutter analyze                                            # must be "No issues found!"
+```
+
+Commands use plain `flutter` (no pinned `.fvmrc`). If you use FVM, prefix with
+`fvm` — same toolchain (Flutter 3.44).
+
+## Code generation
+
+Run `build_runner` after changing any of:
+
+- `@RoutePage()` routes (`auto_route` → `app_router.gr.dart`)
+- `@injectable` / `@lazySingleton` DI (`injectable` → `di_container.config.dart`)
+- drift tables/queries (`drift_dev` → `app_database.g.dart`)
+
+Never hand-edit generated `*.g.dart` / `*.gr.dart` / `*.config.dart`.
+
+## Dependency Injection
+
+```dart
+@injectable            // new instance each resolve
+@lazySingleton         // lazy singleton
+@Injectable(as: Repo)  // register behind an interface
+
+final bloc = getIt<LibraryBloc>();  // at page/Bloc creation, never inside build()
+```
+
+## Routing
+
+`@RoutePage()` on pages; route tree in `lib/core/routing/app_router.dart`.
+Navigate with `context.router` / `context.pushRoute(...)`.
+
+## Persistence
+
+- **drift** database in `lib/core/database/app_database.dart`; repositories expose
+  `Stream`s the Blocs subscribe to. Map rows → domain entities at the data edge.
+- **Preferences**: one typed store per concern over `shared_preferences`
+  (`LibraryPreferences`, `ReaderPreferences`, …); reactive ones expose a
+  `ValueNotifier`.
+
+## Localization
+
+Add keys to `assets/translations/en.json` (nested by feature). No generation step
+— used at runtime via `.tr()`. Add a `<locale>.json` with the same shape for a
+new language.

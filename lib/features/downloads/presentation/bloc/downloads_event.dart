@@ -1,6 +1,7 @@
 import 'package:background_downloader/background_downloader.dart'
     show TaskStatusUpdate;
 
+/// Base type for every input to [DownloadsBloc].
 sealed class DownloadsEvent {
   const DownloadsEvent();
 }
@@ -10,6 +11,7 @@ final class DownloadsStarted extends DownloadsEvent {
   const DownloadsStarted();
 }
 
+/// Queue a chapter for download (tapping the download button).
 final class DownloadEnqueued extends DownloadsEvent {
   const DownloadEnqueued({
     required this.chapterId,
@@ -24,22 +26,29 @@ final class DownloadEnqueued extends DownloadsEvent {
   final String chapterName;
 }
 
+/// Cancel one chapter's download (abort native tasks, keep the queue entry).
 final class DownloadCancelRequested extends DownloadsEvent {
   const DownloadCancelRequested(this.chapterId);
   final int chapterId;
 }
 
+/// Re-queue a failed chapter (the retry button on a failed tile).
 final class DownloadRetryRequested extends DownloadsEvent {
   const DownloadRetryRequested(this.chapterId);
   final int chapterId;
 }
 
+/// Delete a downloaded chapter's files (and drop any in-flight job).
 final class DownloadDeleteRequested extends DownloadsEvent {
-  const DownloadDeleteRequested({required this.mangaId, required this.chapterId});
+  const DownloadDeleteRequested({
+    required this.mangaId,
+    required this.chapterId,
+  });
   final int mangaId;
   final int chapterId;
 }
 
+/// Remove completed/failed/cancelled entries, leaving only active ones.
 final class DownloadsClearFinished extends DownloadsEvent {
   const DownloadsClearFinished();
 }

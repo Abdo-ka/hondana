@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get_it/get_it.dart';
 
-import 'package:mihonx/core/extensions/context_ext.dart';
-import 'package:mihonx/core/network/app_http.dart';
-import 'package:mihonx/features/browse/data/source/http_source_base.dart';
-import 'package:mihonx/features/browse/domain/source/source_manager.dart';
+import 'package:hondana/core/extensions/context_ext.dart';
+import 'package:hondana/core/network/app_http.dart';
+import 'package:hondana/features/browse/data/source/http_source_base.dart';
+import 'package:hondana/features/browse/domain/source/source_manager.dart';
 
 /// Renders a cover from a network URL, a local file path, or a placeholder.
 /// Fills its parent's constraints (use inside a sized box / Positioned.fill).
@@ -26,8 +26,10 @@ class MangaCover extends StatelessWidget {
   /// Madara hosts 403 covers without them.
   final int? sourceId;
 
+  /// Corner radius in logical pixels (scaled to `.r` at render).
   final double radius;
 
+  /// Image request headers pulled from the source, empty if none/unregistered.
   Map<String, String> get _headers {
     final id = sourceId;
     final getIt = GetIt.instance;
@@ -49,29 +51,29 @@ class MangaCover extends StatelessWidget {
               ),
             )
           : url!.startsWith('http')
-              ? CachedNetworkImage(
-                  imageUrl: url!,
-                  httpHeaders: _headers,
-                  cacheManager: AppImageCache.manager,
-                  fit: BoxFit.cover,
-                  placeholder: (context, _) => ColoredBox(
-                    color: context.colorScheme.surfaceContainerHighest,
-                  ),
-                  errorWidget: (context, _, _) => ColoredBox(
-                    color: context.colorScheme.surfaceContainerHighest,
-                    child: Icon(
-                      Icons.broken_image_outlined,
-                      color: context.colorScheme.outline,
-                    ),
-                  ),
-                )
-              : Image.file(
-                  File(url!),
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, _, _) => ColoredBox(
-                    color: context.colorScheme.surfaceContainerHighest,
-                  ),
+          ? CachedNetworkImage(
+              imageUrl: url!,
+              httpHeaders: _headers,
+              cacheManager: AppImageCache.manager,
+              fit: BoxFit.cover,
+              placeholder: (context, _) => ColoredBox(
+                color: context.colorScheme.surfaceContainerHighest,
+              ),
+              errorWidget: (context, _, _) => ColoredBox(
+                color: context.colorScheme.surfaceContainerHighest,
+                child: Icon(
+                  Icons.broken_image_outlined,
+                  color: context.colorScheme.outline,
                 ),
+              ),
+            )
+          : Image.file(
+              File(url!),
+              fit: BoxFit.cover,
+              errorBuilder: (context, _, _) => ColoredBox(
+                color: context.colorScheme.surfaceContainerHighest,
+              ),
+            ),
     );
   }
 }

@@ -2,17 +2,24 @@ import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
-import 'package:mihonx/core/config/app_settings.dart';
-import 'package:mihonx/core/error/app_exception.dart';
-import 'package:mihonx/core/state/bloc_status.dart';
-import 'package:mihonx/features/browse/domain/source/model/manga_status.dart';
-import 'package:mihonx/features/library/data/library_update_service.dart';
-import 'package:mihonx/features/library/domain/library_manga.dart';
-import 'package:mihonx/features/library/domain/library_preferences.dart';
-import 'package:mihonx/features/library/domain/library_repository.dart';
-import 'package:mihonx/features/library/presentation/bloc/library_event.dart';
-import 'package:mihonx/features/library/presentation/bloc/library_state.dart';
+import 'package:hondana/core/config/app_settings.dart';
+import 'package:hondana/core/error/app_exception.dart';
+import 'package:hondana/core/state/bloc_status.dart';
+import 'package:hondana/features/browse/domain/source/model/manga_status.dart';
+import 'package:hondana/features/library/data/library_update_service.dart';
+import 'package:hondana/features/library/domain/library_manga.dart';
+import 'package:hondana/features/library/domain/library_preferences.dart';
+import 'package:hondana/features/library/domain/library_repository.dart';
+import 'package:hondana/features/library/presentation/bloc/library_event.dart';
+import 'package:hondana/features/library/presentation/bloc/library_state.dart';
 
+/// Drives the library screen: streams persisted manga, applies the filter+sort
+/// [_pipeline], and owns view options, multi-select and global refresh.
+///
+/// Initial view options (display/sort/filters) are seeded from
+/// [LibraryPreferences] and written back whenever the user changes them.
+/// The global downloaded-only toggle in [AppSettings] is observed live and
+/// re-runs the pipeline via [LibraryFiltersRefreshed].
 @injectable
 class LibraryBloc extends Bloc<LibraryEvent, LibraryState> {
   LibraryBloc(
@@ -20,15 +27,17 @@ class LibraryBloc extends Bloc<LibraryEvent, LibraryState> {
     LibraryPreferences prefs,
     this._updater,
     this._settings,
-  )   : _prefs = prefs,
-        super(LibraryState(
+  ) : _prefs = prefs,
+      super(
+        LibraryState(
           displayMode: prefs.displayMode,
           sortMode: prefs.sortMode,
           sortAscending: prefs.sortAscending,
           filterUnread: prefs.filterUnread,
           filterCompleted: prefs.filterCompleted,
           filterDownloaded: prefs.filterDownloaded,
-        )) {
+        ),
+      ) {
     on<LibraryCategoriesSubscribed>(_onCategories, transformer: restartable());
     on<LibrarySubscribed>(_onSubscribe, transformer: restartable());
     on<LibraryCategorySelected>(_onCategorySelected);
@@ -59,6 +68,7 @@ class LibraryBloc extends Bloc<LibraryEvent, LibraryState> {
   /// Unfiltered library as last emitted by the repository stream.
   List<LibraryManga> _raw = const [];
 
+  /// Re-runs the pipeline when the app-wide downloaded-only setting flips.
   void _onDownloadedOnlyChanged() => add(const LibraryFiltersRefreshed());
 
   @override
@@ -77,6 +87,8 @@ class LibraryBloc extends Bloc<LibraryEvent, LibraryState> {
     );
   }
 
+  /// Streams the library for the active category, running each emission
+  /// through [_pipeline] and caching the raw list in [_raw] for later re-filters.
   Future<void> _onSubscribe(
     LibrarySubscribed event,
     Emitter<LibraryState> emit,
@@ -100,14 +112,17 @@ class LibraryBloc extends Bloc<LibraryEvent, LibraryState> {
     );
   }
 
+  /// Switches category, clears any selection, then restarts the library stream.
   void _onCategorySelected(
     LibraryCategorySelected event,
     Emitter<LibraryState> emit,
   ) {
-    emit(state.copyWith(
-      selectedCategoryId: event.categoryId,
-      selectedIds: const {},
-    ));
+    emit(
+      state.copyWith(
+        selectedCategoryId: event.categoryId,
+        selectedIds: const {},
+      ),
+    );
     add(const LibrarySubscribed());
   }
 
@@ -137,17 +152,22 @@ class LibraryBloc extends Bloc<LibraryEvent, LibraryState> {
     emit(next.copyWith(manga: _pipeline(_raw, next)));
   }
 
+  /// Advances the targeted tri-state filter one step, persists all three, then
+  /// re-runs the pipeline.
   Future<void> _onFilterCycled(
     LibraryFilterCycled event,
     Emitter<LibraryState> emit,
   ) async {
     final next = switch (event.kind) {
-      LibraryFilterKind.unread =>
-        state.copyWith(filterUnread: state.filterUnread.next),
-      LibraryFilterKind.completed =>
-        state.copyWith(filterCompleted: state.filterCompleted.next),
-      LibraryFilterKind.downloaded =>
-        state.copyWith(filterDownloaded: state.filterDownloaded.next),
+      LibraryFilterKind.unread => state.copyWith(
+        filterUnread: state.filterUnread.next,
+      ),
+      LibraryFilterKind.completed => state.copyWith(
+        filterCompleted: state.filterCompleted.next,
+      ),
+      LibraryFilterKind.downloaded => state.copyWith(
+        filterDownloaded: state.filterDownloaded.next,
+      ),
     };
     await _prefs.setFilterUnread(next.filterUnread);
     await _prefs.setFilterCompleted(next.filterCompleted);
@@ -155,6 +175,7 @@ class LibraryBloc extends Bloc<LibraryEvent, LibraryState> {
     emit(next.copyWith(manga: _pipeline(_raw, next)));
   }
 
+  /// Adds the manga to the selection if absent, removes it if present.
   void _onToggle(
     LibraryItemSelectionToggled event,
     Emitter<LibraryState> emit,
@@ -164,16 +185,14 @@ class LibraryBloc extends Bloc<LibraryEvent, LibraryState> {
     emit(state.copyWith(selectedIds: next));
   }
 
-  void _onSelectAll(
-    LibrarySelectAllToggled event,
-    Emitter<LibraryState> emit,
-  ) {
+  /// Selects every visible manga, or clears the selection if already all-selected.
+  void _onSelectAll(LibrarySelectAllToggled event, Emitter<LibraryState> emit) {
     if (state.allSelected) {
       emit(state.copyWith(selectedIds: const {}));
     } else {
-      emit(state.copyWith(
-        selectedIds: state.manga.map((m) => m.manga.id).toSet(),
-      ));
+      emit(
+        state.copyWith(selectedIds: state.manga.map((m) => m.manga.id).toSet()),
+      );
     }
   }
 
@@ -204,6 +223,8 @@ class LibraryBloc extends Bloc<LibraryEvent, LibraryState> {
     emit(state.copyWith(selectedIds: const {}));
   }
 
+  /// Runs a global library update, surfacing progress via [state.refreshStatus].
+  /// Registered with `droppable()`, so overlapping refresh taps are ignored.
   Future<void> _onRefresh(
     LibraryRefreshRequested event,
     Emitter<LibraryState> emit,
@@ -213,30 +234,34 @@ class LibraryBloc extends Bloc<LibraryEvent, LibraryState> {
       await _updater.refreshAll();
       emit(state.copyWith(refreshStatus: const BlocStatus.success()));
     } catch (err, st) {
-      emit(state.copyWith(
-        refreshStatus: BlocStatus.failure(AppException.from(err, st)),
-      ));
+      emit(
+        state.copyWith(
+          refreshStatus: BlocStatus.failure(AppException.from(err, st)),
+        ),
+      );
     }
   }
 
   // ── Filter + sort pipeline ─────────────────────────────────────────────────
 
+  /// Applies the search query and the three tri-state filters, then sorts.
+  ///
+  /// A [TriFilter] is: `ignore` keeps everything, `include` keeps only matches,
+  /// `exclude` keeps only non-matches. The app-wide downloaded-only setting is
+  /// an additional hard filter layered on top of the per-column filters.
   List<LibraryManga> _pipeline(List<LibraryManga> list, LibraryState s) {
     bool tri(TriFilter f, bool matches) => switch (f) {
-          TriFilter.ignore => true,
-          TriFilter.include => matches,
-          TriFilter.exclude => !matches,
-        };
+      TriFilter.ignore => true,
+      TriFilter.include => matches,
+      TriFilter.exclude => !matches,
+    };
     final q = s.query.trim().toLowerCase();
     final filtered = list.where((m) {
       if (q.isNotEmpty && !m.manga.title.toLowerCase().contains(q)) {
         return false;
       }
       if (!tri(s.filterUnread, m.unreadCount > 0)) return false;
-      if (!tri(
-        s.filterCompleted,
-        m.manga.status == MangaStatus.completed,
-      )) {
+      if (!tri(s.filterCompleted, m.manga.status == MangaStatus.completed)) {
         return false;
       }
       if (!tri(s.filterDownloaded, m.downloadCount > 0)) return false;
@@ -246,6 +271,7 @@ class LibraryBloc extends Bloc<LibraryEvent, LibraryState> {
     return _sort(filtered, s.sortMode, s.sortAscending);
   }
 
+  /// Returns a new list sorted by [mode]; [ascending] flips the comparator.
   List<LibraryManga> _sort(
     List<LibraryManga> list,
     LibrarySortMode mode,
@@ -255,17 +281,19 @@ class LibraryBloc extends Bloc<LibraryEvent, LibraryState> {
     int compare(LibraryManga a, LibraryManga b) {
       switch (mode) {
         case LibrarySortMode.alphabetical:
-          return a.manga.title
-              .toLowerCase()
-              .compareTo(b.manga.title.toLowerCase());
+          return a.manga.title.toLowerCase().compareTo(
+            b.manga.title.toLowerCase(),
+          );
         case LibrarySortMode.unread:
           return a.unreadCount.compareTo(b.unreadCount);
         case LibrarySortMode.dateAdded:
-          return (a.manga.dateAdded ?? DateTime(0))
-              .compareTo(b.manga.dateAdded ?? DateTime(0));
+          return (a.manga.dateAdded ?? DateTime(0)).compareTo(
+            b.manga.dateAdded ?? DateTime(0),
+          );
         case LibrarySortMode.lastUpdate:
-          return (a.manga.lastUpdate ?? DateTime(0))
-              .compareTo(b.manga.lastUpdate ?? DateTime(0));
+          return (a.manga.lastUpdate ?? DateTime(0)).compareTo(
+            b.manga.lastUpdate ?? DateTime(0),
+          );
       }
     }
 

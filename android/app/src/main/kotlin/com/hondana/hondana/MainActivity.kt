@@ -1,4 +1,4 @@
-package com.mihonx.mihonx
+package com.hondana.hondana
 
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
@@ -8,8 +8,8 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        // Reader screen controls: keep-awake + brightness ("mihonx/native").
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "mihonx/native")
+        // Reader screen controls: keep-awake + brightness ("hondana/native").
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "hondana/native")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "keepScreenOn" -> {

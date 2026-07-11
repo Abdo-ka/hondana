@@ -6,8 +6,10 @@ import 'package:flutter/material.dart';
 class AppTheme {
   const AppTheme._();
 
+  /// Seed color the whole Material 3 palette is generated from ("Tako"-ish blue).
   static const Color _seed = Color(0xFF2979FF);
 
+  /// The default light theme.
   static ThemeData get light => _build(Brightness.light);
 
   /// [pureBlack] = Mihon's "Pure black dark mode" (OLED).

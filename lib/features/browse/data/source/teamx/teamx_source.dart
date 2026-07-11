@@ -1,13 +1,13 @@
 import 'package:html/dom.dart';
 import 'package:html/parser.dart' as html_parser;
 
-import 'package:mihonx/features/browse/data/source/http_source_base.dart';
-import 'package:mihonx/features/browse/domain/source/model/filter.dart';
-import 'package:mihonx/features/browse/domain/source/model/manga_page.dart';
-import 'package:mihonx/features/browse/domain/source/model/manga_status.dart';
-import 'package:mihonx/features/browse/domain/source/model/mangas_page.dart';
-import 'package:mihonx/features/browse/domain/source/model/s_chapter.dart';
-import 'package:mihonx/features/browse/domain/source/model/s_manga.dart';
+import 'package:hondana/features/browse/data/source/http_source_base.dart';
+import 'package:hondana/features/browse/domain/source/model/filter.dart';
+import 'package:hondana/features/browse/domain/source/model/manga_page.dart';
+import 'package:hondana/features/browse/domain/source/model/manga_status.dart';
+import 'package:hondana/features/browse/domain/source/model/mangas_page.dart';
+import 'package:hondana/features/browse/domain/source/model/s_chapter.dart';
+import 'package:hondana/features/browse/domain/source/model/s_manga.dart';
 
 /// Dart port of keiyoushi's `TeamX` (Team X / olympustaff.com, Arabic).
 /// Custom PHP site: `/series?page=N` listings, `/ajax/search?keyword=` search,
@@ -47,18 +47,22 @@ class TeamXSource extends HttpSourceBase {
   /// Parses a `/series` archive page. Exposed for testing.
   MangasPage parseBrowse(String htmlBody) {
     final doc = html_parser.parse(htmlBody);
-    final mangas = doc.querySelectorAll('div.listupd div.bsx').map((el) {
-      final a = el.querySelector('a');
-      final href = a?.attributes['href'];
-      if (href == null) return null;
-      final title = a!.attributes['title']?.trim() ?? '';
-      if (title.isEmpty) return null;
-      return SManga(
-        url: _relative(href),
-        title: title,
-        thumbnailUrl: _imgSrc(el.querySelector('img')),
-      );
-    }).nonNulls.toList();
+    final mangas = doc
+        .querySelectorAll('div.listupd div.bsx')
+        .map((el) {
+          final a = el.querySelector('a');
+          final href = a?.attributes['href'];
+          if (href == null) return null;
+          final title = a!.attributes['title']?.trim() ?? '';
+          if (title.isEmpty) return null;
+          return SManga(
+            url: _relative(href),
+            title: title,
+            thumbnailUrl: _imgSrc(el.querySelector('img')),
+          );
+        })
+        .nonNulls
+        .toList();
     return MangasPage(
       mangas: mangas,
       hasNextPage: doc.querySelector(_nextPageSelector) != null,
@@ -74,8 +78,9 @@ class TeamXSource extends HttpSourceBase {
   @override
   Future<MangasPage> getLatestUpdates(int page) async {
     if (page == 1) _latestTitlesSeen.clear();
-    final res =
-        await client.get<String>(page > 1 ? '$baseUrl/?page=$page' : baseUrl);
+    final res = await client.get<String>(
+      page > 1 ? '$baseUrl/?page=$page' : baseUrl,
+    );
     return parseLatest(res.data ?? '', seenTitles: _latestTitlesSeen);
   }
 
@@ -90,12 +95,15 @@ class TeamXSource extends HttpSourceBase {
       final title = link?.querySelector('h3')?.text.trim() ?? '';
       if (href == null || title.isEmpty) continue;
       if (!seen.add(title)) continue;
-      mangas.add(SManga(
-        url: _relative(href),
-        title: title,
-        thumbnailUrl: _imgSrc(el.querySelector('div.imgu img'))
-            ?.replaceFirst(_thumbnailSuffix, ''),
-      ));
+      mangas.add(
+        SManga(
+          url: _relative(href),
+          title: title,
+          thumbnailUrl: _imgSrc(
+            el.querySelector('div.imgu img'),
+          )?.replaceFirst(_thumbnailSuffix, ''),
+        ),
+      );
     }
     return MangasPage(
       mangas: mangas,
@@ -106,7 +114,11 @@ class TeamXSource extends HttpSourceBase {
   // ── Search ─────────────────────────────────────────────────────────────────
 
   @override
-  Future<MangasPage> getSearchManga(int page, String query, FilterList _) async {
+  Future<MangasPage> getSearchManga(
+    int page,
+    String query,
+    FilterList _,
+  ) async {
     if (query.trim().isEmpty) {
       final res = await client.get<String>(
         '$baseUrl/series',
@@ -124,22 +136,27 @@ class TeamXSource extends HttpSourceBase {
   /// Parses the `/ajax/search` HTML fragment. Exposed for testing.
   MangasPage parseSearch(String htmlBody) {
     final doc = html_parser.parse(htmlBody);
-    final mangas =
-        doc.querySelectorAll('a.items-center, div.listupd div.bsx').map((el) {
-      final a = el.localName == 'a' ? el : el.querySelector('a');
-      final href = a?.attributes['href'];
-      if (href == null) return null;
-      final title = el.querySelector('h4')?.text.trim() ??
-          a!.attributes['title']?.trim() ??
-          '';
-      if (title.isEmpty) return null;
-      return SManga(
-        url: _relative(href),
-        title: title,
-        thumbnailUrl:
-            _imgSrc(el.querySelector('img'))?.replaceFirst(_thumbnailSuffix, ''),
-      );
-    }).nonNulls.toList();
+    final mangas = doc
+        .querySelectorAll('a.items-center, div.listupd div.bsx')
+        .map((el) {
+          final a = el.localName == 'a' ? el : el.querySelector('a');
+          final href = a?.attributes['href'];
+          if (href == null) return null;
+          final title =
+              el.querySelector('h4')?.text.trim() ??
+              a!.attributes['title']?.trim() ??
+              '';
+          if (title.isEmpty) return null;
+          return SManga(
+            url: _relative(href),
+            title: title,
+            thumbnailUrl: _imgSrc(
+              el.querySelector('img'),
+            )?.replaceFirst(_thumbnailSuffix, ''),
+          );
+        })
+        .nonNulls
+        .toList();
     return MangasPage(mangas: mangas);
   }
 
@@ -172,8 +189,8 @@ class TeamXSource extends HttpSourceBase {
       title: (title == null || title.isEmpty) ? base.title : title,
       description: description,
       genre: genres,
-      thumbnailUrl: _imgSrc(doc.querySelector('div.text-right img')) ??
-          base.thumbnailUrl,
+      thumbnailUrl:
+          _imgSrc(doc.querySelector('div.text-right img')) ?? base.thumbnailUrl,
       status: _status(_infoRow(doc, 'الحالة')),
       author: author == 'غير معروف' ? null : author,
       initialized: true,
@@ -193,12 +210,12 @@ class TeamXSource extends HttpSourceBase {
   }
 
   MangaStatus _status(String? s) => switch (s) {
-        'مستمرة' || 'قادم قريبًا' => MangaStatus.ongoing,
-        'مكتمل' => MangaStatus.completed,
-        'متوقف' => MangaStatus.onHiatus,
-        'متروك' => MangaStatus.cancelled,
-        _ => MangaStatus.unknown,
-      };
+    'مستمرة' || 'قادم قريبًا' => MangaStatus.ongoing,
+    'مكتمل' => MangaStatus.completed,
+    'متوقف' => MangaStatus.onHiatus,
+    'متروك' => MangaStatus.cancelled,
+    _ => MangaStatus.unknown,
+  };
 
   // ── Chapters ───────────────────────────────────────────────────────────────
 
@@ -233,32 +250,38 @@ class TeamXSource extends HttpSourceBase {
   /// Exposed for testing.
   List<SChapter> parseChapters(String htmlBody) {
     final doc = html_parser.parse(htmlBody);
-    return doc.querySelectorAll('div.chapter-card').map((el) {
-      if (el.querySelector('span.locked') != null) return null;
-      final href = el.querySelector('a')?.attributes['href'];
-      if (href == null) return null;
-      final number = el.attributes['data-number']?.trim() ?? '';
-      final title =
-          el.querySelector('div.chapter-info div.chapter-title')?.text.trim();
-      var name = 'الفصل $number';
-      if (title != null &&
-          title.isNotEmpty &&
-          title != number &&
-          title != 'الفصل $number' &&
-          title != 'الفصل رقم $number') {
-        name = '$name - $title';
-      }
-      final seconds = int.tryParse(el.attributes['data-date'] ?? '');
-      return SChapter(
-        url: _relative(href),
-        // Trailing RLM keeps mixed-direction titles rendering correctly.
-        name: '$name\u200F',
-        dateUpload: seconds == null
-            ? null
-            : DateTime.fromMillisecondsSinceEpoch(seconds * 1000),
-        chapterNumber: double.tryParse(number) ?? -1,
-      );
-    }).nonNulls.toList();
+    return doc
+        .querySelectorAll('div.chapter-card')
+        .map((el) {
+          if (el.querySelector('span.locked') != null) return null;
+          final href = el.querySelector('a')?.attributes['href'];
+          if (href == null) return null;
+          final number = el.attributes['data-number']?.trim() ?? '';
+          final title = el
+              .querySelector('div.chapter-info div.chapter-title')
+              ?.text
+              .trim();
+          var name = 'الفصل $number';
+          if (title != null &&
+              title.isNotEmpty &&
+              title != number &&
+              title != 'الفصل $number' &&
+              title != 'الفصل رقم $number') {
+            name = '$name - $title';
+          }
+          final seconds = int.tryParse(el.attributes['data-date'] ?? '');
+          return SChapter(
+            url: _relative(href),
+            // Trailing RLM keeps mixed-direction titles rendering correctly.
+            name: '$name\u200F',
+            dateUpload: seconds == null
+                ? null
+                : DateTime.fromMillisecondsSinceEpoch(seconds * 1000),
+            chapterNumber: double.tryParse(number) ?? -1,
+          );
+        })
+        .nonNulls
+        .toList();
   }
 
   // ── Pages ──────────────────────────────────────────────────────────────────
@@ -275,7 +298,8 @@ class TeamXSource extends HttpSourceBase {
     final doc = html_parser.parse(htmlBody);
     final urls = doc
         .querySelectorAll(
-            'div.image_list canvas[data-src], div.image_list img[src]')
+          'div.image_list canvas[data-src], div.image_list img[src]',
+        )
         .map((el) => el.attributes['src'] ?? el.attributes['data-src'])
         .nonNulls
         .map((u) => u.startsWith('/') ? '$baseUrl$u' : u)

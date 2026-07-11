@@ -2,27 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:mihonx/core/extensions/context_ext.dart';
-import 'package:mihonx/core/widgets/app_text.dart';
-import 'package:mihonx/features/library/domain/library_preferences.dart';
-import 'package:mihonx/features/library/presentation/bloc/library_bloc.dart';
-import 'package:mihonx/features/library/presentation/bloc/library_event.dart';
-import 'package:mihonx/features/library/presentation/bloc/library_state.dart';
+import 'package:hondana/core/extensions/context_ext.dart';
+import 'package:hondana/core/widgets/app_text.dart';
+import 'package:hondana/features/library/domain/library_preferences.dart';
+import 'package:hondana/features/library/presentation/bloc/library_bloc.dart';
+import 'package:hondana/features/library/presentation/bloc/library_event.dart';
+import 'package:hondana/features/library/presentation/bloc/library_state.dart';
 
 /// Mihon-style library options: a bottom sheet with Filter / Sort / Display
 /// tabs. Filters are tri-state (ignore → include → exclude).
 class LibraryOptionsSheet extends StatelessWidget {
   const LibraryOptionsSheet({super.key});
 
+  /// Opens the sheet, forwarding the caller's [LibraryBloc] so tabs can dispatch.
   static Future<void> show(BuildContext context) {
     final bloc = context.read<LibraryBloc>();
     return showModalBottomSheet(
       context: context,
       showDragHandle: true,
-      builder: (_) => BlocProvider.value(
-        value: bloc,
-        child: const LibraryOptionsSheet(),
-      ),
+      builder: (_) =>
+          BlocProvider.value(value: bloc, child: const LibraryOptionsSheet()),
     );
   }
 
@@ -54,6 +53,7 @@ class LibraryOptionsSheet extends StatelessWidget {
   }
 }
 
+/// Tri-state filter toggles (downloaded / unread / completed).
 class _FilterTab extends StatelessWidget {
   const _FilterTab();
 
@@ -69,23 +69,23 @@ class _FilterTab extends StatelessWidget {
           _TriFilterTile(
             label: 'library.filter_downloaded',
             value: state.filterDownloaded,
-            onTap: () => context
-                .read<LibraryBloc>()
-                .add(const LibraryFilterCycled(LibraryFilterKind.downloaded)),
+            onTap: () => context.read<LibraryBloc>().add(
+              const LibraryFilterCycled(LibraryFilterKind.downloaded),
+            ),
           ),
           _TriFilterTile(
             label: 'library.filter_unread',
             value: state.filterUnread,
-            onTap: () => context
-                .read<LibraryBloc>()
-                .add(const LibraryFilterCycled(LibraryFilterKind.unread)),
+            onTap: () => context.read<LibraryBloc>().add(
+              const LibraryFilterCycled(LibraryFilterKind.unread),
+            ),
           ),
           _TriFilterTile(
             label: 'library.filter_completed',
             value: state.filterCompleted,
-            onTap: () => context
-                .read<LibraryBloc>()
-                .add(const LibraryFilterCycled(LibraryFilterKind.completed)),
+            onTap: () => context.read<LibraryBloc>().add(
+              const LibraryFilterCycled(LibraryFilterKind.completed),
+            ),
           ),
         ],
       ),
@@ -93,6 +93,8 @@ class _FilterTab extends StatelessWidget {
   }
 }
 
+/// One filter row; its leading icon reflects the [TriFilter] state and tapping
+/// cycles ignore → include → exclude.
 class _TriFilterTile extends StatelessWidget {
   const _TriFilterTile({
     required this.label,
@@ -123,6 +125,8 @@ class _TriFilterTile extends StatelessWidget {
   }
 }
 
+/// Sort-mode list; the active mode shows an up/down arrow, and re-tapping it
+/// flips the ascending/descending direction (Mihon behavior).
 class _SortTab extends StatelessWidget {
   const _SortTab();
 
@@ -138,18 +142,18 @@ class _SortTab extends StatelessWidget {
                 leading: Icon(
                   state.sortMode == m
                       ? (state.sortAscending
-                          ? Icons.arrow_upward
-                          : Icons.arrow_downward)
+                            ? Icons.arrow_upward
+                            : Icons.arrow_downward)
                       : null,
                   color: context.colorScheme.primary,
                 ),
                 title: AppText.bodyMedium('library.sort_${m.name}'),
                 onTap: () => context.read<LibraryBloc>().add(
-                      LibrarySortChanged(
-                        m,
-                        state.sortMode == m ? !state.sortAscending : true,
-                      ),
-                    ),
+                  LibrarySortChanged(
+                    m,
+                    state.sortMode == m ? !state.sortAscending : true,
+                  ),
+                ),
               ),
             )
             .toList(),
@@ -158,6 +162,7 @@ class _SortTab extends StatelessWidget {
   }
 }
 
+/// Radio list selecting the [LibraryDisplayMode] (list / compact / comfortable).
 class _DisplayTab extends StatelessWidget {
   const _DisplayTab();
 
@@ -178,9 +183,9 @@ class _DisplayTab extends StatelessWidget {
                       : context.colorScheme.onSurfaceVariant,
                 ),
                 title: AppText.bodyMedium('library.display_${m.name}'),
-                onTap: () => context
-                    .read<LibraryBloc>()
-                    .add(LibraryDisplayModeChanged(m)),
+                onTap: () => context.read<LibraryBloc>().add(
+                  LibraryDisplayModeChanged(m),
+                ),
               ),
             )
             .toList(),

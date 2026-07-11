@@ -1,13 +1,17 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart' show immutable;
 
-import 'package:mihonx/core/state/bloc_status.dart';
-import 'package:mihonx/features/library/domain/category.dart';
-import 'package:mihonx/features/library/domain/library_manga.dart';
-import 'package:mihonx/features/library/domain/library_preferences.dart';
+import 'package:hondana/core/state/bloc_status.dart';
+import 'package:hondana/features/library/domain/category.dart';
+import 'package:hondana/features/library/domain/library_manga.dart';
+import 'package:hondana/features/library/domain/library_preferences.dart';
 
+/// Sentinel distinguishing "argument omitted" from an explicit `null` in
+/// [LibraryState.copyWith], so `selectedCategoryId` can be cleared to `null`.
 const Object _undefined = Object();
 
+/// Immutable state of the library screen: content, view options, filters and
+/// multi-select. [manga] is the finished, filtered-and-sorted list to render.
 @immutable
 class LibraryState extends Equatable {
   const LibraryState({
@@ -26,25 +30,45 @@ class LibraryState extends Equatable {
     this.filterDownloaded = TriFilter.ignore,
   });
 
+  /// Status of the library content stream (loading / empty / success / failure).
   final BlocStatus loadStatus;
+
+  /// Status of the last global refresh request (drives the refresh spinner).
   final BlocStatus refreshStatus;
   final List<Category> categories;
+
+  /// Active category tab; `null` is the "all" pseudo-category.
   final int? selectedCategoryId;
 
   /// Already filtered + sorted by the bloc.
   final List<LibraryManga> manga;
+
+  /// IDs of manga chosen in multi-select mode.
   final Set<int> selectedIds;
   final LibraryDisplayMode displayMode;
   final LibrarySortMode sortMode;
   final bool sortAscending;
+
+  /// Case-insensitive title search substring.
   final String query;
+
+  /// Tri-state filter: keep only unread / only fully-read / ignore.
   final TriFilter filterUnread;
+
+  /// Tri-state filter on completed publication status.
   final TriFilter filterCompleted;
+
+  /// Tri-state filter on whether the manga has downloaded chapters.
   final TriFilter filterDownloaded;
 
+  /// True while any manga is selected (multi-select mode is active).
   bool get isSelecting => selectedIds.isNotEmpty;
+
+  /// True when every visible manga is selected.
   bool get allSelected =>
       manga.isNotEmpty && selectedIds.length == manga.length;
+
+  /// True when any tri-state filter is set (used to highlight the filter icon).
   bool get hasActiveFilters =>
       filterUnread != TriFilter.ignore ||
       filterCompleted != TriFilter.ignore ||
@@ -86,18 +110,18 @@ class LibraryState extends Equatable {
 
   @override
   List<Object?> get props => [
-        loadStatus,
-        refreshStatus,
-        categories,
-        selectedCategoryId,
-        manga,
-        selectedIds,
-        displayMode,
-        sortMode,
-        sortAscending,
-        query,
-        filterUnread,
-        filterCompleted,
-        filterDownloaded,
-      ];
+    loadStatus,
+    refreshStatus,
+    categories,
+    selectedCategoryId,
+    manga,
+    selectedIds,
+    displayMode,
+    sortMode,
+    sortAscending,
+    query,
+    filterUnread,
+    filterCompleted,
+    filterDownloaded,
+  ];
 }

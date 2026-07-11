@@ -1,11 +1,12 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:local_auth/local_auth.dart';
 
-import 'package:mihonx/core/core.dart';
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/features/more/domain/security_preferences.dart';
+import 'package:hondana/core/core.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/features/more/domain/security_preferences.dart';
 
 /// Gates the whole app behind Face ID / Touch ID / passcode when
 /// Settings > Security > "Require unlock" is on, re-locking after the
@@ -13,21 +14,24 @@ import 'package:mihonx/features/more/domain/security_preferences.dart';
 class AppLockGate extends StatefulWidget {
   const AppLockGate({required this.child, super.key});
 
+  /// The app subtree hidden and gated behind unlock.
   final Widget child;
 
   @override
   State<AppLockGate> createState() => _AppLockGateState();
 }
 
-class _AppLockGateState extends State<AppLockGate>
-    with WidgetsBindingObserver {
+class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
   final SecurityPreferences _prefs = getIt<SecurityPreferences>();
   final LocalAuthentication _auth = LocalAuthentication();
 
+  /// Whether the lock scrim is currently shown. Starts locked if the pref is on.
   late final ValueNotifier<bool> _locked = ValueNotifier(_prefs.requireUnlock);
 
   /// When the app last went to background (paused), for the idle re-lock.
   DateTime? _backgroundedAt;
+
+  /// Guards against overlapping authenticate() calls.
   bool _authInProgress = false;
 
   @override
@@ -61,13 +65,15 @@ class _AppLockGateState extends State<AppLockGate>
     }
   }
 
+  /// On resume, re-locks if the idle threshold elapsed, then prompts to unlock.
   void _onResumed() {
     final backgroundedAt = _backgroundedAt;
     _backgroundedAt = null;
     if (_prefs.requireUnlock && !_locked.value && backgroundedAt != null) {
       final lockAfterMinutes = _prefs.lockAfterMinutes;
       final elapsed = DateTime.now().difference(backgroundedAt);
-      final shouldRelock = lockAfterMinutes == 0 ||
+      final shouldRelock =
+          lockAfterMinutes == 0 ||
           (lockAfterMinutes > 0 &&
               elapsed >= Duration(minutes: lockAfterMinutes));
       if (shouldRelock) _locked.value = true;
@@ -75,6 +81,7 @@ class _AppLockGateState extends State<AppLockGate>
     if (_locked.value) _tryUnlock();
   }
 
+  /// Prompts the platform biometric/passcode sheet and unlocks on success.
   Future<void> _tryUnlock() async {
     if (_authInProgress || !_locked.value) return;
     _authInProgress = true;
@@ -97,8 +104,7 @@ class _AppLockGateState extends State<AppLockGate>
       builder: (context, locked, child) => Stack(
         fit: StackFit.expand,
         children: [
-          if (child != null)
-            ExcludeSemantics(excluding: locked, child: child),
+          if (child != null) ExcludeSemantics(excluding: locked, child: child),
           if (locked) _LockScreen(onUnlock: _tryUnlock),
         ],
       ),
@@ -111,6 +117,7 @@ class _AppLockGateState extends State<AppLockGate>
 class _LockScreen extends StatelessWidget {
   const _LockScreen({required this.onUnlock});
 
+  /// Invoked by the retry button to re-trigger the auth prompt.
   final VoidCallback onUnlock;
 
   @override
@@ -124,17 +131,17 @@ class _LockScreen extends StatelessWidget {
             children: [
               Icon(
                 Icons.lock_outline,
-                size: 64,
+                size: 64.r,
                 color: context.colorScheme.primary,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16.h),
               const AppText.headlineSmall('app_name'),
-              const SizedBox(height: 8),
+              SizedBox(height: 8.h),
               AppText.bodyMedium(
                 'security.locked',
                 color: context.colorScheme.onSurfaceVariant,
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24.h),
               FilledButton.icon(
                 onPressed: onUnlock,
                 icon: const Icon(Icons.lock_open_outlined),

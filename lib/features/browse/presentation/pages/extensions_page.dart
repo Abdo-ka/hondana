@@ -2,10 +2,10 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:mihonx/core/core.dart';
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/features/browse/presentation/bloc/extensions_bloc.dart';
-import 'package:mihonx/features/browse/presentation/widgets/extensions_body.dart';
+import 'package:hondana/core/core.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/features/browse/presentation/bloc/extensions_bloc.dart';
+import 'package:hondana/features/browse/presentation/widgets/extensions_body.dart';
 
 /// Standalone Extensions screen (the same content is embedded as a Browse tab).
 @RoutePage()

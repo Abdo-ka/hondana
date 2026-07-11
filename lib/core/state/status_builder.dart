@@ -1,11 +1,11 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mihonx/core/error/app_exception.dart';
-import 'package:mihonx/core/state/bloc_status.dart';
-import 'package:mihonx/core/widgets/feedback_indicators.dart';
+import 'package:hondana/core/error/app_exception.dart';
+import 'package:hondana/core/state/bloc_status.dart';
+import 'package:hondana/core/widgets/feedback_indicators.dart';
 
 /// Rebuilds only when the selected [BlocStatus] changes. Preferred over raw
-/// [BlocBuilder] for status-driven UI (per the badinan rules).
+/// [BlocBuilder] for status-driven UI.
 class StatusBuilder<B extends BlocBase<S>, S> extends StatelessWidget {
   const StatusBuilder({
     required this.statusSelector,
@@ -21,15 +21,34 @@ class StatusBuilder<B extends BlocBase<S>, S> extends StatelessWidget {
     super.key,
   });
 
+  /// Extracts the [BlocStatus] to watch from the bloc's state.
   final BlocStatus Function(S state) statusSelector;
+
+  /// Required builder for the success branch.
   final WidgetBuilder onSuccess;
+
+  /// Loading branch; falls back to [AppLoadingIndicator].
   final WidgetBuilder? onLoading;
+
+  /// Empty branch; falls back to [AppEmptyIndicator] with [emptyMessage].
   final WidgetBuilder? onEmpty;
+
+  /// Message shown by the default empty indicator when [onEmpty] is null.
   final String? emptyMessage;
+
+  /// Initial branch; falls back to an empty box.
   final WidgetBuilder? onInitial;
+
+  /// Failure branch; falls back to [AppFailureIndicator].
   final Widget Function(BuildContext context, AppException error)? onError;
+
+  /// Retry callback wired into the default failure indicator.
   final VoidCallback? onRetry;
+
+  /// Label for the default failure indicator's retry action.
   final String? retryLabel;
+
+  /// Optional explicit bloc; when null the nearest provided one is used.
   final B? bloc;
 
   @override

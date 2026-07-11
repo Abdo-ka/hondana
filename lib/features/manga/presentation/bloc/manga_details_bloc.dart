@@ -2,15 +2,20 @@ import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
-import 'package:mihonx/core/error/app_exception.dart';
-import 'package:mihonx/core/state/bloc_status.dart';
-import 'package:mihonx/features/browse/domain/source/model/s_manga.dart';
-import 'package:mihonx/features/browse/domain/source/source.dart';
-import 'package:mihonx/features/browse/domain/source/source_manager.dart';
-import 'package:mihonx/features/manga/domain/manga_repository.dart';
-import 'package:mihonx/features/manga/presentation/bloc/manga_details_event.dart';
-import 'package:mihonx/features/manga/presentation/bloc/manga_details_state.dart';
+import 'package:hondana/core/error/app_exception.dart';
+import 'package:hondana/core/state/bloc_status.dart';
+import 'package:hondana/features/browse/domain/source/model/s_manga.dart';
+import 'package:hondana/features/browse/domain/source/source.dart';
+import 'package:hondana/features/browse/domain/source/source_manager.dart';
+import 'package:hondana/features/manga/domain/manga_repository.dart';
+import 'package:hondana/features/manga/presentation/bloc/manga_details_event.dart';
+import 'package:hondana/features/manga/presentation/bloc/manga_details_state.dart';
 
+/// Drives the manga details screen: resolves the manga to a local row, streams
+/// its persisted metadata and chapters, and refreshes both from the source.
+///
+/// Watch handlers are [restartable] so a re-subscription cancels the previous
+/// stream; refresh is [droppable] so overlapping pulls are ignored.
 @injectable
 class MangaDetailsBloc extends Bloc<MangaDetailsEvent, MangaDetailsState> {
   MangaDetailsBloc(
@@ -28,9 +33,8 @@ class MangaDetailsBloc extends Bloc<MangaDetailsEvent, MangaDetailsState> {
     // Display order is derived in the state (orderedChapters); the canonical
     // list stays newest-first so DB re-emissions can't undo the toggle.
     on<MangaChapterSortToggled>(
-      (e, emit) => emit(
-        state.copyWith(chaptersDescending: !state.chaptersDescending),
-      ),
+      (e, emit) =>
+          emit(state.copyWith(chaptersDescending: !state.chaptersDescending)),
     );
   }
 
@@ -41,26 +45,32 @@ class MangaDetailsBloc extends Bloc<MangaDetailsEvent, MangaDetailsState> {
 
   Source? get _source => _sources.get(sourceId);
 
+  /// Resolves the local row, kicks off the DB watches, then fetches fresh
+  /// details and chapters from the source.
   Future<void> _onStart(
     MangaDetailsStarted event,
     Emitter<MangaDetailsState> emit,
   ) async {
     final id = await _repo.resolveManga(sourceId, initial);
-    emit(state.copyWith(
-      mangaId: id,
-      detailsStatus: const BlocStatus.loading(),
-      chaptersStatus: const BlocStatus.loading(),
-    ));
+    emit(
+      state.copyWith(
+        mangaId: id,
+        detailsStatus: const BlocStatus.loading(),
+        chaptersStatus: const BlocStatus.loading(),
+      ),
+    );
     add(MangaWatchRequested(id));
     add(ChaptersWatchRequested(id));
 
     final source = _source;
     if (source == null) {
-      emit(state.copyWith(
-        detailsStatus: const BlocStatus.failure(
-          AppException(message: 'Source unavailable'),
+      emit(
+        state.copyWith(
+          detailsStatus: const BlocStatus.failure(
+            AppException(message: 'Source unavailable'),
+          ),
         ),
-      ));
+      );
       return;
     }
 
@@ -69,9 +79,11 @@ class MangaDetailsBloc extends Bloc<MangaDetailsEvent, MangaDetailsState> {
       await _repo.updateDetails(id, details);
       emit(state.copyWith(detailsStatus: const BlocStatus.success()));
     } catch (e, st) {
-      emit(state.copyWith(
-        detailsStatus: BlocStatus.failure(AppException.from(e, st)),
-      ));
+      emit(
+        state.copyWith(
+          detailsStatus: BlocStatus.failure(AppException.from(e, st)),
+        ),
+      );
     }
 
     await _fetchChapters(id, source, emit);
@@ -97,6 +109,8 @@ class MangaDetailsBloc extends Bloc<MangaDetailsEvent, MangaDetailsState> {
     );
   }
 
+  /// Pulls the chapter list from the source and syncs it; sets an empty status
+  /// when the source returns none.
   Future<void> _fetchChapters(
     int id,
     Source source,
@@ -105,15 +119,19 @@ class MangaDetailsBloc extends Bloc<MangaDetailsEvent, MangaDetailsState> {
     try {
       final chapters = await source.getChapterList(initial);
       await _repo.syncChapters(id, chapters);
-      emit(state.copyWith(
-        chaptersStatus: chapters.isEmpty
-            ? const BlocStatus.empty()
-            : const BlocStatus.success(),
-      ));
+      emit(
+        state.copyWith(
+          chaptersStatus: chapters.isEmpty
+              ? const BlocStatus.empty()
+              : const BlocStatus.success(),
+        ),
+      );
     } catch (e, st) {
-      emit(state.copyWith(
-        chaptersStatus: BlocStatus.failure(AppException.from(e, st)),
-      ));
+      emit(
+        state.copyWith(
+          chaptersStatus: BlocStatus.failure(AppException.from(e, st)),
+        ),
+      );
     }
   }
 
@@ -133,6 +151,7 @@ class MangaDetailsBloc extends Bloc<MangaDetailsEvent, MangaDetailsState> {
     await _repo.setChapterRead(event.chapterId, event.read);
   }
 
+  /// Re-fetches chapters on demand (pull-to-refresh / refresh action).
   Future<void> _onRefresh(
     MangaChaptersRefreshed event,
     Emitter<MangaDetailsState> emit,

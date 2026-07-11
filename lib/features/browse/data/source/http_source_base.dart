@@ -1,11 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 
-import 'package:mihonx/core/network/app_http.dart';
-import 'package:mihonx/features/browse/domain/source/model/manga_page.dart';
-import 'package:mihonx/features/browse/domain/source/model/s_manga.dart';
-import 'package:mihonx/features/browse/domain/source/source.dart';
-import 'package:mihonx/features/browse/domain/source_preferences.dart';
+import 'package:hondana/core/network/app_http.dart';
+import 'package:hondana/features/browse/domain/source/model/manga_page.dart';
+import 'package:hondana/features/browse/domain/source/model/s_manga.dart';
+import 'package:hondana/features/browse/domain/source/source.dart';
+import 'package:hondana/features/browse/domain/source_preferences.dart';
 
 /// Base for native-Dart network sources. Provides a configured [Dio] (browser
 /// UA, array query encoding, OS-native TLS stack, WebView cookie replay) and a
@@ -16,18 +16,18 @@ import 'package:mihonx/features/browse/domain/source_preferences.dart';
 /// a shared "theme" base per multisrc family — Madara, MangaThemesia, …).
 abstract class HttpSourceBase implements HttpSource {
   HttpSourceBase()
-      : client = Dio(
-          BaseOptions(
-            headers: {'User-Agent': userAgent},
-            listFormat: ListFormat.multiCompatible,
-            connectTimeout: const Duration(seconds: 20),
-            receiveTimeout: const Duration(seconds: 30),
-            followRedirects: true,
-            maxRedirects: 5,
-            // Follow 3xx; only 4xx/5xx surface as errors.
-            validateStatus: (status) => status != null && status < 400,
-          ),
-        ) {
+    : client = Dio(
+        BaseOptions(
+          headers: {'User-Agent': userAgent},
+          listFormat: ListFormat.multiCompatible,
+          connectTimeout: const Duration(seconds: 20),
+          receiveTimeout: const Duration(seconds: 30),
+          followRedirects: true,
+          maxRedirects: 5,
+          // Follow 3xx; only 4xx/5xx surface as errors.
+          validateStatus: (status) => status != null && status < 400,
+        ),
+      ) {
     useNativeAdapter(client);
     final getIt = GetIt.instance;
     if (getIt.isRegistered<WebCookieStore>()) {

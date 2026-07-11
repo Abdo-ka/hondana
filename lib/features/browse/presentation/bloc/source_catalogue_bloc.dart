@@ -2,18 +2,24 @@ import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:mihonx/core/database/app_database.dart';
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/core/error/app_exception.dart';
-import 'package:mihonx/core/state/bloc_status.dart';
-import 'package:mihonx/features/browse/domain/source/model/mangas_page.dart';
-import 'package:mihonx/features/browse/domain/source/model/s_manga.dart';
-import 'package:mihonx/features/browse/domain/source/source.dart';
-import 'package:mihonx/features/browse/domain/source/source_manager.dart';
-import 'package:mihonx/features/browse/domain/source_preferences.dart';
-import 'package:mihonx/features/browse/presentation/bloc/source_catalogue_event.dart';
-import 'package:mihonx/features/browse/presentation/bloc/source_catalogue_state.dart';
+import 'package:hondana/core/database/app_database.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/core/error/app_exception.dart';
+import 'package:hondana/core/state/bloc_status.dart';
+import 'package:hondana/features/browse/domain/source/model/mangas_page.dart';
+import 'package:hondana/features/browse/domain/source/model/s_manga.dart';
+import 'package:hondana/features/browse/domain/source/source.dart';
+import 'package:hondana/features/browse/domain/source/source_manager.dart';
+import 'package:hondana/features/browse/domain/source_preferences.dart';
+import 'package:hondana/features/browse/presentation/bloc/source_catalogue_event.dart';
+import 'package:hondana/features/browse/presentation/bloc/source_catalogue_state.dart';
 
+/// Drives one source's browse grid: paginated popular / latest / search
+/// listings with hide-in-library filtering.
+///
+/// Concurrency: loads and searches use `restartable()` so a new request cancels
+/// the in-flight one; load-more uses `droppable()` so rapid scroll events don't
+/// stack duplicate page fetches.
 @injectable
 class SourceCatalogueBloc
     extends Bloc<SourceCatalogueEvent, SourceCatalogueState> {
@@ -32,8 +38,7 @@ class SourceCatalogueBloc
   /// "Hide entries already in library" is on, reused across load-more pages.
   Set<String> _libraryUrls = const {};
 
-  CatalogueSource? get _source =>
-      _sources.getCatalogueSource(sourceId);
+  CatalogueSource? get _source => _sources.getCatalogueSource(sourceId);
 
   Future<void> _onLoad(
     CatalogueStarted event,
@@ -54,12 +59,7 @@ class SourceCatalogueBloc
     try {
       _libraryUrls = await _favoriteUrls();
       var page = 1;
-      var result = await _fetch(
-        source,
-        state.mode,
-        state.query,
-        page,
-      );
+      var result = await _fetch(source, state.mode, state.query, page);
       var mangas = _visible(result.mangas);
       // A fully-favorited first page would leave the grid blank with nothing
       // to scroll (load-more is scroll-driven) — keep paging, bounded, until
@@ -105,9 +105,7 @@ class SourceCatalogueBloc
     CatalogueSearched event,
     Emitter<SourceCatalogueState> emit,
   ) async {
-    emit(
-      state.copyWith(mode: CatalogueMode.search, query: event.query),
-    );
+    emit(state.copyWith(mode: CatalogueMode.search, query: event.query));
     await _onLoad(const CatalogueStarted(), emit);
   }
 
@@ -121,12 +119,7 @@ class SourceCatalogueBloc
     emit(state.copyWith(loadMoreStatus: const BlocStatus.loading()));
     try {
       final next = state.page + 1;
-      final result = await _fetch(
-        source,
-        state.mode,
-        state.query,
-        next,
-      );
+      final result = await _fetch(source, state.mode, state.query, next);
       emit(
         state.copyWith(
           manga: [...state.manga, ..._visible(result.mangas)],
@@ -138,9 +131,7 @@ class SourceCatalogueBloc
     } catch (e, st) {
       emit(
         state.copyWith(
-          loadMoreStatus: BlocStatus.failure(
-            AppException.from(e, st),
-          ),
+          loadMoreStatus: BlocStatus.failure(AppException.from(e, st)),
         ),
       );
     }
@@ -156,12 +147,9 @@ class SourceCatalogueBloc
   Future<Set<String>> _favoriteUrls() async {
     if (!getIt<SourcePreferences>().hideInLibrary) return const {};
     final db = getIt<AppDatabase>();
-    final rows =
-        await (db.select(db.mangas)..where(
-              (m) =>
-                  m.favorite.equals(true) & m.source.equals(sourceId),
-            ))
-            .get();
+    final rows = await (db.select(
+      db.mangas,
+    )..where((m) => m.favorite.equals(true) & m.source.equals(sourceId))).get();
     return rows.map((r) => r.url).toSet();
   }
 

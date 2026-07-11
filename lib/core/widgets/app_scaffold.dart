@@ -17,7 +17,10 @@ class AppScaffold extends StatelessWidget {
     this.extendBodyBehindAppBar = false,
   });
 
+  /// Top app bar, typically an [AppAppBar].
   final PreferredSizeWidget? appBar;
+
+  /// Primary content of the screen.
   final Widget? body;
   final Widget? floatingActionButton;
   final FloatingActionButtonLocation? floatingActionButtonLocation;

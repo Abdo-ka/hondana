@@ -2,10 +2,10 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:mihonx/core/routing/app_router.gr.dart';
-import 'package:mihonx/core/widgets/app_text.dart';
-import 'package:mihonx/features/browse/domain/source/model/s_manga.dart';
-import 'package:mihonx/features/library/presentation/widgets/manga_cover.dart';
+import 'package:hondana/core/routing/app_router.gr.dart';
+import 'package:hondana/core/widgets/app_text.dart';
+import 'package:hondana/features/browse/domain/source/model/s_manga.dart';
+import 'package:hondana/features/library/presentation/widgets/manga_cover.dart';
 
 /// Paginating cover grid for source results. Reused by catalogue + search.
 class SourceMangaGrid extends StatelessWidget {
@@ -26,8 +26,7 @@ class SourceMangaGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return NotificationListener<ScrollNotification>(
       onNotification: (n) {
-        if (hasNext &&
-            n.metrics.pixels >= n.metrics.maxScrollExtent - 600) {
+        if (hasNext && n.metrics.pixels >= n.metrics.maxScrollExtent - 600) {
           onLoadMore();
         }
         return false;
@@ -48,6 +47,7 @@ class SourceMangaGrid extends StatelessWidget {
   }
 }
 
+/// A single grid cell: cover with a bottom gradient overlaying the title.
 class _SourceMangaCell extends StatelessWidget {
   const _SourceMangaCell({required this.manga, required this.sourceId});
 

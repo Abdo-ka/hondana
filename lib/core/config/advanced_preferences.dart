@@ -2,8 +2,12 @@ import 'package:injectable/injectable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Advanced settings (Mihon SettingsAdvancedScreen parity where portable).
+///
+/// Thin typed wrapper over [SharedPreferences]; each toggle reads/writes a
+/// namespaced `advanced.*` key with the same defaults Mihon uses.
 @lazySingleton
 class AdvancedPreferences {
+  /// Wraps the shared [SharedPreferences] instance provided by DI.
   AdvancedPreferences(this._prefs);
 
   final SharedPreferences _prefs;
@@ -15,6 +19,8 @@ class AdvancedPreferences {
   /// Custom default User-Agent for source HTTP requests; null = built-in
   /// default. Takes effect on app restart (sources cache their headers).
   String? get userAgent => _prefs.getString(_kUserAgent);
+
+  /// Persists a trimmed User-Agent; a null/blank value clears the override.
   Future<void> setUserAgent(String? v) => (v == null || v.trim().isEmpty)
       ? _prefs.remove(_kUserAgent)
       : _prefs.setString(_kUserAgent, v.trim());

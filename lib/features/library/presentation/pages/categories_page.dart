@@ -3,11 +3,12 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:mihonx/core/core.dart';
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/features/library/domain/category.dart';
-import 'package:mihonx/features/library/presentation/bloc/categories_bloc.dart';
+import 'package:hondana/core/core.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/features/library/domain/category.dart';
+import 'package:hondana/features/library/presentation/bloc/categories_bloc.dart';
 
+/// Category management screen — create, rename, and delete user categories.
 @RoutePage()
 class CategoriesPage extends StatelessWidget {
   const CategoriesPage({super.key});
@@ -32,12 +33,14 @@ class _CategoriesView extends StatelessWidget {
     return AppScaffold(
       appBar: const AppAppBar(title: 'categories.title'),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _CategoryNameDialog.show(context, title: 'categories.add')
-            .then((name) {
-          if (name != null && name.isNotEmpty && context.mounted) {
-            context.read<CategoriesBloc>().add(CategoryCreated(name));
-          }
-        }),
+        onPressed: () =>
+            _CategoryNameDialog.show(context, title: 'categories.add').then((
+              name,
+            ) {
+              if (name != null && name.isNotEmpty && context.mounted) {
+                context.read<CategoriesBloc>().add(CategoryCreated(name));
+              }
+            }),
         child: const Icon(Icons.add),
       ),
       body: StatusBuilder<CategoriesBloc, CategoriesState>(
@@ -80,23 +83,24 @@ class _CategoryTile extends StatelessWidget {
         children: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
-            onPressed: () => _CategoryNameDialog.show(
-              context,
-              title: 'categories.rename',
-              initial: category.name,
-            ).then((name) {
-              if (name != null && name.isNotEmpty && context.mounted) {
-                context
-                    .read<CategoriesBloc>()
-                    .add(CategoryRenamed(category.id, name));
-              }
-            }),
+            onPressed: () =>
+                _CategoryNameDialog.show(
+                  context,
+                  title: 'categories.rename',
+                  initial: category.name,
+                ).then((name) {
+                  if (name != null && name.isNotEmpty && context.mounted) {
+                    context.read<CategoriesBloc>().add(
+                      CategoryRenamed(category.id, name),
+                    );
+                  }
+                }),
           ),
           IconButton(
             icon: const Icon(Icons.delete_outline),
-            onPressed: () => context
-                .read<CategoriesBloc>()
-                .add(CategoryDeleted(category.id)),
+            onPressed: () => context.read<CategoriesBloc>().add(
+              CategoryDeleted(category.id),
+            ),
           ),
         ],
       ),
@@ -104,12 +108,16 @@ class _CategoryTile extends StatelessWidget {
   }
 }
 
+/// Text-entry dialog for creating or renaming a category; pops the trimmed name.
 class _CategoryNameDialog extends StatefulWidget {
   const _CategoryNameDialog({required this.title, this.initial});
 
   final String title;
+
+  /// Pre-fills the field (rename); null for create.
   final String? initial;
 
+  /// Opens the dialog and resolves to the entered name, or null if cancelled.
   static Future<String?> show(
     BuildContext context, {
     required String title,
@@ -126,8 +134,9 @@ class _CategoryNameDialog extends StatefulWidget {
 }
 
 class _CategoryNameDialogState extends State<_CategoryNameDialog> {
-  late final TextEditingController _controller =
-      TextEditingController(text: widget.initial);
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initial,
+  );
 
   @override
   void dispose() {

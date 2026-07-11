@@ -4,18 +4,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:mihonx/core/core.dart';
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/core/routing/app_router.gr.dart';
-import 'package:mihonx/features/browse/data/source/http_source_base.dart';
-import 'package:mihonx/features/browse/domain/source/source.dart';
-import 'package:mihonx/features/browse/domain/source/source_manager.dart';
-import 'package:mihonx/features/browse/presentation/bloc/source_catalogue_bloc.dart';
-import 'package:mihonx/features/browse/presentation/bloc/source_catalogue_event.dart';
-import 'package:mihonx/features/browse/presentation/bloc/source_catalogue_state.dart';
-import 'package:mihonx/features/browse/presentation/widgets/source_manga_grid.dart';
-import 'package:mihonx/features/browse/presentation/widgets/source_url_dialog.dart';
+import 'package:hondana/core/core.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/core/routing/app_router.gr.dart';
+import 'package:hondana/features/browse/data/source/http_source_base.dart';
+import 'package:hondana/features/browse/domain/source/source.dart';
+import 'package:hondana/features/browse/domain/source/source_manager.dart';
+import 'package:hondana/features/browse/presentation/bloc/source_catalogue_bloc.dart';
+import 'package:hondana/features/browse/presentation/bloc/source_catalogue_event.dart';
+import 'package:hondana/features/browse/presentation/bloc/source_catalogue_state.dart';
+import 'package:hondana/features/browse/presentation/widgets/source_manga_grid.dart';
+import 'package:hondana/features/browse/presentation/widgets/source_url_dialog.dart';
 
+/// Browses a single source: Popular/Latest feeds + text search, infinite grid.
+/// URL-edit and WebView actions live in the app bar for HTTP sources.
 @RoutePage()
 class SourceCataloguePage extends StatelessWidget {
   const SourceCataloguePage({
@@ -36,9 +38,11 @@ class SourceCataloguePage extends StatelessWidget {
     return PageLayoutBuilder(
       mobile: (context) => BlocProvider(
         create: (_) => getIt<SourceCatalogueBloc>(param1: sourceId)
-          ..add(latest
-              ? const CatalogueModeChanged(CatalogueMode.latest)
-              : const CatalogueStarted()),
+          ..add(
+            latest
+                ? const CatalogueModeChanged(CatalogueMode.latest)
+                : const CatalogueStarted(),
+          ),
         child: _CatalogueView(sourceId: sourceId, title: sourceName ?? ''),
       ),
     );
@@ -96,6 +100,7 @@ class _CatalogueView extends StatelessWidget {
   }
 }
 
+/// Search field + Popular/Latest mode toggle above the results grid.
 class _CatalogueControls extends StatelessWidget {
   const _CatalogueControls();
 
@@ -113,9 +118,8 @@ class _CatalogueControls extends StatelessWidget {
               border: const OutlineInputBorder(),
             ),
             textInputAction: TextInputAction.search,
-            onSubmitted: (q) => context
-                .read<SourceCatalogueBloc>()
-                .add(CatalogueSearched(q)),
+            onSubmitted: (q) =>
+                context.read<SourceCatalogueBloc>().add(CatalogueSearched(q)),
           ),
           SizedBox(height: 8.h),
           BlocBuilder<SourceCatalogueBloc, SourceCatalogueState>(
@@ -147,6 +151,7 @@ class _CatalogueControls extends StatelessWidget {
   }
 }
 
+/// Results grid; rebuilds only when the manga list or paging flag changes.
 class _CatalogueGrid extends StatelessWidget {
   const _CatalogueGrid({required this.sourceId});
 

@@ -4,27 +4,31 @@ import 'package:flutter/foundation.dart' show immutable;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/core/error/app_exception.dart';
-import 'package:mihonx/core/state/bloc_status.dart';
-import 'package:mihonx/features/browse/data/extensions_index_repository.dart';
-import 'package:mihonx/features/browse/domain/extension_info.dart';
-import 'package:mihonx/features/browse/domain/source/source_manager.dart';
-import 'package:mihonx/features/browse/domain/source_preferences.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/core/error/app_exception.dart';
+import 'package:hondana/core/state/bloc_status.dart';
+import 'package:hondana/features/browse/data/extensions_index_repository.dart';
+import 'package:hondana/features/browse/domain/extension_info.dart';
+import 'package:hondana/features/browse/domain/source/source_manager.dart';
+import 'package:hondana/features/browse/domain/source_preferences.dart';
 
+/// Base event for [ExtensionsBloc].
 sealed class ExtensionsEvent {
   const ExtensionsEvent();
 }
 
+/// Triggered to (re)load the full extensions index from the repository.
 final class ExtensionsFetched extends ExtensionsEvent {
   const ExtensionsFetched();
 }
 
+/// Triggered when the user edits the extension name search box.
 final class ExtensionsSearchChanged extends ExtensionsEvent {
   const ExtensionsSearchChanged(this.query);
   final String query;
 }
 
+/// Triggered when the user picks a language filter chip.
 final class ExtensionsLangChanged extends ExtensionsEvent {
   const ExtensionsLangChanged(this.lang);
 
@@ -32,6 +36,8 @@ final class ExtensionsLangChanged extends ExtensionsEvent {
   final String? lang;
 }
 
+/// State for the extensions catalogue screen: the full index plus the active
+/// name/language filters, derived into [filtered] for display.
 @immutable
 class ExtensionsState extends Equatable {
   const ExtensionsState({
@@ -43,6 +49,8 @@ class ExtensionsState extends Equatable {
   });
 
   final BlocStatus loadStatus;
+
+  /// Full unfiltered index as fetched from the repository.
   final List<ExtensionInfo> all;
   final String query;
 
@@ -52,12 +60,17 @@ class ExtensionsState extends Equatable {
   /// Source ids that have a native Dart implementation in this app.
   final Set<int> implementedSourceIds;
 
+  /// [all] narrowed by [langFilter] and [query], then sorted.
+  ///
+  /// Mihon behavior: ported (implemented) extensions sort first, mirroring
+  /// Mihon's installed-first ordering; ties break alphabetically by name.
   List<ExtensionInfo> get filtered {
     Iterable<ExtensionInfo> list = all;
     if (langFilter != null) list = list.where((e) => e.lang == langFilter);
     if (query.isNotEmpty) {
-      list = list
-          .where((e) => e.name.toLowerCase().contains(query.toLowerCase()));
+      list = list.where(
+        (e) => e.name.toLowerCase().contains(query.toLowerCase()),
+      );
     }
     // Ported (usable) extensions first, Mihon's installed-first ordering.
     final result = list.toList()
@@ -71,6 +84,7 @@ class ExtensionsState extends Equatable {
     return result;
   }
 
+  /// True when any of the extension's sources has a native Dart implementation.
   bool isImplemented(ExtensionInfo e) =>
       e.sourceIds.any(implementedSourceIds.contains);
 
@@ -80,29 +94,39 @@ class ExtensionsState extends Equatable {
     String? query,
     Object? langFilter = _unset,
     Set<int>? implementedSourceIds,
-  }) =>
-      ExtensionsState(
-        loadStatus: loadStatus ?? this.loadStatus,
-        all: all ?? this.all,
-        query: query ?? this.query,
-        langFilter:
-            langFilter == _unset ? this.langFilter : langFilter as String?,
-        implementedSourceIds: implementedSourceIds ?? this.implementedSourceIds,
-      );
+  }) => ExtensionsState(
+    loadStatus: loadStatus ?? this.loadStatus,
+    all: all ?? this.all,
+    query: query ?? this.query,
+    langFilter: langFilter == _unset ? this.langFilter : langFilter as String?,
+    implementedSourceIds: implementedSourceIds ?? this.implementedSourceIds,
+  );
 
   static const _unset = Object();
 
   @override
-  List<Object?> get props =>
-      [loadStatus, all, query, langFilter, implementedSourceIds];
+  List<Object?> get props => [
+    loadStatus,
+    all,
+    query,
+    langFilter,
+    implementedSourceIds,
+  ];
 }
 
+/// Drives the extensions catalogue: fetches the index and applies search /
+/// language filters.
+///
+/// Fetch uses `restartable()` so a re-fetch cancels any in-flight one; filter
+/// events are synchronous state updates.
 @injectable
 class ExtensionsBloc extends Bloc<ExtensionsEvent, ExtensionsState> {
   ExtensionsBloc(this._repo, SourceManager sources)
-      : super(ExtensionsState(
+    : super(
+        ExtensionsState(
           implementedSourceIds: sources.getSources().map((s) => s.id).toSet(),
-        )) {
+        ),
+      ) {
     on<ExtensionsFetched>(_onFetch, transformer: restartable());
     on<ExtensionsSearchChanged>(
       (e, emit) => emit(state.copyWith(query: e.query)),
@@ -125,15 +149,20 @@ class ExtensionsBloc extends Bloc<ExtensionsEvent, ExtensionsState> {
       final all = await _repo.fetchAll(
         includeNsfw: getIt<SourcePreferences>().showNsfwSources,
       );
-      emit(state.copyWith(
-        loadStatus:
-            all.isEmpty ? const BlocStatus.empty() : const BlocStatus.success(),
-        all: all,
-      ));
+      emit(
+        state.copyWith(
+          loadStatus: all.isEmpty
+              ? const BlocStatus.empty()
+              : const BlocStatus.success(),
+          all: all,
+        ),
+      );
     } catch (e, st) {
-      emit(state.copyWith(
-        loadStatus: BlocStatus.failure(AppException.from(e, st)),
-      ));
+      emit(
+        state.copyWith(
+          loadStatus: BlocStatus.failure(AppException.from(e, st)),
+        ),
+      );
     }
   }
 }

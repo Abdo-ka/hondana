@@ -11,7 +11,8 @@ enum ReadingMode {
   webtoon,
   webtoonGaps;
 
-  bool get isPaged => this != ReadingMode.webtoon && this != ReadingMode.webtoonGaps;
+  bool get isPaged =>
+      this != ReadingMode.webtoon && this != ReadingMode.webtoonGaps;
   bool get isWebtoon => !isPaged;
   bool get isHorizontal =>
       this == ReadingMode.leftToRight || this == ReadingMode.rightToLeft;
@@ -22,7 +23,14 @@ enum ReadingMode {
 enum ReaderBackground { black, gray, white, automatic }
 
 /// Tap-zone layouts (Mihon navigation modes).
-enum ReaderNavLayout { defaultLayout, lShaped, kindlish, edge, rightAndLeft, disabled }
+enum ReaderNavLayout {
+  defaultLayout,
+  lShaped,
+  kindlish,
+  edge,
+  rightAndLeft,
+  disabled,
+}
 
 /// Tap-zone inversion.
 enum ReaderNavInvert { none, horizontal, vertical, both }
@@ -44,7 +52,14 @@ enum DoubleTapSpeed {
 }
 
 /// Color-filter blend modes (Mihon's six, all portable in Flutter).
-enum ReaderBlendMode { defaultBlend, multiply, screen, overlay, lighten, darken }
+enum ReaderBlendMode {
+  defaultBlend,
+  multiply,
+  screen,
+  overlay,
+  lighten,
+  darken,
+}
 
 /// All reader settings (Mihon ReaderPreferences.kt parity; defaults match).
 /// Extends [ChangeNotifier] so the open reader re-reads settings live while
@@ -160,7 +175,10 @@ class ReaderPreferences extends ChangeNotifier {
   // ── Paged mode ─────────────────────────────────────────────────────────────
 
   ReaderNavLayout get navLayoutPaged => _enum(
-      _kNavLayoutPaged, ReaderNavLayout.values, ReaderNavLayout.defaultLayout);
+    _kNavLayoutPaged,
+    ReaderNavLayout.values,
+    ReaderNavLayout.defaultLayout,
+  );
   Future<void> setNavLayoutPaged(ReaderNavLayout v) =>
       _set(_kNavLayoutPaged, v);
 
@@ -175,8 +193,11 @@ class ReaderPreferences extends ChangeNotifier {
 
   // ── Long strip (webtoon) mode ──────────────────────────────────────────────
 
-  ReaderNavLayout get navLayoutWebtoon => _enum(_kNavLayoutWebtoon,
-      ReaderNavLayout.values, ReaderNavLayout.defaultLayout);
+  ReaderNavLayout get navLayoutWebtoon => _enum(
+    _kNavLayoutWebtoon,
+    ReaderNavLayout.values,
+    ReaderNavLayout.defaultLayout,
+  );
   Future<void> setNavLayoutWebtoon(ReaderNavLayout v) =>
       _set(_kNavLayoutWebtoon, v);
 
@@ -221,7 +242,10 @@ class ReaderPreferences extends ChangeNotifier {
   Future<void> setFilterAlpha(int v) => _set(_kFilterAlpha, v.clamp(0, 255));
 
   ReaderBlendMode get filterBlend => _enum(
-      _kFilterBlend, ReaderBlendMode.values, ReaderBlendMode.defaultBlend);
+    _kFilterBlend,
+    ReaderBlendMode.values,
+    ReaderBlendMode.defaultBlend,
+  );
   Future<void> setFilterBlend(ReaderBlendMode v) => _set(_kFilterBlend, v);
 
   bool get grayscale => _prefs.getBool(_kGrayscale) ?? false;

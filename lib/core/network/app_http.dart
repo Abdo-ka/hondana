@@ -52,12 +52,14 @@ class WebCookieStore {
   final SharedPreferences _prefs;
   static const _key = 'webview.cookies';
 
+  /// Decodes the persisted host→Cookie-header map.
   Map<String, String> get _all {
     final raw = _prefs.getString(_key);
     if (raw == null) return const {};
     return Map<String, String>.from(jsonDecode(raw) as Map);
   }
 
+  /// Cookie header stored for [uri]'s host, matching parent/subdomains too.
   String? cookieHeaderFor(Uri uri) {
     final all = _all;
     final host = uri.host;
@@ -71,6 +73,7 @@ class WebCookieStore {
     return null;
   }
 
+  /// Persists [cookieHeader] for [host]; an empty header drops the entry.
   Future<void> save(String host, String cookieHeader) async {
     final all = Map<String, String>.from(_all);
     if (cookieHeader.isEmpty) {
@@ -106,9 +109,10 @@ class WebCookieInterceptor extends Interceptor {
 class AppImageCache {
   AppImageCache._();
 
+  /// Shared cache manager whose file service carries the UA + cookies.
   static final CacheManager manager = CacheManager(
     Config(
-      'mihonxImages',
+      'hondanaImages',
       fileService: HttpFileService(httpClient: _HeaderedClient()),
     ),
   );

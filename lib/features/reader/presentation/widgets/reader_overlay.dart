@@ -2,12 +2,14 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:mihonx/core/widgets/app_text.dart';
-import 'package:mihonx/features/reader/domain/reader_preferences.dart';
-import 'package:mihonx/features/reader/presentation/bloc/reader_bloc.dart';
-import 'package:mihonx/features/reader/presentation/bloc/reader_event.dart';
-import 'package:mihonx/features/reader/presentation/bloc/reader_state.dart';
+import 'package:hondana/core/widgets/app_text.dart';
+import 'package:hondana/features/reader/domain/reader_preferences.dart';
+import 'package:hondana/features/reader/presentation/bloc/reader_bloc.dart';
+import 'package:hondana/features/reader/presentation/bloc/reader_event.dart';
+import 'package:hondana/features/reader/presentation/bloc/reader_state.dart';
 
+/// Reader menu top bar: back button, chapter title, and the mode/settings
+/// button that opens the per-series reading-mode sheet.
 class ReaderTopBar extends StatelessWidget {
   const ReaderTopBar({super.key});
 
@@ -49,6 +51,8 @@ class ReaderTopBar extends StatelessWidget {
     );
   }
 
+  /// Mihon "For this series" sheet: pick a per-series reading mode, or Default
+  /// to fall back to the app-wide mode.
   void _showModeSheet(BuildContext context) {
     final bloc = context.read<ReaderBloc>();
     showModalBottomSheet<void>(
@@ -66,9 +70,9 @@ class ReaderTopBar extends StatelessWidget {
                 // reverts to the app-wide mode from Settings > Reader.
                 ListTile(
                   title: const AppText.bodyMedium('reader.mode_default'),
-                  onTap: () => context
-                      .read<ReaderBloc>()
-                      .add(const ReaderModeChanged(null)),
+                  onTap: () => context.read<ReaderBloc>().add(
+                    const ReaderModeChanged(null),
+                  ),
                 ),
                 ...ReadingMode.values.map(
                   (m) => ListTile(
@@ -92,6 +96,8 @@ class ReaderTopBar extends StatelessWidget {
   }
 }
 
+/// Reader menu bottom bar: prev/next-chapter buttons flanking the page
+/// seekbar. Direction and button semantics flip in right-to-left mode.
 class ReaderBottomBar extends StatelessWidget {
   const ReaderBottomBar({super.key});
 
@@ -123,10 +129,10 @@ class ReaderBottomBar extends StatelessWidget {
                     icon: const Icon(Icons.skip_previous, color: Colors.white),
                     onPressed: (reversed ? state.hasNext : state.hasPrev)
                         ? () => context.read<ReaderBloc>().add(
-                              reversed
-                                  ? const ReaderNextChapter()
-                                  : const ReaderPrevChapter(),
-                            )
+                            reversed
+                                ? const ReaderNextChapter()
+                                : const ReaderPrevChapter(),
+                          )
                         : null,
                   ),
                   Expanded(
@@ -136,13 +142,14 @@ class ReaderBottomBar extends StatelessWidget {
                                 ? TextDirection.rtl
                                 : TextDirection.ltr,
                             child: Slider(
-                              value: state.currentPage
-                                  .toDouble()
-                                  .clamp(0, (state.pageCount - 1).toDouble()),
+                              value: state.currentPage.toDouble().clamp(
+                                0,
+                                (state.pageCount - 1).toDouble(),
+                              ),
                               max: (state.pageCount - 1).toDouble(),
-                              onChanged: (v) => context
-                                  .read<ReaderBloc>()
-                                  .add(ReaderPageChanged(v.round())),
+                              onChanged: (v) => context.read<ReaderBloc>().add(
+                                ReaderPageChanged(v.round()),
+                              ),
                             ),
                           )
                         : const SizedBox.shrink(),
@@ -155,10 +162,10 @@ class ReaderBottomBar extends StatelessWidget {
                     icon: const Icon(Icons.skip_next, color: Colors.white),
                     onPressed: (reversed ? state.hasPrev : state.hasNext)
                         ? () => context.read<ReaderBloc>().add(
-                              reversed
-                                  ? const ReaderPrevChapter()
-                                  : const ReaderNextChapter(),
-                            )
+                            reversed
+                                ? const ReaderPrevChapter()
+                                : const ReaderNextChapter(),
+                          )
                         : null,
                   ),
                 ],

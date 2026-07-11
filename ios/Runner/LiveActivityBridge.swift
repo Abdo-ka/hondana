@@ -3,14 +3,14 @@ import Flutter
 import Foundation
 
 /// Dart-facing bridge for the downloads Live Activity. Channel
-/// "mihonx/live_activity": `update` (starts the activity if needed) and
+/// "hondana/live_activity": `update` (starts the activity if needed) and
 /// `end`. Silently no-ops below iOS 16.2 (ActivityContent API floor) or when
 /// the user disabled
 /// Live Activities.
 enum LiveActivityBridge {
   static func register(messenger: FlutterBinaryMessenger) {
     let channel = FlutterMethodChannel(
-      name: "mihonx/live_activity",
+      name: "hondana/live_activity",
       binaryMessenger: messenger
     )
     channel.setMethodCallHandler { call, result in

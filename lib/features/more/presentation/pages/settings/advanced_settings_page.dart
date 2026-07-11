@@ -1,17 +1,18 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:mihonx/core/config/advanced_preferences.dart';
-import 'package:mihonx/core/core.dart';
-import 'package:mihonx/core/database/app_database.dart';
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/core/network/app_http.dart';
-import 'package:mihonx/features/browse/data/source/http_source_base.dart';
-import 'package:mihonx/features/browse/domain/source/source_manager.dart';
-import 'package:mihonx/features/downloads/domain/download_service.dart';
-import 'package:mihonx/features/more/data/maintenance_service.dart';
-import 'package:mihonx/features/more/presentation/widgets/settings_widgets.dart';
+import 'package:hondana/core/config/advanced_preferences.dart';
+import 'package:hondana/core/core.dart';
+import 'package:hondana/core/database/app_database.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/core/network/app_http.dart';
+import 'package:hondana/features/browse/data/source/http_source_base.dart';
+import 'package:hondana/features/browse/domain/source/source_manager.dart';
+import 'package:hondana/features/downloads/domain/download_service.dart';
+import 'package:hondana/features/more/data/maintenance_service.dart';
+import 'package:hondana/features/more/presentation/widgets/settings_widgets.dart';
 
 /// Settings > Advanced (Mihon SettingsAdvancedScreen parity where portable):
 /// networking overrides, database/cookie/WebView housekeeping, library
@@ -42,10 +43,12 @@ class _AdvancedSettingsViewState extends State<_AdvancedSettingsView> {
     advanced: getIt<AdvancedPreferences>(),
   );
 
-  late final ValueNotifier<String?> _userAgent =
-      ValueNotifier(_advanced.userAgent);
-  late final ValueNotifier<bool> _updateTitles =
-      ValueNotifier(_advanced.updateTitlesFromSource);
+  late final ValueNotifier<String?> _userAgent = ValueNotifier(
+    _advanced.userAgent,
+  );
+  late final ValueNotifier<bool> _updateTitles = ValueNotifier(
+    _advanced.updateTitlesFromSource,
+  );
   // Long-running maintenance (cover refresh) must not be double-fired.
   final ValueNotifier<bool> _busy = ValueNotifier(false);
 
@@ -57,13 +60,19 @@ class _AdvancedSettingsViewState extends State<_AdvancedSettingsView> {
     super.dispose();
   }
 
+  /// Shows a transient [SnackBar]; [message] is already translated by callers.
   void _toast(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
+  /// Prompts for a custom User-Agent. Empty result resets to the built-in
+  /// default ([HttpSourceBase.userAgent]); a null result (Cancel) is a no-op.
   Future<void> _editUserAgent() async {
-    final controller =
-        TextEditingController(text: _userAgent.value ?? HttpSourceBase.userAgent);
+    final controller = TextEditingController(
+      text: _userAgent.value ?? HttpSourceBase.userAgent,
+    );
     final result = await showDialog<String?>(
       context: context,
       builder: (context) => AlertDialog(
@@ -71,8 +80,9 @@ class _AdvancedSettingsViewState extends State<_AdvancedSettingsView> {
         content: TextField(
           controller: controller,
           maxLines: 3,
-          decoration:
-              InputDecoration(helperText: 'settings.restart_required'.tr()),
+          decoration: InputDecoration(
+            helperText: 'settings.restart_required'.tr(),
+          ),
         ),
         actions: [
           // Reset clears the override back to the built-in default.
@@ -98,6 +108,7 @@ class _AdvancedSettingsViewState extends State<_AdvancedSettingsView> {
     _userAgent.value = _advanced.userAgent;
   }
 
+  /// Confirms then purges non-library manga rows, reporting the deleted count.
   Future<void> _confirmClearDatabase() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -122,6 +133,7 @@ class _AdvancedSettingsViewState extends State<_AdvancedSettingsView> {
     _toast('settings.entries_deleted'.tr(args: ['$deleted']));
   }
 
+  /// Re-fetches all library covers; guarded by [_busy] so it can't double-fire.
   Future<void> _refreshCovers() async {
     if (_busy.value) return;
     _busy.value = true;
@@ -186,10 +198,12 @@ class _AdvancedSettingsViewState extends State<_AdvancedSettingsView> {
               enabled: !busy,
               title: const AppText.bodyLarge('settings.refresh_covers'),
               trailing: busy
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator.adaptive(strokeWidth: 2),
+                  ? SizedBox(
+                      width: 20.w,
+                      height: 20.h,
+                      child: const CircularProgressIndicator.adaptive(
+                        strokeWidth: 2,
+                      ),
                     )
                   : null,
               onTap: _refreshCovers,

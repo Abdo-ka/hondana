@@ -2,11 +2,13 @@ import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import 'package:mihonx/core/config/app_settings.dart';
-import 'package:mihonx/core/core.dart';
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/features/more/presentation/widgets/settings_widgets.dart';
+import 'package:hondana/core/config/app_settings.dart';
+import 'package:hondana/core/core.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/features/more/presentation/widgets/settings_widgets.dart';
 
+/// Settings > Appearance (Mihon SettingsAppearanceScreen) — theme mode, pure
+/// black, and display options (locale, date format, relative timestamps).
 @RoutePage()
 class AppearanceSettingsPage extends StatelessWidget {
   const AppearanceSettingsPage({super.key});
@@ -54,14 +56,15 @@ class _ThemeModeTile extends StatelessWidget {
           'settings.theme_${mode.name}',
           color: context.colorScheme.onSurfaceVariant,
         ),
-        onTap: () => OptionPickerSheet.show<ThemeMode>(
-          context,
-          values: ThemeMode.values,
-          selected: mode,
-          labelKey: (m) => 'settings.theme_${m.name}',
-        ).then((picked) {
-          if (picked != null) settings.setThemeMode(picked);
-        }),
+        onTap: () =>
+            OptionPickerSheet.show<ThemeMode>(
+              context,
+              values: ThemeMode.values,
+              selected: mode,
+              labelKey: (m) => 'settings.theme_${m.name}',
+            ).then((picked) {
+              if (picked != null) settings.setThemeMode(picked);
+            }),
       ),
     );
   }
@@ -100,14 +103,15 @@ class _AppLanguageTile extends StatelessWidget {
         _localeDisplayName(context.locale),
         color: context.colorScheme.onSurfaceVariant,
       ),
-      onTap: () => OptionPickerSheet.show<Locale>(
-        context,
-        values: context.supportedLocales,
-        selected: context.locale,
-        labelKey: _localeDisplayName,
-      ).then((picked) {
-        if (picked != null && context.mounted) context.setLocale(picked);
-      }),
+      onTap: () =>
+          OptionPickerSheet.show<Locale>(
+            context,
+            values: context.supportedLocales,
+            selected: context.locale,
+            labelKey: _localeDisplayName,
+          ).then((picked) {
+            if (picked != null && context.mounted) context.setLocale(picked);
+          }),
     );
   }
 }
@@ -127,14 +131,15 @@ class _DateFormatTile extends StatelessWidget {
           _dateFormatLabel(format),
           color: context.colorScheme.onSurfaceVariant,
         ),
-        onTap: () => OptionPickerSheet.show<String>(
-          context,
-          values: AppSettings.dateFormats,
-          selected: format,
-          labelKey: _dateFormatLabel,
-        ).then((picked) {
-          if (picked != null) settings.setDateFormat(picked);
-        }),
+        onTap: () =>
+            OptionPickerSheet.show<String>(
+              context,
+              values: AppSettings.dateFormats,
+              selected: format,
+              labelKey: _dateFormatLabel,
+            ).then((picked) {
+              if (picked != null) settings.setDateFormat(picked);
+            }),
       ),
     );
   }
@@ -157,8 +162,9 @@ class _RelativeTimestampsTile extends StatelessWidget {
           onChanged: settings.setRelativeTimestamps,
           title: const AppText.bodyLarge('settings.relative_timestamps'),
           subtitle: AppText.bodySmall(
-            'settings.relative_timestamps_summary'
-                .tr(namedArgs: {'date': _todayIn(format)}),
+            'settings.relative_timestamps_summary'.tr(
+              namedArgs: {'date': _todayIn(format)},
+            ),
             color: context.colorScheme.onSurfaceVariant,
           ),
         ),

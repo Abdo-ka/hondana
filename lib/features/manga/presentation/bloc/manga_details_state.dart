@@ -2,11 +2,13 @@ import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 
-import 'package:mihonx/core/database/app_database.dart';
-import 'package:mihonx/core/state/bloc_status.dart';
-import 'package:mihonx/features/browse/domain/source/model/s_manga.dart';
-import 'package:mihonx/features/library/domain/manga.dart';
+import 'package:hondana/core/database/app_database.dart';
+import 'package:hondana/core/state/bloc_status.dart';
+import 'package:hondana/features/browse/domain/source/model/s_manga.dart';
+import 'package:hondana/features/library/domain/manga.dart';
 
+/// Immutable state for [MangaDetailsBloc]: source seed, persisted manga row,
+/// chapter list, per-op statuses, and the display sort direction.
 @immutable
 class MangaDetailsState extends Equatable {
   const MangaDetailsState({
@@ -21,17 +23,32 @@ class MangaDetailsState extends Equatable {
 
   /// Initial source data — shows the header instantly before the DB resolves.
   final SManga source;
+
+  /// Status of the source details fetch.
   final BlocStatus detailsStatus;
+
+  /// Status of the chapter list fetch.
   final BlocStatus chaptersStatus;
+
+  /// Local row id, set once [resolveManga] completes.
   final int? mangaId;
+
+  /// The persisted manga row; null until the DB watch emits.
   final Manga? manga;
 
   /// Canonical order as streamed from the repository: newest first.
   final List<ChapterData> chapters;
+
+  /// Whether the list is shown newest-first (the default).
   final bool chaptersDescending;
 
+  /// Whether the manga is in the library.
   bool get isFavorite => manga?.favorite ?? false;
+
+  /// Persisted title, falling back to the source seed.
   String get title => manga?.title ?? source.title;
+
+  /// Persisted cover url, falling back to the source seed.
   String? get thumbnailUrl => manga?.thumbnailUrl ?? source.thumbnailUrl;
 
   /// Display order — derived so DB re-emissions can't clobber the sort toggle.
@@ -73,12 +90,12 @@ class MangaDetailsState extends Equatable {
 
   @override
   List<Object?> get props => [
-        source,
-        detailsStatus,
-        chaptersStatus,
-        mangaId,
-        manga,
-        chapters,
-        chaptersDescending,
-      ];
+    source,
+    detailsStatus,
+    chaptersStatus,
+    mangaId,
+    manga,
+    chapters,
+    chaptersDescending,
+  ];
 }

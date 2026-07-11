@@ -1,4 +1,4 @@
-import 'package:mihonx/features/library/domain/manga.dart';
+import 'package:hondana/features/library/domain/manga.dart';
 
 /// A library grid entry: the manga plus the aggregate counts shown as badges.
 class LibraryManga {
@@ -9,6 +9,10 @@ class LibraryManga {
   });
 
   final Manga manga;
+
+  /// Unread chapters — drives the unread badge and the unread sort/filter.
   final int unreadCount;
+
+  /// Downloaded chapters — drives the download badge and the downloaded filter.
   final int downloadCount;
 }

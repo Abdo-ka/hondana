@@ -4,20 +4,25 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// App-level user settings, exposed as [ValueNotifier]s so the UI rebuilds on
 /// change (ValueNotifier per the no-setState rule).
+///
+/// Each notifier is seeded from [SharedPreferences] at construction; setters
+/// update the notifier first (immediate UI reaction) then persist.
 @lazySingleton
 class AppSettings {
+  /// Seeds every notifier from persisted values, falling back to Mihon defaults.
   AppSettings(this._prefs)
-      : themeModeNotifier = ValueNotifier(
-          ThemeMode.values[_prefs.getInt(_kThemeMode) ?? 0],
-        ),
-        downloadedOnlyNotifier =
-            ValueNotifier(_prefs.getBool(_kDownloadedOnly) ?? false),
-        incognitoNotifier = ValueNotifier(_prefs.getBool(_kIncognito) ?? false),
-        pureBlackNotifier = ValueNotifier(_prefs.getBool(_kPureBlack) ?? false),
-        relativeTimestampsNotifier =
-            ValueNotifier(_prefs.getBool(_kRelativeTimestamps) ?? true),
-        dateFormatNotifier =
-            ValueNotifier(_prefs.getString(_kDateFormat) ?? '');
+    : themeModeNotifier = ValueNotifier(
+        ThemeMode.values[_prefs.getInt(_kThemeMode) ?? 0],
+      ),
+      downloadedOnlyNotifier = ValueNotifier(
+        _prefs.getBool(_kDownloadedOnly) ?? false,
+      ),
+      incognitoNotifier = ValueNotifier(_prefs.getBool(_kIncognito) ?? false),
+      pureBlackNotifier = ValueNotifier(_prefs.getBool(_kPureBlack) ?? false),
+      relativeTimestampsNotifier = ValueNotifier(
+        _prefs.getBool(_kRelativeTimestamps) ?? true,
+      ),
+      dateFormatNotifier = ValueNotifier(_prefs.getString(_kDateFormat) ?? '');
 
   final SharedPreferences _prefs;
   static const _kThemeMode = 'app.themeMode';
@@ -37,6 +42,7 @@ class AppSettings {
     'MMM dd, yyyy',
   ];
 
+  /// Light/dark/system theme selection.
   final ValueNotifier<ThemeMode> themeModeNotifier;
 
   /// Library shows only downloaded entries (Mihon's global toggle).

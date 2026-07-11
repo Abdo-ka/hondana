@@ -1,10 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/core/widgets/app_text.dart';
-import 'package:mihonx/features/browse/data/source/http_source_base.dart';
-import 'package:mihonx/features/browse/domain/source_preferences.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/core/widgets/app_text.dart';
+import 'package:hondana/features/browse/data/source/http_source_base.dart';
+import 'package:hondana/features/browse/domain/source_preferences.dart';
 
 /// Edits a source's base URL — these sites hop domains frequently, so users
 /// can repoint a source without waiting for an app update. Resolves true when
@@ -16,6 +16,7 @@ Future<bool?> showSourceUrlDialog(BuildContext context, HttpSourceBase source) {
   );
 }
 
+/// The URL-edit dialog itself: a validated text field plus Save/Reset actions.
 class _SourceUrlDialog extends StatefulWidget {
   const _SourceUrlDialog({required this.source});
 
@@ -26,8 +27,9 @@ class _SourceUrlDialog extends StatefulWidget {
 }
 
 class _SourceUrlDialogState extends State<_SourceUrlDialog> {
-  late final TextEditingController _controller =
-      TextEditingController(text: widget.source.baseUrl);
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.source.baseUrl,
+  );
   final ValueNotifier<String?> _error = ValueNotifier(null);
 
   @override
@@ -37,6 +39,8 @@ class _SourceUrlDialogState extends State<_SourceUrlDialog> {
     super.dispose();
   }
 
+  /// Validates the entered URL and stores it as an override (or clears it when
+  /// it matches the source's default), then pops with `true`.
   void _save() {
     final text = _controller.text.trim().replaceAll(RegExp(r'/+$'), '');
     final uri = Uri.tryParse(text);
@@ -53,6 +57,7 @@ class _SourceUrlDialogState extends State<_SourceUrlDialog> {
     Navigator.of(context).pop(true);
   }
 
+  /// Clears any URL override, restoring the source's built-in default.
   void _reset() {
     getIt<SourcePreferences>().setUrlOverride(widget.source.id, null);
     Navigator.of(context).pop(true);

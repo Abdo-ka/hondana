@@ -3,7 +3,11 @@
 /// them.
 sealed class Filter<T> {
   Filter(this.name, this.state);
+
+  /// Label shown in the filter sheet.
   final String name;
+
+  /// Mutable current value; the type varies per filter kind ([T]).
   T state;
 }
 
@@ -26,15 +30,24 @@ class CheckBoxFilter extends Filter<bool> {
 /// Three-way: 0 = ignore, 1 = include, 2 = exclude.
 class TriStateFilter extends Filter<int> {
   TriStateFilter(super.name, [super.state = 0]);
+
+  /// [state] value: filter has no effect.
   static const int ignore = 0;
+
+  /// [state] value: only matching entries pass.
   static const int include = 1;
+
+  /// [state] value: matching entries are removed.
   static const int exclude = 2;
 }
 
 /// Single choice from [values]; [state] is the selected index.
 class SelectFilter extends Filter<int> {
   SelectFilter(super.name, this.values, [super.state = 0]);
+
+  /// Option labels; the chosen one is `values[state]`.
   final List<String> values;
 }
 
+/// A list of heterogeneous filters, in display order.
 typedef FilterList = List<Filter<dynamic>>;

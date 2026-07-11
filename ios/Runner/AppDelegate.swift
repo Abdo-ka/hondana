@@ -20,9 +20,9 @@ import UIKit
     }
   }
 
-  /// Reader screen controls: keep-awake + brightness ("mihonx/native").
+  /// Reader screen controls: keep-awake + brightness ("hondana/native").
   private func registerNativeScreenChannel(messenger: FlutterBinaryMessenger) {
-    let channel = FlutterMethodChannel(name: "mihonx/native", binaryMessenger: messenger)
+    let channel = FlutterMethodChannel(name: "hondana/native", binaryMessenger: messenger)
     channel.setMethodCallHandler { call, result in
       let args = call.arguments as? [String: Any] ?? [:]
       switch call.method {

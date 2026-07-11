@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-import 'package:mihonx/features/browse/domain/source/model/manga_page.dart';
+import 'package:hondana/features/browse/domain/source/model/manga_page.dart';
 
 /// One entry in the reader's continuous item list: chapters flow into each
 /// other separated by transition cards (Mihon's viewer model), so webtoon
@@ -9,6 +9,8 @@ sealed class ReaderItem extends Equatable {
   const ReaderItem();
 }
 
+/// A single manga page in the continuous list, carrying enough chapter
+/// context to update the indicator and lastPageRead without a lookup.
 final class ReaderPageItem extends ReaderItem {
   const ReaderPageItem({
     required this.chapterId,

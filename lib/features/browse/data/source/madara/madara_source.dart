@@ -2,13 +2,13 @@ import 'package:dio/dio.dart';
 import 'package:html/dom.dart';
 import 'package:html/parser.dart' as html_parser;
 
-import 'package:mihonx/features/browse/data/source/http_source_base.dart';
-import 'package:mihonx/features/browse/domain/source/model/filter.dart';
-import 'package:mihonx/features/browse/domain/source/model/manga_page.dart';
-import 'package:mihonx/features/browse/domain/source/model/manga_status.dart';
-import 'package:mihonx/features/browse/domain/source/model/mangas_page.dart';
-import 'package:mihonx/features/browse/domain/source/model/s_chapter.dart';
-import 'package:mihonx/features/browse/domain/source/model/s_manga.dart';
+import 'package:hondana/features/browse/data/source/http_source_base.dart';
+import 'package:hondana/features/browse/domain/source/model/filter.dart';
+import 'package:hondana/features/browse/domain/source/model/manga_page.dart';
+import 'package:hondana/features/browse/domain/source/model/manga_status.dart';
+import 'package:hondana/features/browse/domain/source/model/mangas_page.dart';
+import 'package:hondana/features/browse/domain/source/model/s_chapter.dart';
+import 'package:hondana/features/browse/domain/source/model/s_manga.dart';
 
 /// Dart port of keiyoushi's `Madara` multisrc theme — the WordPress "Madara"
 /// manga theme that powers a large share of English + Arabic scanlation sites.
@@ -47,13 +47,18 @@ abstract class MadaraSource extends HttpSourceBase {
     String? search,
   }) async {
     if (useLoadMoreRequest) {
-      return _loadMore(page, orderby: orderby, metaKey: metaKey,
-          search: search);
+      return _loadMore(
+        page,
+        orderby: orderby,
+        metaKey: metaKey,
+        search: search,
+      );
     }
     final pagePath = page > 1 ? 'page/$page/' : '';
     final res = search == null
         ? await client.get<String>(
-            '$baseUrl/$mangaSubString/$pagePath?m_orderby=$orderby')
+            '$baseUrl/$mangaSubString/$pagePath?m_orderby=$orderby',
+          )
         : await client.get<String>(
             '$baseUrl/$pagePath',
             queryParameters: {'s': search, 'post_type': 'wp-manga'},
@@ -111,11 +116,13 @@ abstract class MadaraSource extends HttpSourceBase {
     final doc = html_parser.parse(htmlBody);
     final mangas = doc
         .querySelectorAll(
-            'div.page-item-detail, div.c-tabs-item__content, div.manga')
+          'div.page-item-detail, div.c-tabs-item__content, div.manga',
+        )
         .map(_parseListItem)
         .nonNulls
         .toList();
-    final hasNext = doc.querySelector(
+    final hasNext =
+        doc.querySelector(
           'div.nav-previous a, a.nextpostslink, .nav-links a.next, '
           'link[rel=next], div.wp-pagenavi a.nextpostslink',
         ) !=
@@ -124,8 +131,7 @@ abstract class MadaraSource extends HttpSourceBase {
   }
 
   /// Parses a Madara listing HTML fragment into manga. Exposed for testing.
-  List<SManga> parsePopular(String htmlBody) =>
-      _parseListing(htmlBody).mangas;
+  List<SManga> parsePopular(String htmlBody) => _parseListing(htmlBody).mangas;
 
   SManga? _parseListItem(Element el) {
     final a = el.querySelector('.post-title a') ?? el.querySelector('a');
@@ -154,13 +160,16 @@ abstract class MadaraSource extends HttpSourceBase {
     final author = doc.querySelector('.author-content a')?.text.trim();
     final artist = doc.querySelector('.artist-content a')?.text.trim();
     final description =
-        doc.querySelector('.description-summary .summary__content')?.text.trim() ??
-            doc.querySelector('div.summary__content')?.text.trim();
+        doc
+            .querySelector('.description-summary .summary__content')
+            ?.text
+            .trim() ??
+        doc.querySelector('div.summary__content')?.text.trim();
     final statusText = doc
         .querySelectorAll('.post-content_item')
         .where((e) {
-          final heading =
-              (e.querySelector('.summary-heading')?.text ?? '').toLowerCase();
+          final heading = (e.querySelector('.summary-heading')?.text ?? '')
+              .toLowerCase();
           return heading.contains('status') || heading.contains('الحالة');
         })
         .map((e) => e.querySelector('.summary-content')?.text.trim() ?? '')
@@ -225,18 +234,22 @@ abstract class MadaraSource extends HttpSourceBase {
   /// Parses a chapter list HTML fragment. Exposed for testing.
   List<SChapter> parseChapters(String htmlBody) {
     final doc = html_parser.parse(htmlBody);
-    return doc.querySelectorAll('li.wp-manga-chapter').map((li) {
-      final a = li.querySelector('a');
-      final href = a?.attributes['href'] ?? '';
-      final name = a?.text.trim() ?? '';
-      final date = li.querySelector('.chapter-release-date')?.text.trim();
-      return SChapter(
-        url: _relative(href),
-        name: name,
-        dateUpload: parseChapterDate(date),
-        chapterNumber: _chapterNumber(name),
-      );
-    }).where((c) => c.url.isNotEmpty).toList();
+    return doc
+        .querySelectorAll('li.wp-manga-chapter')
+        .map((li) {
+          final a = li.querySelector('a');
+          final href = a?.attributes['href'] ?? '';
+          final name = a?.text.trim() ?? '';
+          final date = li.querySelector('.chapter-release-date')?.text.trim();
+          return SChapter(
+            url: _relative(href),
+            name: name,
+            dateUpload: parseChapterDate(date),
+            chapterNumber: _chapterNumber(name),
+          );
+        })
+        .where((c) => c.url.isNotEmpty)
+        .toList();
   }
 
   @override
@@ -271,12 +284,33 @@ abstract class MadaraSource extends HttpSourceBase {
   }
 
   static const _months = {
-    'january': 1, 'february': 2, 'march': 3, 'april': 4, 'may': 5,
-    'june': 6, 'july': 7, 'august': 8, 'september': 9, 'october': 10,
-    'november': 11, 'december': 12,
-    'يناير': 1, 'فبراير': 2, 'مارس': 3, 'أبريل': 4, 'ابريل': 4, 'مايو': 5,
-    'يونيو': 6, 'يوليو': 7, 'أغسطس': 8, 'اغسطس': 8, 'سبتمبر': 9,
-    'أكتوبر': 10, 'اكتوبر': 10, 'نوفمبر': 11, 'ديسمبر': 12,
+    'january': 1,
+    'february': 2,
+    'march': 3,
+    'april': 4,
+    'may': 5,
+    'june': 6,
+    'july': 7,
+    'august': 8,
+    'september': 9,
+    'october': 10,
+    'november': 11,
+    'december': 12,
+    'يناير': 1,
+    'فبراير': 2,
+    'مارس': 3,
+    'أبريل': 4,
+    'ابريل': 4,
+    'مايو': 5,
+    'يونيو': 6,
+    'يوليو': 7,
+    'أغسطس': 8,
+    'اغسطس': 8,
+    'سبتمبر': 9,
+    'أكتوبر': 10,
+    'اكتوبر': 10,
+    'نوفمبر': 11,
+    'ديسمبر': 12,
   };
 
   /// Madara emits locale strings ("July 9, 2026", "9 يوليو، 2026") or
@@ -289,9 +323,8 @@ abstract class MadaraSource extends HttpSourceBase {
     final lower = text.toLowerCase();
     // Relative dates — a day-resolution approximation is enough for sorting.
     if (lower.contains('ago') || lower.contains('منذ')) {
-      final n = int.tryParse(
-              RegExp(r'(\d+)').firstMatch(lower)?.group(1) ?? '') ??
-          1;
+      final n =
+          int.tryParse(RegExp(r'(\d+)').firstMatch(lower)?.group(1) ?? '') ?? 1;
       final now = DateTime.now();
       if (lower.contains('min') || lower.contains('دقيق')) {
         return now.subtract(Duration(minutes: n));
@@ -299,14 +332,16 @@ abstract class MadaraSource extends HttpSourceBase {
       if (lower.contains('hour') || lower.contains('ساع')) {
         return now.subtract(Duration(hours: n));
       }
-      if (lower.contains('week') || lower.contains('أسبوع') ||
+      if (lower.contains('week') ||
+          lower.contains('أسبوع') ||
           lower.contains('اسبوع')) {
         return now.subtract(Duration(days: 7 * n));
       }
       if (lower.contains('month') || lower.contains('شهر')) {
         return now.subtract(Duration(days: 30 * n));
       }
-      if (lower.contains('year') || lower.contains('سنة') ||
+      if (lower.contains('year') ||
+          lower.contains('سنة') ||
           lower.contains('عام')) {
         return now.subtract(Duration(days: 365 * n));
       }
@@ -314,10 +349,9 @@ abstract class MadaraSource extends HttpSourceBase {
     }
 
     // "July 9, 2026" / "9 يوليو، 2026" / "9 July 2026".
-    final numbers = RegExp(r'\d+')
-        .allMatches(lower)
-        .map((m) => int.parse(m.group(0)!))
-        .toList();
+    final numbers = RegExp(
+      r'\d+',
+    ).allMatches(lower).map((m) => int.parse(m.group(0)!)).toList();
     for (final entry in _months.entries) {
       if (!lower.contains(entry.key)) continue;
       final year = numbers.where((n) => n > 1900).firstOrNull;
@@ -334,9 +368,15 @@ abstract class MadaraSource extends HttpSourceBase {
     if (t.contains('complet') || t.contains('مكتمل')) {
       return MangaStatus.completed;
     }
-    if (t.contains('ongoing') || t.contains('مستمر')) return MangaStatus.ongoing;
-    if (t.contains('hiatus') || t.contains('متوقف')) return MangaStatus.onHiatus;
-    if (t.contains('cancel') || t.contains('ملغي')) return MangaStatus.cancelled;
+    if (t.contains('ongoing') || t.contains('مستمر')) {
+      return MangaStatus.ongoing;
+    }
+    if (t.contains('hiatus') || t.contains('متوقف')) {
+      return MangaStatus.onHiatus;
+    }
+    if (t.contains('cancel') || t.contains('ملغي')) {
+      return MangaStatus.cancelled;
+    }
     return MangaStatus.unknown;
   }
 }

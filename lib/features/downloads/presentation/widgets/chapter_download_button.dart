@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:mihonx/core/extensions/context_ext.dart';
-import 'package:mihonx/features/downloads/presentation/bloc/downloads_bloc.dart';
-import 'package:mihonx/features/downloads/presentation/bloc/downloads_event.dart';
-import 'package:mihonx/features/downloads/presentation/bloc/downloads_state.dart';
+import 'package:hondana/core/extensions/context_ext.dart';
+import 'package:hondana/features/downloads/presentation/bloc/downloads_bloc.dart';
+import 'package:hondana/features/downloads/presentation/bloc/downloads_event.dart';
+import 'package:hondana/features/downloads/presentation/bloc/downloads_state.dart';
 
 /// Per-chapter download control: download icon → determinate progress ring →
 /// check (tap deletes). Requires a [DownloadsBloc] above it.
@@ -33,11 +34,8 @@ class ChapterDownloadButton extends StatelessWidget {
           return IconButton(
             icon: Icon(Icons.check_circle, color: context.colorScheme.primary),
             onPressed: () => context.read<DownloadsBloc>().add(
-                  DownloadDeleteRequested(
-                    mangaId: mangaId,
-                    chapterId: chapterId,
-                  ),
-                ),
+              DownloadDeleteRequested(mangaId: mangaId, chapterId: chapterId),
+            ),
           );
         }
         final task = state.taskFor(chapterId);
@@ -45,18 +43,18 @@ class ChapterDownloadButton extends StatelessWidget {
           return IconButton(
             // Determinate ring, not a loading spinner.
             icon: SizedBox(
-              width: 20,
-              height: 20,
+              width: 20.r,
+              height: 20.r,
               child: CircularProgressIndicator(
-                strokeWidth: 2,
+                strokeWidth: 2.r,
                 value: task.status == DownloadTaskStatus.downloading
                     ? task.progress
                     : null,
               ),
             ),
-            onPressed: () => context
-                .read<DownloadsBloc>()
-                .add(DownloadCancelRequested(chapterId)),
+            onPressed: () => context.read<DownloadsBloc>().add(
+              DownloadCancelRequested(chapterId),
+            ),
           );
         }
         return IconButton(
@@ -65,13 +63,13 @@ class ChapterDownloadButton extends StatelessWidget {
             color: context.colorScheme.onSurfaceVariant,
           ),
           onPressed: () => context.read<DownloadsBloc>().add(
-                DownloadEnqueued(
-                  chapterId: chapterId,
-                  mangaId: mangaId,
-                  mangaTitle: mangaTitle,
-                  chapterName: chapterName,
-                ),
-              ),
+            DownloadEnqueued(
+              chapterId: chapterId,
+              mangaId: mangaId,
+              mangaTitle: mangaTitle,
+              chapterName: chapterName,
+            ),
+          ),
         );
       },
     );

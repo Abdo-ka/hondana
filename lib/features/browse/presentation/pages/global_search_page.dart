@@ -4,21 +4,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:mihonx/core/core.dart';
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/core/routing/app_router.gr.dart';
-import 'package:mihonx/features/browse/domain/source/model/s_manga.dart';
-import 'package:mihonx/features/browse/domain/source/source.dart';
-import 'package:mihonx/features/browse/domain/source/source_manager.dart';
-import 'package:mihonx/features/browse/presentation/bloc/global_search_bloc.dart';
-import 'package:mihonx/features/browse/presentation/bloc/global_search_event.dart';
-import 'package:mihonx/features/browse/presentation/bloc/global_search_state.dart';
-import 'package:mihonx/features/library/presentation/widgets/manga_cover.dart';
+import 'package:hondana/core/core.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/core/routing/app_router.gr.dart';
+import 'package:hondana/features/browse/domain/source/model/s_manga.dart';
+import 'package:hondana/features/browse/domain/source/source.dart';
+import 'package:hondana/features/browse/domain/source/source_manager.dart';
+import 'package:hondana/features/browse/presentation/bloc/global_search_bloc.dart';
+import 'package:hondana/features/browse/presentation/bloc/global_search_event.dart';
+import 'package:hondana/features/browse/presentation/bloc/global_search_state.dart';
+import 'package:hondana/features/library/presentation/widgets/manga_cover.dart';
 
+/// Searches every enabled source at once, showing one horizontal shelf per
+/// source. Mihon behavior: sources are queried in parallel and results stream
+/// in independently, so one slow/blocked source doesn't stall the rest.
 @RoutePage()
 class GlobalSearchPage extends StatelessWidget {
   const GlobalSearchPage({this.initialQuery, super.key});
 
+  /// Prefilled query (e.g. opened from a manga's "search other sources").
   final String? initialQuery;
 
   @override
@@ -47,8 +51,9 @@ class _SearchView extends StatefulWidget {
 }
 
 class _SearchViewState extends State<_SearchView> {
-  late final TextEditingController _controller =
-      TextEditingController(text: widget.initialQuery);
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initialQuery,
+  );
 
   @override
   void dispose() {
@@ -90,6 +95,8 @@ class _SearchViewState extends State<_SearchView> {
   }
 }
 
+/// One source's results shelf: header + horizontal cover strip (or its
+/// loading/empty/error state).
 class _SourceSection extends StatelessWidget {
   const _SourceSection({required this.result});
 
@@ -172,7 +179,9 @@ class _SourceError extends StatelessWidget {
                       title: sourceName,
                     ),
                   );
-                  if (!bloc.isClosed) bloc.add(GlobalSearched(bloc.state.query));
+                  if (!bloc.isClosed) {
+                    bloc.add(GlobalSearched(bloc.state.query));
+                  }
                 },
               ),
           ],
@@ -182,6 +191,7 @@ class _SourceError extends StatelessWidget {
   }
 }
 
+/// A single manga cover + title in the horizontal shelf; taps into details.
 class _SearchCover extends StatelessWidget {
   const _SearchCover({required this.sourceId, required this.manga});
 
@@ -202,10 +212,7 @@ class _SearchCover extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: MangaCover(
-                  url: manga.thumbnailUrl,
-                  sourceId: sourceId,
-                ),
+                child: MangaCover(url: manga.thumbnailUrl, sourceId: sourceId),
               ),
               SizedBox(height: 4.h),
               AppText.labelSmall(

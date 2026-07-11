@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:injectable/injectable.dart';
 
-import 'package:mihonx/features/browse/domain/extension_info.dart';
+import 'package:hondana/features/browse/domain/extension_info.dart';
 
 /// Fetches the keiyoushi extension index and filters it to the app's policy:
 /// Arabic + English + multi-language ("all"); 18+ entries excluded unless the
@@ -18,6 +18,8 @@ class ExtensionsIndexRepository {
       'https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.min.json';
   static const allowedLangs = {'ar', 'en', 'all'};
 
+  /// Fetches the remote index and applies [filter]. Set [includeNsfw] to keep
+  /// 18+ entries (driven by the "Show NSFW sources" browse setting).
   Future<List<ExtensionInfo>> fetchAll({bool includeNsfw = false}) async {
     // GitHub serves the file as text/plain, so Dio won't JSON-decode it —
     // fetch the raw string and decode ourselves.
@@ -37,10 +39,15 @@ class ExtensionsIndexRepository {
     Iterable<ExtensionInfo> all, {
     bool includeNsfw = false,
   }) {
-    final list = all
-        .where((e) => (includeNsfw || !e.nsfw) && allowedLangs.contains(e.lang))
-        .toList()
-      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    final list =
+        all
+            .where(
+              (e) => (includeNsfw || !e.nsfw) && allowedLangs.contains(e.lang),
+            )
+            .toList()
+          ..sort(
+            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+          );
     return list;
   }
 }

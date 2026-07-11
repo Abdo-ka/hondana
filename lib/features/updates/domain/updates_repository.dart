@@ -1,5 +1,9 @@
 /// A recent chapter for a favorited manga (the Updates feed).
+///
+/// Flattened join of a chapter row with its parent manga so the UI can render
+/// a tile without a second lookup.
 class UpdateItem {
+  /// Creates an update row from joined chapter + manga columns.
   const UpdateItem({
     required this.chapterId,
     required this.mangaId,
@@ -21,6 +25,8 @@ class UpdateItem {
   final DateTime? dateUpload;
 }
 
+/// Read-side source for the Updates feed.
 abstract interface class UpdatesRepository {
+  /// Emits recent chapters of favorited manga, newest first.
   Stream<List<UpdateItem>> watchUpdates();
 }

@@ -3,18 +3,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:mihonx/core/extensions/context_ext.dart';
-import 'package:mihonx/core/routing/app_router.gr.dart';
-import 'package:mihonx/core/widgets/app_text.dart';
-import 'package:mihonx/features/library/domain/library_manga.dart';
-import 'package:mihonx/features/library/presentation/bloc/library_bloc.dart';
-import 'package:mihonx/features/library/presentation/bloc/library_event.dart';
-import 'package:mihonx/features/library/presentation/widgets/manga_cover.dart';
-import 'package:mihonx/features/library/presentation/widgets/unread_badge.dart';
+import 'package:hondana/core/extensions/context_ext.dart';
+import 'package:hondana/core/routing/app_router.gr.dart';
+import 'package:hondana/core/widgets/app_text.dart';
+import 'package:hondana/features/library/domain/library_manga.dart';
+import 'package:hondana/features/library/presentation/bloc/library_bloc.dart';
+import 'package:hondana/features/library/presentation/bloc/library_event.dart';
+import 'package:hondana/features/library/presentation/widgets/manga_cover.dart';
+import 'package:hondana/features/library/presentation/widgets/unread_badge.dart';
 
 /// Compact list row: thumbnail + title + unread badge.
 class LibraryListItem extends StatelessWidget {
-  const LibraryListItem({required this.entry, required this.selected, super.key});
+  const LibraryListItem({
+    required this.entry,
+    required this.selected,
+    super.key,
+  });
 
   final LibraryManga entry;
   final bool selected;
@@ -45,9 +49,9 @@ class LibraryListItem extends StatelessWidget {
             )
           : null,
       onTap: () => _handleTap(context),
-      onLongPress: () => context
-          .read<LibraryBloc>()
-          .add(LibraryItemSelectionToggled(entry.manga.id)),
+      onLongPress: () => context.read<LibraryBloc>().add(
+        LibraryItemSelectionToggled(entry.manga.id),
+      ),
     );
   }
 
@@ -57,9 +61,11 @@ class LibraryListItem extends StatelessWidget {
       bloc.add(LibraryItemSelectionToggled(entry.manga.id));
       return;
     }
-    context.router.push(MangaDetailsRoute(
-      sourceId: entry.manga.source,
-      initial: entry.manga.toSManga(),
-    ));
+    context.router.push(
+      MangaDetailsRoute(
+        sourceId: entry.manga.source,
+        initial: entry.manga.toSManga(),
+      ),
+    );
   }
 }

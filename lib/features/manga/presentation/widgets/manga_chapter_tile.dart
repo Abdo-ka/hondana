@@ -1,16 +1,17 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:mihonx/core/database/app_database.dart';
-import 'package:mihonx/core/extensions/context_ext.dart';
-import 'package:mihonx/core/routing/app_router.gr.dart';
-import 'package:mihonx/core/utils/app_dates.dart';
-import 'package:mihonx/core/widgets/app_text.dart';
-import 'package:mihonx/features/browse/data/source/local_source.dart';
-import 'package:mihonx/features/downloads/presentation/widgets/chapter_download_button.dart';
-import 'package:mihonx/features/manga/presentation/bloc/manga_details_bloc.dart';
-import 'package:mihonx/features/manga/presentation/bloc/manga_details_event.dart';
+import 'package:hondana/core/database/app_database.dart';
+import 'package:hondana/core/extensions/context_ext.dart';
+import 'package:hondana/core/routing/app_router.gr.dart';
+import 'package:hondana/core/utils/app_dates.dart';
+import 'package:hondana/core/widgets/app_text.dart';
+import 'package:hondana/features/browse/data/source/local_source.dart';
+import 'package:hondana/features/downloads/presentation/widgets/chapter_download_button.dart';
+import 'package:hondana/features/manga/presentation/bloc/manga_details_bloc.dart';
+import 'package:hondana/features/manga/presentation/bloc/manga_details_event.dart';
 
 /// A chapter row. Tap opens the reader; long-press toggles read; the trailing
 /// button downloads / shows progress / deletes the download.
@@ -37,7 +38,7 @@ class MangaChapterTile extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (chapter.read)
-            Icon(Icons.check, size: 18, color: context.colorScheme.primary),
+            Icon(Icons.check, size: 18.r, color: context.colorScheme.primary),
           if (context.read<MangaDetailsBloc>().sourceId !=
               LocalSource.localSourceId)
             ChapterDownloadButton(
@@ -49,9 +50,9 @@ class MangaChapterTile extends StatelessWidget {
         ],
       ),
       onTap: () => context.router.push(ReaderRoute(chapterId: chapter.id)),
-      onLongPress: () => context
-          .read<MangaDetailsBloc>()
-          .add(MangaChapterReadToggled(chapter.id, !chapter.read)),
+      onLongPress: () => context.read<MangaDetailsBloc>().add(
+        MangaChapterReadToggled(chapter.id, !chapter.read),
+      ),
     );
   }
 
@@ -64,4 +65,3 @@ class MangaChapterTile extends StatelessWidget {
     return parts.join(' • ');
   }
 }
-

@@ -1,17 +1,18 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:mihonx/core/core.dart';
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/core/routing/app_router.gr.dart';
-import 'package:mihonx/features/browse/data/source/http_source_base.dart';
-import 'package:mihonx/features/browse/domain/source/source.dart';
-import 'package:mihonx/features/browse/domain/source/source_manager.dart';
-import 'package:mihonx/features/browse/domain/source_preferences.dart';
-import 'package:mihonx/features/browse/presentation/bloc/extensions_bloc.dart';
-import 'package:mihonx/features/browse/presentation/widgets/extensions_body.dart';
-import 'package:mihonx/features/browse/presentation/widgets/source_url_dialog.dart';
+import 'package:hondana/core/core.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/core/routing/app_router.gr.dart';
+import 'package:hondana/features/browse/data/source/http_source_base.dart';
+import 'package:hondana/features/browse/domain/source/source.dart';
+import 'package:hondana/features/browse/domain/source/source_manager.dart';
+import 'package:hondana/features/browse/domain/source_preferences.dart';
+import 'package:hondana/features/browse/presentation/bloc/extensions_bloc.dart';
+import 'package:hondana/features/browse/presentation/widgets/extensions_body.dart';
+import 'package:hondana/features/browse/presentation/widgets/source_url_dialog.dart';
 
 /// Browse: Sources / Extensions tabs (Mihon layout), global search in the
 /// app bar. Sources are grouped by language with pin support; pinned sources
@@ -55,14 +56,13 @@ class _BrowseView extends StatelessWidget {
             ],
           ),
         ),
-        body: const TabBarView(
-          children: [_SourcesTab(), ExtensionsBody()],
-        ),
+        body: const TabBarView(children: [_SourcesTab(), ExtensionsBody()]),
       ),
     );
   }
 }
 
+/// Sources tab: enabled sources grouped by language with pin support.
 class _SourcesTab extends StatefulWidget {
   const _SourcesTab();
 
@@ -73,6 +73,7 @@ class _SourcesTab extends StatefulWidget {
 class _SourcesTabState extends State<_SourcesTab> {
   final SourcePreferences _prefs = getIt<SourcePreferences>();
 
+  /// Flips a source's pinned flag; the [ListenableBuilder] rebuilds the list.
   void _togglePin(int id) => _prefs.setPinned(id, !_prefs.isPinned(id));
 
   /// Enabled sources grouped: pinned first, then by language (local last).
@@ -81,8 +82,7 @@ class _SourcesTabState extends State<_SourcesTab> {
         .getCatalogueSources()
         .where((s) => _prefs.isEnabled(s.id))
         .toList();
-    final pinnedSources =
-        enabled.where((s) => pinned.contains(s.id)).toList();
+    final pinnedSources = enabled.where((s) => pinned.contains(s.id)).toList();
     const langOrder = ['all', 'en', 'ar', 'local'];
     return [
       if (pinnedSources.isNotEmpty) ...[
@@ -113,12 +113,12 @@ class _SourcesTabState extends State<_SourcesTab> {
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: _prefs,
-      builder: (context, _) =>
-          ListView(children: _sections(_prefs.pinnedIds)),
+      builder: (context, _) => ListView(children: _sections(_prefs.pinnedIds)),
     );
   }
 }
 
+/// Section header labelling a language group (or the "Pinned" section).
 class _LangHeader extends StatelessWidget {
   const _LangHeader(this.labelKey);
 
@@ -127,7 +127,7 @@ class _LangHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 4.h),
       child: AppText.titleSmall(labelKey, color: context.colorScheme.primary),
     );
   }

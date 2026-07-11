@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:mihonx/core/state/status_builder.dart';
-import 'package:mihonx/core/widgets/app_text.dart';
-import 'package:mihonx/features/library/domain/library_preferences.dart';
-import 'package:mihonx/features/library/presentation/bloc/library_bloc.dart';
-import 'package:mihonx/features/library/presentation/bloc/library_event.dart';
-import 'package:mihonx/features/library/presentation/bloc/library_state.dart';
-import 'package:mihonx/features/library/presentation/widgets/library_grid_item.dart';
-import 'package:mihonx/features/library/presentation/widgets/library_list_item.dart';
+import 'package:hondana/core/state/status_builder.dart';
+import 'package:hondana/core/widgets/app_text.dart';
+import 'package:hondana/features/library/domain/library_preferences.dart';
+import 'package:hondana/features/library/presentation/bloc/library_bloc.dart';
+import 'package:hondana/features/library/presentation/bloc/library_event.dart';
+import 'package:hondana/features/library/presentation/bloc/library_state.dart';
+import 'package:hondana/features/library/presentation/widgets/library_grid_item.dart';
+import 'package:hondana/features/library/presentation/widgets/library_list_item.dart';
 
+/// Library content area — category tabs above a pull-to-refresh grid/list.
 class LibraryBody extends StatelessWidget {
   const LibraryBody({super.key});
 
@@ -21,9 +22,9 @@ class LibraryBody extends StatelessWidget {
         const _CategoryTabs(),
         Expanded(
           child: RefreshIndicator(
-            onRefresh: () async => context
-                .read<LibraryBloc>()
-                .add(const LibraryRefreshRequested()),
+            onRefresh: () async => context.read<LibraryBloc>().add(
+              const LibraryRefreshRequested(),
+            ),
             child: StatusBuilder<LibraryBloc, LibraryState>(
               statusSelector: (s) => s.loadStatus,
               emptyMessage: 'library.empty',
@@ -52,21 +53,23 @@ class _CategoryTabs extends StatelessWidget {
               length: state.categories.length + 1,
               initialIndex: state.selectedCategoryId == null
                   ? 0
-                  : state.categories
-                          .indexWhere((c) => c.id == state.selectedCategoryId) +
-                      1,
+                  : state.categories.indexWhere(
+                          (c) => c.id == state.selectedCategoryId,
+                        ) +
+                        1,
               child: TabBar(
                 isScrollable: true,
                 tabAlignment: TabAlignment.start,
                 onTap: (index) => context.read<LibraryBloc>().add(
-                      LibraryCategorySelected(
-                        index == 0 ? null : state.categories[index - 1].id,
-                      ),
-                    ),
+                  LibraryCategorySelected(
+                    index == 0 ? null : state.categories[index - 1].id,
+                  ),
+                ),
                 tabs: [
                   const Tab(child: AppText.labelLarge('library.all')),
-                  ...state.categories
-                      .map((c) => Tab(child: AppText.labelLarge(c.name))),
+                  ...state.categories.map(
+                    (c) => Tab(child: AppText.labelLarge(c.name)),
+                  ),
                 ],
               ),
             ),
@@ -74,6 +77,8 @@ class _CategoryTabs extends StatelessWidget {
   }
 }
 
+/// Renders the current category's manga as either a list or a fixed 3-column
+/// grid, per the active [LibraryDisplayMode].
 class _LibraryContent extends StatelessWidget {
   const _LibraryContent();
 
@@ -89,8 +94,9 @@ class _LibraryContent extends StatelessWidget {
               itemCount: state.manga.length,
               itemBuilder: (context, index) => LibraryListItem(
                 entry: state.manga[index],
-                selected:
-                    state.selectedIds.contains(state.manga[index].manga.id),
+                selected: state.selectedIds.contains(
+                  state.manga[index].manga.id,
+                ),
               ),
             )
           : GridView.builder(
@@ -100,16 +106,17 @@ class _LibraryContent extends StatelessWidget {
                 // Comfortable needs extra height for the two-line title below.
                 childAspectRatio:
                     state.displayMode == LibraryDisplayMode.comfortableGrid
-                        ? 0.52
-                        : 0.62,
+                    ? 0.52
+                    : 0.62,
                 crossAxisSpacing: 8.w,
                 mainAxisSpacing: 8.w,
               ),
               itemCount: state.manga.length,
               itemBuilder: (context, index) => LibraryGridItem(
                 entry: state.manga[index],
-                selected:
-                    state.selectedIds.contains(state.manga[index].manga.id),
+                selected: state.selectedIds.contains(
+                  state.manga[index].manga.id,
+                ),
                 mode: state.displayMode,
               ),
             ),

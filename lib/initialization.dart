@@ -2,14 +2,20 @@ import 'package:bloc/bloc.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:mihonx/core/config/advanced_preferences.dart';
-import 'package:mihonx/core/di/di_container.dart';
-import 'package:mihonx/core/network/app_http.dart';
-import 'package:mihonx/core/utils/app_bloc_observer.dart';
-import 'package:mihonx/features/browse/data/source/http_source_base.dart';
-import 'package:mihonx/features/downloads/presentation/bloc/downloads_bloc.dart';
+import 'package:hondana/core/config/advanced_preferences.dart';
+import 'package:hondana/core/di/di_container.dart';
+import 'package:hondana/core/network/app_http.dart';
+import 'package:hondana/core/utils/app_bloc_observer.dart';
+import 'package:hondana/features/browse/data/source/http_source_base.dart';
+import 'package:hondana/features/downloads/presentation/bloc/downloads_bloc.dart';
 
 /// Ordered startup invoked by `main()` before the first frame.
+///
+/// Runs each step to completion in dependency order: Flutter bindings and
+/// localization first, then DI ([configureDependencies]), then post-DI wiring
+/// that reads resolved services — cookie-store resolver, [Bloc] observer,
+/// advanced preferences (user-agent override, optional cache clear) and eager
+/// construction of [DownloadsBloc].
 Future<void> preInitializations() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();

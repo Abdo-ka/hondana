@@ -23,6 +23,7 @@ class Mangas extends Table {
   IntColumn get chapterFlags => integer().withDefault(const Constant(0))();
 }
 
+/// Chapter row belonging to a [Mangas] entry; cascade-deleted with its manga.
 @DataClassName('ChapterData')
 class Chapters extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -40,6 +41,7 @@ class Chapters extends Table {
   IntColumn get sourceOrder => integer().withDefault(const Constant(0))();
 }
 
+/// User-defined library category (Mihon's library tabs/filters).
 @DataClassName('CategoryData')
 class Categories extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -48,6 +50,7 @@ class Categories extends Table {
   IntColumn get flags => integer().withDefault(const Constant(0))();
 }
 
+/// Many-to-many join between [Mangas] and [Categories].
 @DataClassName('MangaCategoryData')
 class MangasCategories extends Table {
   IntColumn get mangaId =>
@@ -55,10 +58,12 @@ class MangasCategories extends Table {
   IntColumn get categoryId =>
       integer().references(Categories, #id, onDelete: KeyAction.cascade)();
 
+  /// Composite key prevents duplicate manga/category assignments.
   @override
   Set<Column<Object>> get primaryKey => {mangaId, categoryId};
 }
 
+/// Per-chapter reading history (last read time, accumulated read duration).
 @DataClassName('HistoryData')
 class HistoryEntries extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -71,8 +76,12 @@ class HistoryEntries extends Table {
 @DriftDatabase(
   tables: [Mangas, Chapters, Categories, MangasCategories, HistoryEntries],
 )
+/// The app's Drift database; owns all tables and connection lifecycle.
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(driftDatabase(name: 'mihonx'));
+  /// Opens the on-disk `hondana` database via drift_flutter.
+  AppDatabase() : super(driftDatabase(name: 'hondana'));
+
+  /// Backs the database with a caller-supplied executor (e.g. in-memory tests).
   AppDatabase.forTesting(super.executor);
 
   @override

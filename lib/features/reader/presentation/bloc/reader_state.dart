@@ -1,10 +1,12 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 
-import 'package:mihonx/core/state/bloc_status.dart';
-import 'package:mihonx/features/reader/domain/reader_preferences.dart';
-import 'package:mihonx/features/reader/presentation/bloc/reader_item.dart';
+import 'package:hondana/core/state/bloc_status.dart';
+import 'package:hondana/features/reader/domain/reader_preferences.dart';
+import 'package:hondana/features/reader/presentation/bloc/reader_item.dart';
 
+/// Immutable snapshot of the reader: the continuous item list, the current
+/// position/seek, the active mode, and the derived indicator/navigation fields.
 @immutable
 class ReaderState extends Equatable {
   const ReaderState({
@@ -87,19 +89,19 @@ class ReaderState extends Equatable {
 
   @override
   List<Object?> get props => [
-        status,
-        items,
-        currentItem,
-        seek,
-        currentPage,
-        pageCount,
-        readingMode,
-        showOverlay,
-        chapterId,
-        chapterName,
-        imageHeaders,
-        mangaId,
-        hasPrev,
-        hasNext,
-      ];
+    status,
+    items,
+    currentItem,
+    seek,
+    currentPage,
+    pageCount,
+    readingMode,
+    showOverlay,
+    chapterId,
+    chapterName,
+    imageHeaders,
+    mangaId,
+    hasPrev,
+    hasNext,
+  ];
 }

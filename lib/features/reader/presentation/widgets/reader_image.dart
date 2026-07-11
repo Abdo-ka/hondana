@@ -2,8 +2,9 @@ import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:mihonx/core/network/app_http.dart';
+import 'package:hondana/core/network/app_http.dart';
 
 /// Remembers each page's intrinsic aspect ratio across rebuilds. In webtoon
 /// mode an item whose image is still loading (or was disposed offscreen and
@@ -130,7 +131,7 @@ class _ReaderImageState extends State<ReaderImage> {
     // to a typical page so the eventual correction stays small. Fixed logical
     // px, not MediaQuery — immersive-mode toggles change the reported screen
     // size and would shift every still-loading item.
-    final placeholderHeight = _reservesHeight ? 500.0 : 320.0;
+    final placeholderHeight = _reservesHeight ? 500.0.h : 320.0.h;
     final image = url.startsWith('http')
         ? CachedNetworkImage(
             imageUrl: url,
@@ -145,8 +146,10 @@ class _ReaderImageState extends State<ReaderImage> {
             ),
             errorWidget: (context, _, _) => SizedBox(
               height: placeholderHeight,
-              child: const Icon(Icons.broken_image_outlined,
-                  color: Colors.white38),
+              child: const Icon(
+                Icons.broken_image_outlined,
+                color: Colors.white38,
+              ),
             ),
           )
         : Image.file(
@@ -154,8 +157,10 @@ class _ReaderImageState extends State<ReaderImage> {
             fit: widget.fit,
             errorBuilder: (context, _, _) => SizedBox(
               height: placeholderHeight,
-              child: const Icon(Icons.broken_image_outlined,
-                  color: Colors.white38),
+              child: const Icon(
+                Icons.broken_image_outlined,
+                color: Colors.white38,
+              ),
             ),
           );
     if (!_reservesHeight) return image;

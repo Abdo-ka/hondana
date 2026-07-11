@@ -2,9 +2,12 @@ import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import 'package:mihonx/core/routing/app_router.gr.dart';
+import 'package:hondana/core/routing/app_router.gr.dart';
 
 /// Bottom-nav shell hosting the five primary tabs, mirroring Mihon's navigation.
+///
+/// Uses [AutoTabsScaffold] so each tab keeps its own nested navigation stack;
+/// tab order (Library, Updates, History, Browse, More) matches Mihon.
 @RoutePage()
 class MainPage extends StatelessWidget {
   const MainPage({super.key});

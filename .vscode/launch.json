@@ -5,18 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "mihonx",
+            "name": "hondana",
             "request": "launch",
             "type": "dart"
         },
         {
-            "name": "mihonx (profile mode)",
+            "name": "hondana (profile mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
-            "name": "mihonx (release mode)",
+            "name": "hondana (release mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"
