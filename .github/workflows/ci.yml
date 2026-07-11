@@ -43,8 +43,14 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
+      # Tests run only if a test/ directory exists (none yet).
       - name: Run tests
-        run: flutter test
+        run: |
+          if [ -d test ] && ls test/*_test.dart test/**/*_test.dart >/dev/null 2>&1; then
+            flutter test
+          else
+            echo "No tests found — skipping."
+          fi
 
   build-android:
     name: Build Android (debug)

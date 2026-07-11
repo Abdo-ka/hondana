@@ -1,0 +1,45 @@
+# Path-based auto-labels for pull requests (used by .github/workflows/labeler.yml).
+# https://github.com/actions/labeler
+
+"area: library":
+  - changed-files:
+      - any-glob-to-any-file: "lib/features/library/**"
+"area: browse":
+  - changed-files:
+      - any-glob-to-any-file: "lib/features/browse/**"
+"area: reader":
+  - changed-files:
+      - any-glob-to-any-file: "lib/features/reader/**"
+"area: downloads":
+  - changed-files:
+      - any-glob-to-any-file: "lib/features/downloads/**"
+"area: manga":
+  - changed-files:
+      - any-glob-to-any-file: "lib/features/manga/**"
+"area: settings":
+  - changed-files:
+      - any-glob-to-any-file: "lib/features/more/**"
+"area: history":
+  - changed-files:
+      - any-glob-to-any-file: "lib/features/history/**"
+"area: updates":
+  - changed-files:
+      - any-glob-to-any-file: "lib/features/updates/**"
+"area: core":
+  - changed-files:
+      - any-glob-to-any-file: "lib/core/**"
+"platform: android":
+  - changed-files:
+      - any-glob-to-any-file: "android/**"
+"platform: ios":
+  - changed-files:
+      - any-glob-to-any-file: "ios/**"
+"documentation":
+  - changed-files:
+      - any-glob-to-any-file: ["**/*.md", ".cursor/**", "CLAUDE.md", "AGENTS.md"]
+"ci":
+  - changed-files:
+      - any-glob-to-any-file: ".github/**"
+"dependencies":
+  - changed-files:
+      - any-glob-to-any-file: ["pubspec.yaml", "pubspec.lock"]
