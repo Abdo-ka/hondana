@@ -103,9 +103,15 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
         ReaderTransitionItem(
           fromChapterId: chapter.id,
           fromChapterName: chapter.name,
-          toChapterName: _nameAt(_index + 1),
+          toChapterName: _nameAt(_nextIndexFrom(_index)),
         ),
       ];
+      // Per-series mode (Mihon viewer_flags): 0 = app default,
+      // else ReadingMode.index + 1.
+      final flags = manga?.viewerFlags ?? 0;
+      final mode = flags > 0 && flags <= ReadingMode.values.length
+          ? ReadingMode.values[flags - 1]
+          : _prefs.readingMode;
       final initialPage =
           pages.isEmpty ? 0 : chapter.lastPageRead.clamp(0, pages.length - 1);
       emit(state.copyWith(
@@ -113,6 +119,7 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
             ? const BlocStatus.empty()
             : const BlocStatus.success(),
         items: items,
+        readingMode: mode,
         // For the first loaded chapter, item index == page index.
         currentItem: initialPage,
         // A load is an explicit seek: readers must jump to the new position.
@@ -126,7 +133,7 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
             ? (_source! as HttpSourceBase).imageHeaders
             : const {},
         hasPrev: _index > 0,
-        hasNext: _index >= 0 && _index < _siblings.length - 1,
+        hasNext: _index >= 0 && _nextIndexFrom(_index) != -1,
       ));
       // Incognito reading leaves no history trail.
       if (!_settings.incognito) await _history.upsert(chapterId);
@@ -173,6 +180,27 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
   String? _nameAt(int index) =>
       index >= 0 && index < _siblings.length ? _siblings[index].name : null;
 
+  /// Next sibling index honoring "Skip chapters marked read" and "Skip
+  /// duplicate chapters" (forward navigation and preload only — going back
+  /// must always work, even through read chapters). Returns -1 when none.
+  int _nextIndexFrom(int from) {
+    final fromNumber = from >= 0 && from < _siblings.length
+        ? _siblings[from].chapterNumber
+        : null;
+    for (var i = from + 1; i < _siblings.length; i++) {
+      final c = _siblings[i];
+      if (_prefs.skipRead && c.read) continue;
+      if (_prefs.skipDuplicates &&
+          fromNumber != null &&
+          fromNumber >= 0 &&
+          c.chapterNumber == fromNumber) {
+        continue;
+      }
+      return i;
+    }
+    return -1;
+  }
+
   Future<void> _onItemChanged(
     ReaderItemChanged event,
     Emitter<ReaderState> emit,
@@ -213,7 +241,7 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
           chapterId: item.chapterId,
           chapterName: item.chapterName,
           hasPrev: _index > 0,
-          hasNext: _index >= 0 && _index < _siblings.length - 1,
+          hasNext: _index >= 0 && _nextIndexFrom(_index) != -1,
         ));
         if (switched && !_settings.incognito) {
           await _history.upsert(item.chapterId);
@@ -240,7 +268,7 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
   /// transition in place; the next scroll retries.
   Future<void> _maybeLoadNext(Emitter<ReaderState> emit) async {
     if (_loadingNext) return;
-    final nextIndex = _loadedThrough + 1;
+    final nextIndex = _nextIndexFrom(_loadedThrough);
     if (nextIndex <= 0 || nextIndex >= _siblings.length) return;
     _loadingNext = true;
     final generation = _loadGeneration;
@@ -264,7 +292,7 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
         ReaderTransitionItem(
           fromChapterId: chapter.id,
           fromChapterName: chapter.name,
-          toChapterName: _nameAt(nextIndex + 1),
+          toChapterName: _nameAt(_nextIndexFrom(nextIndex)),
         ),
       ]));
     } on Exception {
@@ -292,16 +320,22 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
     emit(state.copyWith(seek: state.seek + 1));
   }
 
+  /// In-reader mode selector is per-series (Mihon viewer_flags); the global
+  /// default only changes from Settings > Reader.
   Future<void> _onModeChanged(
     ReaderModeChanged event,
     Emitter<ReaderState> emit,
   ) async {
-    await _prefs.setReadingMode(event.mode);
-    emit(state.copyWith(readingMode: event.mode));
+    final mangaId = state.mangaId;
+    if (mangaId != null) {
+      final mode = event.mode;
+      await _repo.setViewerFlags(mangaId, mode == null ? 0 : mode.index + 1);
+    }
+    emit(state.copyWith(readingMode: event.mode ?? _prefs.readingMode));
   }
 
   Future<void> _navigate(int delta, Emitter<ReaderState> emit) async {
-    final target = _index + delta;
+    final target = delta > 0 ? _nextIndexFrom(_index) : _index - 1;
     if (target < 0 || target >= _siblings.length) return;
     await _load(_siblings[target].id, emit);
   }

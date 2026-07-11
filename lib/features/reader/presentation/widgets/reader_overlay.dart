@@ -61,21 +61,29 @@ class ReaderTopBar extends StatelessWidget {
           builder: (context, state) => SafeArea(
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              children: ReadingMode.values
-                  .map(
-                    (m) => ListTile(
-                      title: AppText.bodyMedium('reader.mode_${m.name}'),
-                      trailing: state.readingMode == m
-                          ? Icon(
-                              Icons.check,
-                              color: Theme.of(context).colorScheme.primary,
-                            )
-                          : null,
-                      onTap: () =>
-                          context.read<ReaderBloc>().add(ReaderModeChanged(m)),
-                    ),
-                  )
-                  .toList(),
+              children: [
+                // Per-series override (Mihon "For this series"); Default
+                // reverts to the app-wide mode from Settings > Reader.
+                ListTile(
+                  title: const AppText.bodyMedium('reader.mode_default'),
+                  onTap: () => context
+                      .read<ReaderBloc>()
+                      .add(const ReaderModeChanged(null)),
+                ),
+                ...ReadingMode.values.map(
+                  (m) => ListTile(
+                    title: AppText.bodyMedium('reader.mode_${m.name}'),
+                    trailing: state.readingMode == m
+                        ? Icon(
+                            Icons.check,
+                            color: Theme.of(context).colorScheme.primary,
+                          )
+                        : null,
+                    onTap: () =>
+                        context.read<ReaderBloc>().add(ReaderModeChanged(m)),
+                  ),
+                ),
+              ],
             ),
           ),
         ),

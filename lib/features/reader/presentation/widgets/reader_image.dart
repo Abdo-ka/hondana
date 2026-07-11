@@ -35,12 +35,17 @@ class ReaderImage extends StatefulWidget {
     required this.url,
     this.headers = const {},
     this.fit = BoxFit.contain,
+    this.reserveHeight = false,
     super.key,
   });
 
   final String? url;
   final Map<String, String> headers;
   final BoxFit fit;
+
+  /// Webtoon items live in an unbounded-height list where height stability
+  /// matters; paged mode is always viewport-sized and must not reserve.
+  final bool reserveHeight;
 
   @override
   State<ReaderImage> createState() => _ReaderImageState();
@@ -52,9 +57,7 @@ class _ReaderImageState extends State<ReaderImage> {
   ImageStream? _stream;
   ImageStreamListener? _listener;
 
-  /// Only webtoon items live in an unbounded-height list where height
-  /// stability matters; paged mode is always viewport-sized.
-  bool get _reservesHeight => widget.fit == BoxFit.fitWidth;
+  bool get _reservesHeight => widget.reserveHeight;
 
   @override
   void initState() {

@@ -24,9 +24,11 @@ final class ReaderOverlayToggled extends ReaderEvent {
   const ReaderOverlayToggled();
 }
 
+/// Per-series reading mode (Mihon viewer_flags); null = follow the app
+/// default from Settings > Reader.
 final class ReaderModeChanged extends ReaderEvent {
   const ReaderModeChanged(this.mode);
-  final ReadingMode mode;
+  final ReadingMode? mode;
 }
 
 final class ReaderNextChapter extends ReaderEvent {

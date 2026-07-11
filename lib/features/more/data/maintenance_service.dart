@@ -120,6 +120,11 @@ class MaintenanceService {
     });
   }
 
+  /// Mihon's ResetViewerFlags: every entry falls back to the default reader
+  /// settings. Returns the number of entries touched.
+  Future<int> resetViewerFlags() => (db.update(db.mangas))
+      .write(const MangasCompanion(viewerFlags: Value(0)));
+
   /// Clears cookies replayed onto Dio/image requests and the WebView's own jar.
   Future<void> clearCookies() async {
     await cookies.clear();
