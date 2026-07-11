@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:hondana/core/state/bloc_status.dart';
-import 'package:hondana/features/history/domain/history_repository.dart';
+import 'package:hondana/features/history/domain/entities/history_item.dart';
 
 /// Immutable state for the History page: load status plus the current entries.
 @immutable

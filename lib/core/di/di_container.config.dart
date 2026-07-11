@@ -41,12 +41,14 @@ import 'package:hondana/features/downloads/domain/live_activity_service.dart'
     as _i264;
 import 'package:hondana/features/downloads/presentation/bloc/downloads_bloc.dart'
     as _i778;
-import 'package:hondana/features/history/data/history_repository_impl.dart'
-    as _i484;
-import 'package:hondana/features/history/domain/history_repository.dart'
-    as _i622;
-import 'package:hondana/features/history/presentation/bloc/history_bloc.dart'
-    as _i1032;
+import 'package:hondana/features/history/data/data_sources/history_local_datasource.dart'
+    as _i232;
+import 'package:hondana/features/history/data/repositories/history_repository_imp.dart'
+    as _i377;
+import 'package:hondana/features/history/domain/repositories/history_repository.dart'
+    as _i7;
+import 'package:hondana/features/history/presentation/state/bloc/history_bloc.dart'
+    as _i1060;
 import 'package:hondana/features/library/data/library_repository_impl.dart'
     as _i417;
 import 'package:hondana/features/library/data/library_update_service.dart'
@@ -102,11 +104,8 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i746.UpdatesRepository>(
       () => _i933.UpdatesRepositoryImpl(gh<_i306.AppDatabase>()),
     );
-    gh.lazySingleton<_i622.HistoryRepository>(
-      () => _i484.HistoryRepositoryImpl(gh<_i306.AppDatabase>()),
-    );
-    gh.factory<_i1032.HistoryBloc>(
-      () => _i1032.HistoryBloc(gh<_i622.HistoryRepository>()),
+    gh.factory<_i232.HistoryLocalDataSource>(
+      () => _i232.HistoryLocalDataSource(gh<_i306.AppDatabase>()),
     );
     gh.lazySingleton<_i944.MangaRepository>(
       () => _i153.MangaRepositoryImpl(gh<_i306.AppDatabase>()),
@@ -147,27 +146,30 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i959.ReaderPreferences>(
       () => _i959.ReaderPreferences(gh<_i460.SharedPreferences>()),
     );
-    gh.factoryParam<_i425.ReaderBloc, int, dynamic>(
-      (_chapterId, _) => _i425.ReaderBloc(
-        gh<_i944.MangaRepository>(),
-        gh<_i893.SourceManager>(),
-        gh<_i622.HistoryRepository>(),
-        gh<_i170.DownloadService>(),
-        gh<_i763.AppSettings>(),
-        gh<_i959.ReaderPreferences>(),
-        _chapterId,
-      ),
-    );
     gh.lazySingleton<_i161.LibraryRepository>(
       () => _i417.LibraryRepositoryImpl(
         gh<_i306.AppDatabase>(),
         gh<_i170.DownloadService>(),
       ),
     );
+    gh.lazySingleton<_i7.HistoryRepository>(
+      () => _i377.HistoryRepositoryImp(gh<_i232.HistoryLocalDataSource>()),
+    );
     gh.factory<_i674.GlobalSearchBloc>(
       () => _i674.GlobalSearchBloc(
         gh<_i893.SourceManager>(),
         gh<_i82.SourcePreferences>(),
+      ),
+    );
+    gh.factoryParam<_i425.ReaderBloc, int, dynamic>(
+      (_chapterId, _) => _i425.ReaderBloc(
+        gh<_i944.MangaRepository>(),
+        gh<_i893.SourceManager>(),
+        gh<_i7.HistoryRepository>(),
+        gh<_i170.DownloadService>(),
+        gh<_i763.AppSettings>(),
+        gh<_i959.ReaderPreferences>(),
+        _chapterId,
       ),
     );
     gh.factory<_i372.ExtensionsBloc>(
@@ -207,6 +209,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i901.LibraryUpdateService>(),
         gh<_i763.AppSettings>(),
       ),
+    );
+    gh.factory<_i1060.HistoryBloc>(
+      () => _i1060.HistoryBloc(gh<_i7.HistoryRepository>()),
     );
     gh.factory<_i861.UpdatesBloc>(
       () => _i861.UpdatesBloc(

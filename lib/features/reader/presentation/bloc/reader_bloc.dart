@@ -12,7 +12,7 @@ import 'package:hondana/features/browse/domain/source/model/s_chapter.dart';
 import 'package:hondana/features/browse/domain/source/source.dart';
 import 'package:hondana/features/browse/domain/source/source_manager.dart';
 import 'package:hondana/features/downloads/domain/download_service.dart';
-import 'package:hondana/features/history/domain/history_repository.dart';
+import 'package:hondana/features/history/domain/repositories/history_repository.dart';
 import 'package:hondana/features/manga/domain/manga_repository.dart';
 import 'package:hondana/features/reader/domain/reader_preferences.dart';
 import 'package:hondana/features/reader/presentation/bloc/reader_event.dart';

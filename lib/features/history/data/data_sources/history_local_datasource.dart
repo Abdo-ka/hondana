@@ -2,19 +2,18 @@ import 'package:drift/drift.dart';
 import 'package:injectable/injectable.dart';
 
 import 'package:hondana/core/database/app_database.dart';
-import 'package:hondana/features/history/domain/history_repository.dart';
+import 'package:hondana/features/history/domain/entities/history_item.dart';
 
-/// Drift-backed [HistoryRepository]: one history row per chapter, joined to
-/// chapter + manga for the feed.
-@LazySingleton(as: HistoryRepository)
-class HistoryRepositoryImpl implements HistoryRepository {
-  HistoryRepositoryImpl(this._db);
+/// Local (drift) data source for reading history — one row per chapter, joined
+/// to chapter + manga for the feed.
+@injectable
+class HistoryLocalDataSource {
+  HistoryLocalDataSource(this._db);
 
   final AppDatabase _db;
 
-  /// Bumps the existing row's [lastRead] to now, or inserts a new one so a
+  /// Bumps the existing row's `lastRead` to now, or inserts a new one so a
   /// chapter is never duplicated in history.
-  @override
   Future<void> upsert(int chapterId) async {
     final existing =
         await (_db.select(_db.historyEntries)
@@ -40,7 +39,6 @@ class HistoryRepositoryImpl implements HistoryRepository {
 
   /// Streams history entries joined with their chapter + manga, ordered by
   /// most-recently-read first.
-  @override
   Stream<List<HistoryItem>> watchHistory() {
     final query =
         _db.select(_db.historyEntries).join([
@@ -75,14 +73,14 @@ class HistoryRepositoryImpl implements HistoryRepository {
     );
   }
 
-  @override
+  /// Deletes a single history entry by its row id.
   Future<void> remove(int historyId) async {
     await (_db.delete(
       _db.historyEntries,
     )..where((h) => h.id.equals(historyId))).go();
   }
 
-  @override
+  /// Wipes all reading history.
   Future<void> clear() async {
     await _db.delete(_db.historyEntries).go();
   }

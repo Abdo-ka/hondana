@@ -3,9 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
 import 'package:hondana/core/state/bloc_status.dart';
-import 'package:hondana/features/history/domain/history_repository.dart';
-import 'package:hondana/features/history/presentation/bloc/history_event.dart';
-import 'package:hondana/features/history/presentation/bloc/history_state.dart';
+import 'package:hondana/features/history/domain/repositories/history_repository.dart';
+import 'package:hondana/features/history/presentation/state/bloc/history_event.dart';
+import 'package:hondana/features/history/presentation/state/bloc/history_state.dart';
 
 /// Drives the History page: subscribes to the repository stream and forwards
 /// remove/clear intents.
