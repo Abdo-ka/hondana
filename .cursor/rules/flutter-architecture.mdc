@@ -10,14 +10,36 @@ alwaysApply: true
 lib/
 ├── main.dart / app.dart / initialization.dart
 ├── core/            # DI, config, database (drift), network, routing, state, theme, widgets
-└── features/<feature>/
-    ├── data/         # sources, repository implementations, services
-    ├── domain/       # entities, models, repository interfaces, preference stores
-    └── presentation/ # bloc/, pages/ (@RoutePage), widgets/
+└── features/<feature>/                       # scaffold via `mason make feature`
+    ├── data/
+    │   ├── data_sources/   <f>_local_datasource.dart + <f>_remote_datasource.dart
+    │   └── repositories/   <f>_repository_imp.dart  @Injectable(as: <F>Repository)
+    ├── domain/
+    │   ├── entities/       <f>_entity.dart          (plain models)
+    │   └── repositories/   <f>_repository.dart      (abstract interface)
+    └── presentation/
+        ├── pages/          <f>_page.dart            @RoutePage wrapper
+        │   └── mobile/     <f>_page_mobile.dart     the screen tree
+        ├── state/bloc/     <f>_bloc.dart, _event.dart, _state.dart
+        └── widgets/        feature widget classes
 ```
 
 Shared UI/utilities live in `lib/core/`, imported via
 `package:hondana/core/core.dart`. No `packages/` monorepo, no Firebase.
+
+## Mandatory feature structure
+
+Generate features with `mason make feature --feature_name <name> -o lib/features`
+(brick in `bricks/feature/`) — never hand-roll folders. Rules:
+
+- `pages/` holds **two things**: the thin `@RoutePage` wrapper (`<f>_page.dart` —
+  provides the Bloc, returns `PageLayoutBuilder(mobile: …)`) and the mobile
+  implementation (`mobile/<f>_page_mobile.dart` — the real `AppScaffold` tree).
+- The repository **interface** is in `domain/repositories/`; its
+  `@Injectable(as: …)` **implementation** and the `@injectable` local/remote
+  **data sources** are in `data/`.
+- Domain models are `*_entity.dart` under `domain/entities/` (no drift/DTO types).
+- Mirror the `auth` feature in the sibling `shadows` project exactly.
 
 ## Layer boundaries
 

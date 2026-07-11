@@ -28,6 +28,41 @@ precedence. Do not start code changes until the relevant rules are reviewed.
 - No hardcoded user-facing strings; nested `.tr()` keys.
 - No business logic / network / database access in pages.
 
+## Feature structure (mandatory)
+
+Every feature follows Clean Architecture, feature-first. Generate new ones with
+Mason — never hand-roll folders:
+
+```bash
+mason make feature --feature_name <name> -o lib/features
+```
+
+```
+features/<name>/
+├── data/
+│   ├── data_sources/   <name>_local_datasource.dart, <name>_remote_datasource.dart  (@injectable)
+│   └── repositories/   <name>_repository_imp.dart      (@Injectable(as: <Name>Repository))
+├── domain/
+│   ├── entities/       <name>_entity.dart               (plain models)
+│   └── repositories/   <name>_repository.dart           (abstract interface)
+└── presentation/
+    ├── pages/          <name>_page.dart                 (@RoutePage wrapper)
+    │   └── mobile/     <name>_page_mobile.dart          (the screen tree)
+    ├── state/bloc/     <name>_bloc.dart, _event.dart, _state.dart
+    └── widgets/        <name>_widget.dart
+```
+
+`pages/` always holds two things: the thin `@RoutePage` wrapper and its `mobile/`
+implementation. Mirror the `auth` feature in the sibling `shadows` project.
+
+## Branch & commit conventions
+
+- Branches: `feature/<name>` (new work), `fix/<issue-or-name>` (bug fixes), also
+  `docs/`, `chore/`.
+- Commits & PR titles: Conventional Commits — `type(scope): imperative summary`
+  (`feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`,
+  `chore`). CI lints PR titles; PRs are squash-merged. See `CONTRIBUTING.md`.
+
 ## Daily commands
 
 ```bash

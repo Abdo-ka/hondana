@@ -199,11 +199,28 @@ nouns (e.g. "MangaDex") are not translated.
 lib/
 ├── main.dart / app.dart / initialization.dart   # entry, MaterialApp, bootstrap
 ├── core/            # DI, config, database, network, routing, state, theme, widgets
-└── features/<feature>/
-    ├── data/         # sources, repository implementations, services
-    ├── domain/       # entities, models, repository interfaces, preference stores
-    └── presentation/ # bloc/, pages/ (@RoutePage), widgets/
+└── features/<feature>/                           # scaffold via `mason make feature`
+    ├── data/
+    │   ├── data_sources/   <f>_local_datasource.dart + <f>_remote_datasource.dart  (@injectable)
+    │   └── repositories/   <f>_repository_imp.dart   @Injectable(as: <F>Repository)
+    ├── domain/
+    │   ├── entities/       <f>_entity.dart            (plain models — no drift/DTO types)
+    │   └── repositories/   <f>_repository.dart        (abstract interface)
+    └── presentation/
+        ├── pages/          <f>_page.dart              @RoutePage wrapper (BlocProvider + PageLayoutBuilder)
+        │   └── mobile/     <f>_page_mobile.dart       the actual AppScaffold screen tree
+        ├── state/bloc/     <f>_bloc.dart, _event.dart, _state.dart
+        └── widgets/        feature widget classes
 ```
+
+**This structure is mandatory** — generate features with
+`mason make feature --feature_name <name> -o lib/features` (brick in
+`bricks/feature/`), never by hand. `pages/` always holds two things: the thin
+`@RoutePage` wrapper and its `mobile/` implementation. The repository interface
+lives in `domain/repositories/`; its `@Injectable(as: …)` implementation and the
+local/remote data sources live under `data/`. Mirror the `auth` feature in the
+sibling `shadows` project exactly. Local-only features may omit the remote data
+source — don't create one that does nothing.
 
 Shared UI/utilities live in `lib/core/` and are imported via
 `package:hondana/core/core.dart`. There is no `packages/` monorepo and no Firebase.

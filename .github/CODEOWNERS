@@ -1,0 +1,11 @@
+# Code owners are automatically requested for review on matching pull requests.
+# https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything in the repo.
+*                       @Abdo-ka
+
+# Project rules & CI — changes here should always be reviewed.
+/.github/                @Abdo-ka
+/CLAUDE.md               @Abdo-ka
+/.cursor/                @Abdo-ka
+/AGENTS.md               @Abdo-ka

@@ -74,18 +74,44 @@ lib/
 │   ├── utils/             BlocObserver, date helpers, native screen helpers
 │   └── widgets/           AppScaffold, AppAppBar, AppText, feedback indicators, …
 │
-└── features/<feature>/
-    ├── data/              source implementations, repository impls, services
-    ├── domain/            entities, models, repository interfaces, preference stores
+└── features/<feature>/                 Scaffold new ones with `mason make feature`
+    ├── data/
+    │   ├── data_sources/     <f>_local_datasource.dart, <f>_remote_datasource.dart (@injectable)
+    │   └── repositories/     <f>_repository_imp.dart      @Injectable(as: <F>Repository)
+    ├── domain/
+    │   ├── entities/         <f>_entity.dart               (plain domain models)
+    │   └── repositories/     <f>_repository.dart           (abstract interface)
     └── presentation/
-        ├── bloc/          <feature>_bloc.dart, _event.dart, _state.dart
-        ├── pages/         @RoutePage screens (thin composition)
-        └── widgets/       feature widget classes
+        ├── pages/            <f>_page.dart                 @RoutePage wrapper: BlocProvider + PageLayoutBuilder(mobile: …)
+        │   └── mobile/       <f>_page_mobile.dart          the actual AppScaffold screen tree
+        ├── state/bloc/       <f>_bloc.dart, _event.dart, _state.dart
+        └── widgets/          feature widget classes
 ```
 
 **Features:** `browse` (sources / extensions / global search), `library`,
 `manga` (details), `reader`, `downloads`, `history`, `updates`, `more`
 (settings), `main` (bottom-nav shell).
+
+### Mandatory feature structure
+
+Every feature follows the layout above — generate it with
+`mason make feature --feature_name <name> -o lib/features` (see `bricks/feature/`),
+never hand-roll folders. The non-negotiable shape:
+
+- **`data/data_sources/`** — a `@injectable` `<F>LocalDataSource` (drift / prefs)
+  and `<F>RemoteDataSource` (network / sources). Local-only features may omit the
+  remote one; never invent a data source that does nothing.
+- **`data/repositories/<f>_repository_imp.dart`** — `@Injectable(as: <F>Repository)`,
+  implements the domain interface, orchestrates the data sources.
+- **`domain/entities/`** — plain domain models (`*_entity.dart`); keep drift/DTO
+  types out. **`domain/repositories/`** — the abstract `<F>Repository` contract.
+- **`presentation/pages/`** holds **two things**: `<f>_page.dart` (the thin
+  `@RoutePage` wrapper — provides the Bloc, returns `PageLayoutBuilder(mobile: …)`)
+  and `mobile/<f>_page_mobile.dart` (the real screen tree). Blocs live under
+  **`presentation/state/bloc/`**; widget classes under `presentation/widgets/`.
+
+Reference implementation to mirror exactly: the `auth` feature in the sibling
+`shadows` project.
 
 ### File-name stability — do not rename
 
@@ -237,7 +263,15 @@ Hondana is published on GitHub, so the code is documented for readers:
   ("Mihon behavior: …").
 - Comment intent, not syntax. Don't narrate what the code plainly says.
 
-## Git
+## Git & contribution conventions
 
-Git is the user's domain. Do not commit, push, branch, merge, or rewrite history
-unless explicitly asked.
+Git is the user's domain — don't commit, push, branch, merge, or rewrite history
+unless explicitly asked. When you do, follow the project conventions (full detail
+in [`CONTRIBUTING.md`](CONTRIBUTING.md)):
+
+- **Branches:** `feature/<name>` for new work, `fix/<issue-or-name>` for bug
+  fixes (also `docs/`, `chore/`). One logical change per branch/PR.
+- **Commits:** Conventional Commits — `type(scope): imperative summary`, where
+  `type` ∈ `feat, fix, docs, style, refactor, perf, test, build, ci, chore` and
+  `scope` is usually the feature. PR titles are CI-linted to this shape and PRs
+  are squash-merged.

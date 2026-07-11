@@ -93,6 +93,42 @@ The short version:
 
 ---
 
+## Scaffolding a new feature (Mason)
+
+New features **must** follow the standard structure. Generate it with the Mason
+brick instead of creating folders by hand:
+
+```bash
+# One-time: install the Mason CLI and fetch the project's bricks
+dart pub global activate mason_cli
+mason get
+
+# Scaffold a feature (creates lib/features/<name>/ with the full structure)
+mason make feature --feature_name reader -o lib/features
+```
+
+This generates the canonical layout:
+
+```
+features/<name>/
+├── data/
+│   ├── data_sources/   <name>_local_datasource.dart, <name>_remote_datasource.dart
+│   └── repositories/   <name>_repository_imp.dart          (@Injectable(as: <Name>Repository))
+├── domain/
+│   ├── entities/       <name>_entity.dart
+│   └── repositories/   <name>_repository.dart               (abstract interface)
+└── presentation/
+    ├── pages/          <name>_page.dart                     (@RoutePage wrapper)
+    │   └── mobile/     <name>_page_mobile.dart              (the actual screen tree)
+    ├── state/bloc/     <name>_bloc.dart, _event.dart, _state.dart
+    └── widgets/        <name>_widget.dart
+```
+
+After generating (or after adding any `@RoutePage` / `@injectable` / drift
+annotation), run `dart run build_runner build --delete-conflicting-outputs`.
+
+---
+
 ## The quality gate
 
 **Every change must pass this locally before you open a PR** (CI runs the same
@@ -112,25 +148,32 @@ If `flutter analyze` reports anything, fix it before pushing.
 
 ## Branching & workflow
 
-We use a simple fork + feature-branch flow off `main`:
+We use a fork + branch flow off `main`. **Name your branch by type** — new work
+goes on a `feature/` branch, bug fixes on a `fix/` branch:
+
+| Branch prefix | Use for | Example |
+| --- | --- | --- |
+| `feature/` | a new feature | `feature/reader-double-tap-zoom` |
+| `fix/` | a bug fix (include the issue number when there is one) | `fix/123-library-scroll-jump` |
+| `docs/` | documentation only | `docs/contributing-guide` |
+| `chore/` | tooling / maintenance | `chore/bump-drift` |
 
 ```bash
 # Sync your fork's main with upstream
 git checkout main
 git pull upstream main
 
-# Create a descriptive branch for your work
-git checkout -b feat/reader-double-tap-zoom
-#            ^type/short-description
+# feature/<name> for new work, fix/<issue-or-name> for bug fixes
+git checkout -b feature/reader-double-tap-zoom
 
 # ... make changes, commit ...
 
 # Push to your fork and open a PR against upstream main
-git push origin feat/reader-double-tap-zoom
+git push origin feature/reader-double-tap-zoom
 ```
 
-Branch-name prefixes mirror the commit types below (`feat/`, `fix/`, `docs/`, …).
-Keep one logical change per branch/PR — it's much easier to review.
+Keep one logical change per branch/PR — it's much easier to review. The branch
+prefix mirrors the commit `type` below.
 
 ---
 
