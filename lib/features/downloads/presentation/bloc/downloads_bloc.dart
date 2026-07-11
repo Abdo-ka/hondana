@@ -4,27 +4,34 @@ import 'dart:io';
 
 import 'package:background_downloader/background_downloader.dart' as bd;
 import 'package:bloc_concurrency/bloc_concurrency.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:path/path.dart' as p;
 
+import 'package:mihonx/core/network/app_http.dart';
 import 'package:mihonx/features/browse/data/source/http_source_base.dart';
 import 'package:mihonx/features/browse/domain/source/model/s_chapter.dart';
 import 'package:mihonx/features/browse/domain/source/source_manager.dart';
+import 'package:mihonx/features/downloads/domain/download_queue_store.dart';
 import 'package:mihonx/features/downloads/domain/download_service.dart';
 import 'package:mihonx/features/downloads/presentation/bloc/downloads_event.dart';
 import 'package:mihonx/features/downloads/presentation/bloc/downloads_state.dart';
 import 'package:mihonx/features/manga/domain/manga_repository.dart';
 
-/// App-wide download queue (singleton — survives navigation). The page list
-/// is fetched in the foreground, then each page becomes a native background
-/// task (URLSession on iOS via background_downloader) so downloads continue
-/// when the app is backgrounded or killed. Per-page completions are
+/// App-wide download queue (singleton — survives navigation). Chapters are
+/// processed one at a time in queue order (Mihon behavior — queue chapter 1
+/// first and it finishes first). The active chapter's page list is fetched in
+/// the foreground, then each page becomes a native background task (WorkManager
+/// on Android, URLSession on iOS via background_downloader) so downloads
+/// continue when the app is backgrounded or killed. Per-page completions are
 /// aggregated back into one chapter-level [DownloadTask]; the `.done` marker
-/// is written only after every page of the chapter has completed.
+/// is written only after every page of the chapter has completed. The pending
+/// queue itself is persisted via [DownloadQueueStore] and restored on startup,
+/// so remaining chapters resume after a restart.
 @lazySingleton
 class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
-  DownloadsBloc(this._service, this._repo, this._sources)
+  DownloadsBloc(this._service, this._repo, this._sources, this._store)
       : super(const DownloadsState()) {
     on<DownloadsStarted>(_onStarted);
     on<DownloadEnqueued>(_onEnqueued);
@@ -32,6 +39,9 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
     on<DownloadRetryRequested>(_onRetry);
     on<DownloadDeleteRequested>(_onDelete);
     on<DownloadsClearFinished>(_onClearFinished);
+    on<DownloadsPauseToggled>(_onPauseToggled);
+    on<DownloadsCancelAll>(_onCancelAll);
+    on<DownloadsReordered>(_onReordered);
     on<DownloadsQueueProcessed>(_onProcess, transformer: droppable());
     on<DownloadsTaskStatusChanged>(_onTaskStatus, transformer: sequential());
     add(const DownloadsStarted());
@@ -44,6 +54,7 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
   final DownloadService _service;
   final MangaRepository _repo;
   final SourceManager _sources;
+  final DownloadQueueStore _store;
 
   /// In-flight chapters: aggregates per-page native tasks into one chapter.
   /// A chapter absent from this map ignores late native updates, which is
@@ -63,7 +74,15 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
     DownloadsStarted event,
     Emitter<DownloadsState> emit,
   ) async {
-    emit(state.copyWith(downloaded: await _service.scanDownloadedChapterIds()));
+    // Snapshot the persisted queue BEFORE any emit — the first emit and
+    // `_reconcile`'s resurrected-queue emit both trigger onChange, which
+    // re-saves the (then partial) queue and would otherwise clobber the
+    // chapters still waiting behind the in-flight one.
+    final persisted = _store.load();
+    emit(state.copyWith(
+      downloaded: await _service.scanDownloadedChapterIds(),
+      paused: _store.paused,
+    ));
     if (_updatesSub != null) return; // Idempotent — bloc is a lazySingleton.
     // The listener must exist before resumeFromBackground() so updates
     // delivered while the app was suspended/killed are not missed.
@@ -74,6 +93,11 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
     });
     try {
       final downloader = bd.FileDownloader();
+      final permissions = downloader.permissions;
+      if (await permissions.status(bd.PermissionType.notifications) !=
+          bd.PermissionStatus.granted) {
+        await permissions.request(bd.PermissionType.notifications);
+      }
       await downloader.trackTasks();
       await downloader.resumeFromBackground();
       await _reconcile(emit);
@@ -83,7 +107,24 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
       // Native downloader unavailable (e.g. tests) — enqueues will surface
       // per-chapter failures instead.
     } finally {
+      _restoreQueue(persisted, emit);
       if (!_ready.isCompleted) _ready.complete();
+      add(const DownloadsQueueProcessed());
+    }
+  }
+
+  /// Re-adds chapters that were still pending when the app last stopped —
+  /// reconciliation only recovers the chapter whose pages were already
+  /// enqueued natively; everything behind it in the queue lives in [persisted]
+  /// (snapshotted before reconciliation could re-save a partial queue).
+  void _restoreQueue(List<DownloadTask> persisted, Emitter<DownloadsState> emit) {
+    final restored = persisted
+        .where((t) =>
+            !state.downloaded.contains(t.chapterId) &&
+            state.taskFor(t.chapterId) == null)
+        .toList();
+    if (restored.isNotEmpty) {
+      emit(state.copyWith(queue: [...state.queue, ...restored]));
     }
   }
 
@@ -218,6 +259,13 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
   ) async {
     await _ready.future; // Never enqueue before reconciliation finished.
     while (true) {
+      // One chapter at a time in queue order (Mihon): wait out any chapter
+      // already in flight — including one resurrected after an app kill —
+      // before starting the next.
+      while (_jobs.isNotEmpty) {
+        await _jobs.values.first.done;
+      }
+      if (state.paused) return;
       final next = state.queue
           .where((t) => t.status == DownloadTaskStatus.queued)
           .firstOrNull;
@@ -226,12 +274,61 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
           (t) => t.copyWith(status: DownloadTaskStatus.downloading, progress: 0));
       try {
         await _startChapter(next, emit);
-      } on Exception {
-        _jobs.remove(next.chapterId);
+      } catch (e) {
+        // Catch Error too (e.g. a StateError/TypeError from a source's
+        // getPageList): an uncaught Error here would wedge the serial drain
+        // with the chapter stuck at 'downloading'.
+        final job = _jobs.remove(next.chapterId);
+        job?.finish();
         _update(emit, next.chapterId,
-            (t) => t.copyWith(status: DownloadTaskStatus.failed));
+            (t) => t.copyWith(status: DownloadTaskStatus.failed, error: '$e'));
       }
     }
+  }
+
+  Future<void> _onPauseToggled(
+    DownloadsPauseToggled event,
+    Emitter<DownloadsState> emit,
+  ) async {
+    final paused = !state.paused;
+    // Flip the flag before aborting so the drain loop can't start the next
+    // chapter in the gap.
+    emit(state.copyWith(paused: paused));
+    if (paused) {
+      // The in-flight chapter returns to queued and restarts on resume.
+      // ponytail: restart, not byte-resume — pages are small images.
+      final active = state.queue
+          .where((t) => t.status == DownloadTaskStatus.downloading)
+          .toList();
+      for (final task in active) {
+        await _abortNative(task.chapterId);
+        _update(emit, task.chapterId,
+            (t) => t.copyWith(status: DownloadTaskStatus.queued, progress: 0));
+      }
+    } else {
+      add(const DownloadsQueueProcessed());
+    }
+  }
+
+  Future<void> _onCancelAll(
+    DownloadsCancelAll event,
+    Emitter<DownloadsState> emit,
+  ) async {
+    final active = state.queue.where((t) => t.isActive).toList();
+    for (final task in active) {
+      await _abortNative(task.chapterId);
+      _update(emit, task.chapterId,
+          (t) => t.copyWith(status: DownloadTaskStatus.cancelled));
+    }
+  }
+
+  /// Indices arrive pre-adjusted (onReorderItem semantics).
+  void _onReordered(DownloadsReordered event, Emitter<DownloadsState> emit) {
+    final queue = [...state.queue];
+    if (event.oldIndex < 0 || event.oldIndex >= queue.length) return;
+    final task = queue.removeAt(event.oldIndex);
+    queue.insert(event.newIndex.clamp(0, queue.length), task);
+    emit(state.copyWith(queue: queue));
   }
 
   /// Fetches the page list (foreground) and enqueues one native background
@@ -246,8 +343,14 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
         chapter == null ? null : await _repo.getManga(chapter.mangaId);
     final source = manga == null ? null : _sources.get(manga.source);
     if (chapter == null || manga == null || source == null) {
-      _update(emit, task.chapterId,
-          (t) => t.copyWith(status: DownloadTaskStatus.failed));
+      _update(
+          emit,
+          task.chapterId,
+          (t) => t.copyWith(
+              status: DownloadTaskStatus.failed,
+              error: source == null
+                  ? 'Source not installed'
+                  : 'Chapter not found'));
       return;
     }
     final pages = await source
@@ -263,8 +366,11 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
         .where((url) => url.isNotEmpty)
         .toList();
     if (urls.isEmpty) {
-      _update(emit, task.chapterId,
-          (t) => t.copyWith(status: DownloadTaskStatus.failed));
+      _update(
+          emit,
+          task.chapterId,
+          (t) => t.copyWith(
+              status: DownloadTaskStatus.failed, error: 'No pages found'));
       return;
     }
 
@@ -277,6 +383,10 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
       'User-Agent': HttpSourceBase.userAgent,
       if (source is HttpSourceBase) ...source.imageHeaders,
     };
+    // Native download tasks bypass Dio, so the WebView cookies (Cloudflare
+    // cf_clearance) must be replayed here explicitly — without them every
+    // page request on a protected site 403s and the chapter fails.
+    final cookieStore = cookieStoreResolver?.call();
     final group = _group(task.mangaId, task.chapterId);
     final metaData = jsonEncode({
       'mangaId': task.mangaId,
@@ -303,10 +413,11 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
         job.completed.add(taskId);
         continue;
       }
+      final cookie = cookieStore?.cookieHeaderFor(Uri.parse(url));
       tasks.add(bd.DownloadTask(
         taskId: taskId,
         url: url,
-        headers: headers,
+        headers: cookie == null ? headers : {...headers, 'Cookie': cookie},
         baseDirectory: bd.BaseDirectory.applicationDocuments,
         directory: _service.relativeChapterDir(task.mangaId, task.chapterId),
         filename: filename,
@@ -325,12 +436,38 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
     // A cancel/delete may have interleaved with the local-page copies above.
     if (state.taskFor(task.chapterId)?.status !=
         DownloadTaskStatus.downloading) {
-      _jobs.remove(task.chapterId);
+      _jobs.remove(task.chapterId)?.finish();
       await _service.delete(task.mangaId, task.chapterId);
       return;
     }
+    // One combined system notification per chapter (fixed notification id, so
+    // consecutive chapters replace it) — the visible "background download".
+    // iOS re-issues a group notification whenever its text changes, so the
+    // body must stay static there (Android updates in place, so it can show
+    // page counts and a progress bar).
+    bd.FileDownloader().configureNotificationForGroup(
+      group,
+      running: bd.TaskNotification(
+        task.mangaTitle,
+        Platform.isIOS
+            ? task.chapterName
+            : '${task.chapterName} · {numFinished}/{numTotal}',
+      ),
+      progressBar: !Platform.isIOS,
+      groupNotificationId: 'mihonx_downloads',
+    );
     final enqueued = await bd.FileDownloader().enqueueAll(tasks);
-    if (enqueued.contains(false)) await _failChapter(task.chapterId, emit);
+    // Pause/cancel/delete may have aborted the chapter during the enqueue
+    // await — its cancelAll(group) ran before these tasks existed, so they'd
+    // keep downloading. Cancel them now and drop the partials.
+    if (!_jobs.containsKey(task.chapterId)) {
+      await bd.FileDownloader().cancelAll(group: group);
+      await _service.delete(task.mangaId, task.chapterId);
+      return;
+    }
+    if (enqueued.contains(false)) {
+      await _failChapter(task.chapterId, emit, 'Could not start downloads');
+    }
   }
 
   Future<void> _onTaskStatus(
@@ -373,7 +510,17 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
       case bd.TaskStatus.canceled:
         // canceled with a live job means the OS killed the task — user
         // cancels remove the job before native cancellation runs.
-        await _failChapter(job.chapterId, emit);
+        await _failChapter(
+          job.chapterId,
+          emit,
+          update.exception?.description ??
+              switch (update.status) {
+                bd.TaskStatus.notFound =>
+                  'HTTP ${update.responseStatusCode ?? 404}',
+                bd.TaskStatus.canceled => 'Stopped by the system',
+                _ => 'Download failed',
+              },
+        );
       case bd.TaskStatus.enqueued:
       case bd.TaskStatus.running:
       case bd.TaskStatus.waitingToRetry:
@@ -382,38 +529,58 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
     }
   }
 
+  // These three end a chapter's flight. `job.finish()` MUST run even if the
+  // filesystem/native cleanup throws — a pending completer would deadlock the
+  // serial drain (`await _jobs.values.first.done`) forever.
   Future<void> _finishChapter(
     _ChapterJob job,
     Emitter<DownloadsState> emit,
   ) async {
     _jobs.remove(job.chapterId);
-    await _service.markDone(job.mangaId, job.chapterId);
-    await _deleteRecords(job.taskIds);
-    _update(emit, job.chapterId,
-        (t) => t.copyWith(status: DownloadTaskStatus.completed, progress: 1));
-    emit(state.copyWith(downloaded: {...state.downloaded, job.chapterId}));
+    try {
+      await _service.markDone(job.mangaId, job.chapterId);
+      await _deleteRecords(job.taskIds);
+      _update(emit, job.chapterId,
+          (t) => t.copyWith(status: DownloadTaskStatus.completed, progress: 1));
+      emit(state.copyWith(downloaded: {...state.downloaded, job.chapterId}));
+    } finally {
+      job.finish();
+    }
   }
 
-  Future<void> _failChapter(int chapterId, Emitter<DownloadsState> emit) async {
+  Future<void> _failChapter(
+    int chapterId,
+    Emitter<DownloadsState> emit, [
+    String? error,
+  ]) async {
     final job = _jobs.remove(chapterId);
-    if (job != null) {
-      await bd.FileDownloader()
-          .cancelAll(group: _group(job.mangaId, chapterId));
-      await _deleteRecords(job.taskIds);
-      // Failed downloads never keep partial pages on disk.
-      await _service.delete(job.mangaId, chapterId);
+    try {
+      if (job != null) {
+        await bd.FileDownloader()
+            .cancelAll(group: _group(job.mangaId, chapterId));
+        await _deleteRecords(job.taskIds);
+        // Failed downloads never keep partial pages on disk.
+        await _service.delete(job.mangaId, chapterId);
+      }
+      _update(emit, chapterId,
+          (t) => t.copyWith(status: DownloadTaskStatus.failed, error: error));
+    } finally {
+      job?.finish();
     }
-    _update(emit, chapterId,
-        (t) => t.copyWith(status: DownloadTaskStatus.failed));
   }
 
   /// Cancels a chapter's native tasks, forgets its job and removes partials.
   Future<void> _abortNative(int chapterId) async {
     final job = _jobs.remove(chapterId);
     if (job == null) return;
-    await bd.FileDownloader().cancelAll(group: _group(job.mangaId, chapterId));
-    await _deleteRecords(job.taskIds);
-    await _service.delete(job.mangaId, chapterId);
+    try {
+      await bd.FileDownloader()
+          .cancelAll(group: _group(job.mangaId, chapterId));
+      await _deleteRecords(job.taskIds);
+      await _service.delete(job.mangaId, chapterId);
+    } finally {
+      job.finish();
+    }
   }
 
   Future<void> _deleteRecords(Iterable<String> taskIds) async {
@@ -441,6 +608,24 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
     ));
   }
 
+  /// Persists queue identity/order (not per-page progress) and the paused
+  /// flag whenever they change — Mihon's DownloadStore behavior.
+  @override
+  void onChange(Change<DownloadsState> change) {
+    super.onChange(change);
+    List<int> activeIds(DownloadsState s) =>
+        [for (final t in s.queue.where((t) => t.isActive)) t.chapterId];
+    if (!listEquals(
+      activeIds(change.currentState),
+      activeIds(change.nextState),
+    )) {
+      _store.save(change.nextState.queue);
+    }
+    if (change.currentState.paused != change.nextState.paused) {
+      _store.setPaused(change.nextState.paused);
+    }
+  }
+
   @override
   Future<void> close() async {
     await _updatesSub?.cancel();
@@ -466,6 +651,16 @@ class _ChapterJob {
 
   /// Task ids of completed pages — a set so replayed updates stay idempotent.
   final Set<String> completed;
+
+  /// Resolves when the chapter leaves flight (finished, failed or aborted) —
+  /// the serial drain loop waits on this before starting the next chapter.
+  final Completer<void> _done = Completer<void>();
+
+  Future<void> get done => _done.future;
+
+  void finish() {
+    if (!_done.isCompleted) _done.complete();
+  }
 }
 
 /// Chapter identity carried in each native task's `metaData` JSON, so a

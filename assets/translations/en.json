@@ -63,8 +63,15 @@
     "no_chapters": "No chapters found.",
     "start_reading": "Start reading",
     "resume": "Resume",
-    "download_all": "Download all",
-    "download_all_queued": "All chapters queued for download"
+    "download_all": "All",
+    "download_all_queued": "All chapters queued for download",
+    "download": "Download",
+    "download_next1": "Next chapter",
+    "download_next5": "Next 5 chapters",
+    "download_next10": "Next 10 chapters",
+    "download_next25": "Next 25 chapters",
+    "download_unread": "Unread",
+    "download_queued": "Chapters queued for download"
   },
   "status": {
     "unknown": "Unknown",
@@ -79,7 +86,10 @@
     "mode_leftToRight": "Left to right",
     "mode_rightToLeft": "Right to left",
     "mode_vertical": "Vertical",
-    "mode_webtoon": "Webtoon (continuous)"
+    "mode_webtoon": "Webtoon (continuous)",
+    "finished": "Finished:",
+    "next": "Next:",
+    "no_next_chapter": "There's no next chapter"
   },
   "extensions": {
     "title": "Extensions",
@@ -101,7 +111,11 @@
     "status_queued": "Queued",
     "status_completed": "Downloaded",
     "status_failed": "Failed",
-    "status_cancelled": "Cancelled"
+    "status_cancelled": "Cancelled",
+    "pause": "Pause",
+    "resume": "Resume",
+    "cancel_all": "Cancel all",
+    "clear_finished": "Clear finished"
   },
   "categories": {
     "title": "Categories",

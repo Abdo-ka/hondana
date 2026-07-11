@@ -44,6 +44,23 @@ final class DownloadsClearFinished extends DownloadsEvent {
   const DownloadsClearFinished();
 }
 
+/// Pause/resume queue processing (Mihon's downloads-page FAB).
+final class DownloadsPauseToggled extends DownloadsEvent {
+  const DownloadsPauseToggled();
+}
+
+/// Cancel every queued and in-flight download.
+final class DownloadsCancelAll extends DownloadsEvent {
+  const DownloadsCancelAll();
+}
+
+/// Drag-reorder of the queue list (ReorderableListView semantics).
+final class DownloadsReordered extends DownloadsEvent {
+  const DownloadsReordered(this.oldIndex, this.newIndex);
+  final int oldIndex;
+  final int newIndex;
+}
+
 /// Internal: drains the queue. Droppable — one drain loop at a time.
 final class DownloadsQueueProcessed extends DownloadsEvent {
   const DownloadsQueueProcessed();

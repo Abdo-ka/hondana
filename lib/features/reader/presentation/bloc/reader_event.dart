@@ -8,9 +8,16 @@ final class ReaderStarted extends ReaderEvent {
   const ReaderStarted();
 }
 
+/// Seek within the current chapter (slider) — page index, chapter-relative.
 final class ReaderPageChanged extends ReaderEvent {
   const ReaderPageChanged(this.page);
   final int page;
+}
+
+/// The visible entry in the continuous item list changed (scroll/swipe).
+final class ReaderItemChanged extends ReaderEvent {
+  const ReaderItemChanged(this.index);
+  final int index;
 }
 
 final class ReaderOverlayToggled extends ReaderEvent {

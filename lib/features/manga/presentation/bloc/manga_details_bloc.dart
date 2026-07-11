@@ -25,11 +25,12 @@ class MangaDetailsBloc extends Bloc<MangaDetailsEvent, MangaDetailsState> {
     on<MangaFavoriteToggled>(_onFavorite);
     on<MangaChapterReadToggled>(_onChapterRead);
     on<MangaChaptersRefreshed>(_onRefresh, transformer: droppable());
+    // Display order is derived in the state (orderedChapters); the canonical
+    // list stays newest-first so DB re-emissions can't undo the toggle.
     on<MangaChapterSortToggled>(
-      (e, emit) => emit(state.copyWith(
-        chapters: state.chapters.reversed.toList(),
-        chaptersDescending: !state.chaptersDescending,
-      )),
+      (e, emit) => emit(
+        state.copyWith(chaptersDescending: !state.chaptersDescending),
+      ),
     );
   }
 

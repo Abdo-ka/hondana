@@ -29,11 +29,20 @@ class LibraryUpdateService {
         final existing = await (_db.select(_db.chapters)
               ..where((c) => c.mangaId.equals(m.id)))
             .get();
-        final existingUrls = existing.map((e) => e.url).toSet();
-        for (var i = 0; i < chapters.length; i++) {
-          final ch = chapters[i];
-          if (existingUrls.contains(ch.url)) continue;
-          await _db.into(_db.chapters).insert(
+        final byUrl = {for (final c in existing) c.url: c};
+        final now = DateTime.now();
+        var added = 0;
+        // Re-sync sourceOrder for EVERY chapter to its position in the freshly
+        // fetched list (0 = newest). Inserting new chapters with a bare index
+        // would collide with existing rows' orders and break the ordering
+        // invariant the reader/details sort depend on — so update in place too.
+        await _db.batch((batch) {
+          for (var i = 0; i < chapters.length; i++) {
+            final ch = chapters[i];
+            final prev = byUrl[ch.url];
+            if (prev == null) {
+              batch.insert(
+                _db.chapters,
                 ChaptersCompanion.insert(
                   mangaId: m.id,
                   url: ch.url,
@@ -41,12 +50,32 @@ class LibraryUpdateService {
                   scanlator: Value(ch.scanlator),
                   chapterNumber: Value(ch.chapterNumber),
                   dateUpload: Value(ch.dateUpload),
-                  dateFetch: Value(DateTime.now()),
+                  dateFetch: Value(now),
                   sourceOrder: Value(i),
                 ),
               );
-          newChapters++;
+              added++;
+            } else {
+              batch.update(
+                _db.chapters,
+                ChaptersCompanion(
+                  name: Value(ch.name),
+                  scanlator: Value(ch.scanlator),
+                  chapterNumber: Value(ch.chapterNumber),
+                  sourceOrder: Value(i),
+                ),
+                where: (c) => c.id.equals(prev.id),
+              );
+            }
+          }
+        });
+        if (added > 0) {
+          // Stamp lastUpdate so the library's "last updated" sort works
+          // (the column was otherwise never written).
+          await (_db.update(_db.mangas)..where((row) => row.id.equals(m.id)))
+              .write(MangasCompanion(lastUpdate: Value(now)));
         }
+        newChapters += added;
       } catch (_) {
         // skip this source for this run
       }

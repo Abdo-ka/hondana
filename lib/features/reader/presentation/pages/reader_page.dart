@@ -7,9 +7,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import 'package:mihonx/core/di/di_container.dart';
+import 'package:mihonx/core/widgets/app_text.dart';
 import 'package:mihonx/features/reader/domain/reader_preferences.dart';
 import 'package:mihonx/features/reader/presentation/bloc/reader_bloc.dart';
 import 'package:mihonx/features/reader/presentation/bloc/reader_event.dart';
+import 'package:mihonx/features/reader/presentation/bloc/reader_item.dart';
 import 'package:mihonx/features/reader/presentation/bloc/reader_state.dart';
 import 'package:mihonx/features/reader/presentation/widgets/reader_image.dart';
 import 'package:mihonx/features/reader/presentation/widgets/reader_overlay.dart';
@@ -143,7 +145,7 @@ class _PagedReaderState extends State<_PagedReader> {
   void initState() {
     super.initState();
     _controller = PageController(
-      initialPage: context.read<ReaderBloc>().state.currentPage,
+      initialPage: context.read<ReaderBloc>().state.currentItem,
     );
   }
 
@@ -157,17 +159,18 @@ class _PagedReaderState extends State<_PagedReader> {
   @override
   Widget build(BuildContext context) {
     return BlocListener<ReaderBloc, ReaderState>(
-      listenWhen: (a, b) =>
-          a.chapterId != b.chapterId || a.currentPage != b.currentPage,
+      listenWhen: (a, b) => a.currentItem != b.currentItem,
       listener: (context, state) {
+        // External seeks only (slider, chapter buttons) — swipes already
+        // moved the controller.
         if (!_controller.hasClients) return;
-        if ((_controller.page?.round() ?? -1) != state.currentPage) {
-          _controller.jumpToPage(state.currentPage);
+        if ((_controller.page?.round() ?? -1) != state.currentItem) {
+          _controller.jumpToPage(state.currentItem);
         }
       },
       child: BlocBuilder<ReaderBloc, ReaderState>(
         buildWhen: (a, b) =>
-            a.pages != b.pages ||
+            a.items != b.items ||
             a.readingMode != b.readingMode ||
             a.imageHeaders != b.imageHeaders,
         builder: (context, state) => GestureDetector(
@@ -184,18 +187,22 @@ class _PagedReaderState extends State<_PagedReader> {
               reverse: state.readingMode.isReversed,
               onPageChanged: (i) {
                 _zoomed.value = false;
-                context.read<ReaderBloc>().add(ReaderPageChanged(i));
+                context.read<ReaderBloc>().add(ReaderItemChanged(i));
               },
-              itemCount: state.pages.length,
-              itemBuilder: (context, index) => _ZoomablePage(
-                onZoomChanged: (z) => _zoomed.value = z,
-                child: Center(
-                  child: ReaderImage(
-                    url: state.pages[index].imageUrl ?? state.pages[index].url,
-                    headers: state.imageHeaders,
+              itemCount: state.items.length,
+              itemBuilder: (context, index) => switch (state.items[index]) {
+                final ReaderPageItem item => _ZoomablePage(
+                    onZoomChanged: (z) => _zoomed.value = z,
+                    child: Center(
+                      child: ReaderImage(
+                        url: item.page.imageUrl ?? item.page.url,
+                        headers: state.imageHeaders,
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                final ReaderTransitionItem item =>
+                  Center(child: _ChapterTransitionView(item: item)),
+              },
             ),
           ),
         ),
@@ -300,14 +307,14 @@ class _WebtoonReaderState extends State<_WebtoonReader> {
   final ItemPositionsListener _positions = ItemPositionsListener.create();
   late int _currentIndex;
   // Suppresses position reports while an external seek jump is in flight so
-  // stale positions cannot bounce currentPage back (and cannot mark pages
+  // stale positions cannot bounce currentItem back (and cannot mark pages
   // read from a transient index).
   bool _pendingJump = false;
 
   @override
   void initState() {
     super.initState();
-    _currentIndex = context.read<ReaderBloc>().state.currentPage;
+    _currentIndex = context.read<ReaderBloc>().state.currentItem;
     _positions.itemPositions.addListener(_onPositionsChanged);
   }
 
@@ -320,7 +327,7 @@ class _WebtoonReaderState extends State<_WebtoonReader> {
   void _onPositionsChanged() {
     final positions = _positions.itemPositions.value;
     if (positions.isEmpty || !mounted || _pendingJump) return;
-    // Current page = the item whose leading edge last crossed the viewport
+    // Current item = the one whose leading edge last crossed the viewport
     // middle (Mihon's webtoon rule).
     final above = positions.where((p) => p.itemLeadingEdge <= 0.5);
     final index = above.isEmpty
@@ -328,7 +335,7 @@ class _WebtoonReaderState extends State<_WebtoonReader> {
         : above.map((p) => p.index).reduce(max);
     if (index == _currentIndex) return;
     _currentIndex = index;
-    context.read<ReaderBloc>().add(ReaderPageChanged(index));
+    context.read<ReaderBloc>().add(ReaderItemChanged(index));
   }
 
   void _handleTap(TapUpDetails d) {
@@ -352,13 +359,12 @@ class _WebtoonReaderState extends State<_WebtoonReader> {
   @override
   Widget build(BuildContext context) {
     return BlocListener<ReaderBloc, ReaderState>(
-      listenWhen: (a, b) =>
-          a.chapterId != b.chapterId || a.currentPage != b.currentPage,
+      listenWhen: (a, b) => a.currentItem != b.currentItem,
       listener: (context, state) {
         // Jump only for external seeks (slider, chapter switch), never for
-        // pages this widget itself reported while scrolling.
-        if (state.currentPage == _currentIndex) return;
-        _currentIndex = state.currentPage;
+        // items this widget itself reported while scrolling.
+        if (state.currentItem == _currentIndex) return;
+        _currentIndex = state.currentItem;
         _pendingJump = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted && _scrollController.isAttached) {
@@ -371,7 +377,7 @@ class _WebtoonReaderState extends State<_WebtoonReader> {
       },
       child: BlocBuilder<ReaderBloc, ReaderState>(
         buildWhen: (a, b) =>
-            a.pages != b.pages || a.imageHeaders != b.imageHeaders,
+            a.items != b.items || a.imageHeaders != b.imageHeaders,
         builder: (context, state) => GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTapUp: _handleTap,
@@ -380,14 +386,52 @@ class _WebtoonReaderState extends State<_WebtoonReader> {
             scrollOffsetController: _offsetController,
             itemPositionsListener: _positions,
             initialScrollIndex: _currentIndex,
-            itemCount: state.pages.length,
-            itemBuilder: (context, index) => ReaderImage(
-              url: state.pages[index].imageUrl ?? state.pages[index].url,
-              headers: state.imageHeaders,
-              fit: BoxFit.fitWidth,
-            ),
+            itemCount: state.items.length,
+            itemBuilder: (context, index) => switch (state.items[index]) {
+              final ReaderPageItem item => ReaderImage(
+                  url: item.page.imageUrl ?? item.page.url,
+                  headers: state.imageHeaders,
+                  fit: BoxFit.fitWidth,
+                ),
+              final ReaderTransitionItem item => SizedBox(
+                  height: MediaQuery.sizeOf(context).height * 0.7,
+                  child: Center(child: _ChapterTransitionView(item: item)),
+                ),
+            },
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Mihon's between-chapter card: what just finished, what comes next (or
+/// that nothing does).
+class _ChapterTransitionView extends StatelessWidget {
+  const _ChapterTransitionView({required this.item});
+
+  final ReaderTransitionItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const AppText.labelMedium('reader.finished', color: Colors.white70),
+          AppText.bodyLarge(item.fromChapterName, color: Colors.white),
+          const SizedBox(height: 24),
+          if (item.toChapterName != null) ...[
+            const AppText.labelMedium('reader.next', color: Colors.white70),
+            AppText.bodyLarge(item.toChapterName!, color: Colors.white),
+          ] else
+            const AppText.bodyLarge(
+              'reader.no_next_chapter',
+              color: Colors.white,
+            ),
+        ],
       ),
     );
   }

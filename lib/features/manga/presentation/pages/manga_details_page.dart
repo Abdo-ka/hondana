@@ -133,17 +133,32 @@ class _StartReadingFab extends StatelessWidget {
   }
 }
 
+/// Mihon's toolbar download menu: next 1/5/10/25 unread, all unread, or all.
+enum _DownloadChoice {
+  next1(1),
+  next5(5),
+  next10(10),
+  next25(25),
+  unread(null),
+  all(null);
+
+  const _DownloadChoice(this.count);
+  final int? count;
+}
+
 class _ChaptersHeader extends StatelessWidget {
   const _ChaptersHeader();
 
-  /// Queues every chapter in reading order; the bloc skips ones already
-  /// downloaded or in flight.
-  void _downloadAll(BuildContext context) {
+  /// Queues chapters in reading order (chapter 1 first); the bloc skips ones
+  /// already downloaded or in flight.
+  void _download(BuildContext context, _DownloadChoice choice) {
     final details = context.read<MangaDetailsBloc>().state;
     final downloads = context.read<DownloadsBloc>();
-    final chapters = details.chaptersDescending
-        ? details.chapters.reversed
-        : details.chapters;
+    final chapters = switch (choice) {
+      _DownloadChoice.all => details.ascendingChapters,
+      _DownloadChoice.unread => details.unreadAscending,
+      _ => details.unreadAscending.take(choice.count!),
+    };
     for (final chapter in chapters) {
       downloads.add(DownloadEnqueued(
         chapterId: chapter.id,
@@ -153,7 +168,7 @@ class _ChaptersHeader extends StatelessWidget {
       ));
     }
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('manga.download_all_queued'.tr())),
+      SnackBar(content: Text('manga.download_queued'.tr())),
     );
   }
 
@@ -172,10 +187,17 @@ class _ChaptersHeader extends StatelessWidget {
             ),
             if (context.read<MangaDetailsBloc>().sourceId !=
                 LocalSource.localSourceId)
-              IconButton(
+              PopupMenuButton<_DownloadChoice>(
                 icon: const Icon(Icons.download),
-                tooltip: 'manga.download_all'.tr(),
-                onPressed: () => _downloadAll(context),
+                tooltip: 'manga.download'.tr(),
+                onSelected: (choice) => _download(context, choice),
+                itemBuilder: (context) => [
+                  for (final choice in _DownloadChoice.values)
+                    PopupMenuItem(
+                      value: choice,
+                      child: Text('manga.download_${choice.name}'.tr()),
+                    ),
+                ],
               ),
             IconButton(
               icon: Icon(
@@ -201,7 +223,9 @@ class _ChaptersSliver extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<MangaDetailsBloc, MangaDetailsState>(
       buildWhen: (a, b) =>
-          a.chapters != b.chapters || a.chaptersStatus != b.chaptersStatus,
+          a.chapters != b.chapters ||
+          a.chaptersStatus != b.chaptersStatus ||
+          a.chaptersDescending != b.chaptersDescending,
       builder: (context, state) => state.chapters.isEmpty
           ? SliverToBoxAdapter(
               child: Padding(
@@ -213,9 +237,9 @@ class _ChaptersSliver extends StatelessWidget {
               ),
             )
           : SliverList.builder(
-              itemCount: state.chapters.length,
+              itemCount: state.orderedChapters.length,
               itemBuilder: (context, index) =>
-                  MangaChapterTile(chapter: state.chapters[index]),
+                  MangaChapterTile(chapter: state.orderedChapters[index]),
             ),
     );
   }

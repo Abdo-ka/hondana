@@ -2,15 +2,17 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:mihonx/core/state/bloc_status.dart';
-import 'package:mihonx/features/browse/domain/source/model/manga_page.dart';
 import 'package:mihonx/features/reader/domain/reader_preferences.dart';
+import 'package:mihonx/features/reader/presentation/bloc/reader_item.dart';
 
 @immutable
 class ReaderState extends Equatable {
   const ReaderState({
     this.status = const BlocStatus.loading(),
-    this.pages = const [],
+    this.items = const [],
+    this.currentItem = 0,
     this.currentPage = 0,
+    this.pageCount = 0,
     this.readingMode = ReadingMode.rightToLeft,
     this.showOverlay = true,
     this.chapterId,
@@ -22,8 +24,17 @@ class ReaderState extends Equatable {
   });
 
   final BlocStatus status;
-  final List<MangaPage> pages;
+
+  /// Continuous list of pages and chapter transitions — grows as the next
+  /// chapter is preloaded so both readers scroll/swipe across chapters.
+  final List<ReaderItem> items;
+
+  /// Index into [items] of what's on screen.
+  final int currentItem;
+
+  /// Page position within the *current chapter* (indicator + slider).
   final int currentPage;
+  final int pageCount;
   final ReadingMode readingMode;
   final bool showOverlay;
   final int? chapterId;
@@ -33,12 +44,12 @@ class ReaderState extends Equatable {
   final bool hasPrev;
   final bool hasNext;
 
-  int get pageCount => pages.length;
-
   ReaderState copyWith({
     BlocStatus? status,
-    List<MangaPage>? pages,
+    List<ReaderItem>? items,
+    int? currentItem,
     int? currentPage,
+    int? pageCount,
     ReadingMode? readingMode,
     bool? showOverlay,
     int? chapterId,
@@ -50,8 +61,10 @@ class ReaderState extends Equatable {
   }) {
     return ReaderState(
       status: status ?? this.status,
-      pages: pages ?? this.pages,
+      items: items ?? this.items,
+      currentItem: currentItem ?? this.currentItem,
       currentPage: currentPage ?? this.currentPage,
+      pageCount: pageCount ?? this.pageCount,
       readingMode: readingMode ?? this.readingMode,
       showOverlay: showOverlay ?? this.showOverlay,
       chapterId: chapterId ?? this.chapterId,
@@ -66,8 +79,10 @@ class ReaderState extends Equatable {
   @override
   List<Object?> get props => [
         status,
-        pages,
+        items,
+        currentItem,
         currentPage,
+        pageCount,
         readingMode,
         showOverlay,
         chapterId,

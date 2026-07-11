@@ -25,6 +25,8 @@ class MangaDetailsState extends Equatable {
   final BlocStatus chaptersStatus;
   final int? mangaId;
   final Manga? manga;
+
+  /// Canonical order as streamed from the repository: newest first.
   final List<ChapterData> chapters;
   final bool chaptersDescending;
 
@@ -32,8 +34,16 @@ class MangaDetailsState extends Equatable {
   String get title => manga?.title ?? source.title;
   String? get thumbnailUrl => manga?.thumbnailUrl ?? source.thumbnailUrl;
 
+  /// Display order — derived so DB re-emissions can't clobber the sort toggle.
   List<ChapterData> get orderedChapters =>
       chaptersDescending ? chapters : chapters.reversed.toList();
+
+  /// Reading order (chapter 1 first) — the order downloads are queued in.
+  List<ChapterData> get ascendingChapters => chapters.reversed.toList();
+
+  /// Unread chapters in reading order (Mihon's "download next N/unread" pool).
+  List<ChapterData> get unreadAscending =>
+      ascendingChapters.where((c) => !c.read).toList();
 
   /// Target for "Start reading": the earliest unread chapter, else the first.
   ChapterData? get nextUnread {

@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:mihonx/core/di/di_container.dart';
 import 'package:mihonx/core/network/app_http.dart';
 import 'package:mihonx/core/utils/app_bloc_observer.dart';
+import 'package:mihonx/features/downloads/presentation/bloc/downloads_bloc.dart';
 
 /// Ordered startup invoked by `main()` before the first frame.
 Future<void> preInitializations() async {
@@ -16,4 +17,8 @@ Future<void> preInitializations() async {
   await configureDependencies();
   cookieStoreResolver = () => getIt<WebCookieStore>();
   Bloc.observer = const AppBlocObserver();
+  // Eager: reconciles native download tasks and resumes the persisted queue
+  // on every launch — including iOS background relaunches — without waiting
+  // for a downloads-aware page to be opened.
+  getIt<DownloadsBloc>();
 }

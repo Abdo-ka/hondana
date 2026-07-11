@@ -31,6 +31,8 @@ import 'package:mihonx/features/browse/presentation/bloc/global_search_bloc.dart
     as _i919;
 import 'package:mihonx/features/browse/presentation/bloc/source_catalogue_bloc.dart'
     as _i14;
+import 'package:mihonx/features/downloads/domain/download_queue_store.dart'
+    as _i755;
 import 'package:mihonx/features/downloads/domain/download_service.dart'
     as _i158;
 import 'package:mihonx/features/downloads/presentation/bloc/downloads_bloc.dart'
@@ -106,6 +108,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i733.SourcePreferences>(
       () => _i733.SourcePreferences(gh<_i460.SharedPreferences>()),
     );
+    gh.lazySingleton<_i755.DownloadQueueStore>(
+      () => _i755.DownloadQueueStore(gh<_i460.SharedPreferences>()),
+    );
     gh.lazySingleton<_i26.LibraryPreferences>(
       () => _i26.LibraryPreferences(gh<_i460.SharedPreferences>()),
     );
@@ -151,6 +156,7 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i158.DownloadService>(),
         gh<_i484.MangaRepository>(),
         gh<_i598.SourceManager>(),
+        gh<_i755.DownloadQueueStore>(),
       ),
     );
     gh.factoryParam<_i862.MangaDetailsBloc, int, _i664.SManga>(

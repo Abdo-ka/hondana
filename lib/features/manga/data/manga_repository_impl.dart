@@ -42,16 +42,13 @@ class MangaRepositoryImpl implements MangaRepository {
         .map((d) => d == null ? null : Manga.fromData(d));
   }
 
+  /// Source order (sourceOrder 0 = newest chapter, Mihon convention), so the
+  /// list arrives newest-first — the details page's default display order.
   @override
   Stream<List<ChapterData>> watchChapters(int mangaId) {
     return (_db.select(_db.chapters)
           ..where((c) => c.mangaId.equals(mangaId))
-          ..orderBy([
-            (c) => OrderingTerm(
-                  expression: c.sourceOrder,
-                  mode: OrderingMode.desc,
-                ),
-          ]))
+          ..orderBy([(c) => OrderingTerm(expression: c.sourceOrder)]))
         .watch();
   }
 
@@ -136,11 +133,18 @@ class MangaRepositoryImpl implements MangaRepository {
       (_db.select(_db.chapters)..where((c) => c.id.equals(chapterId)))
           .getSingleOrNull();
 
+  /// Reading order (oldest → newest): the reader's "next chapter" is the
+  /// next element, matching Mihon.
   @override
   Future<List<ChapterData>> getChaptersForManga(int mangaId) =>
       (_db.select(_db.chapters)
             ..where((c) => c.mangaId.equals(mangaId))
-            ..orderBy([(c) => OrderingTerm(expression: c.sourceOrder)]))
+            ..orderBy([
+              (c) => OrderingTerm(
+                    expression: c.sourceOrder,
+                    mode: OrderingMode.desc,
+                  ),
+            ]))
           .get();
 
   @override

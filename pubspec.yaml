@@ -73,6 +73,11 @@ dev_dependencies:
   drift_dev: ^2.21.0
 
 flutter:
+  # Flutter 3.44 hardcodes the generated SwiftPM package to iOS 13, which
+  # conflicts with background_downloader (needs iOS 14). Use CocoaPods instead;
+  # the Podfile is already at platform :ios, '14.0'.
+  config:
+    enable-swift-package-manager: false
   uses-material-design: true
   assets:
     - assets/translations/
