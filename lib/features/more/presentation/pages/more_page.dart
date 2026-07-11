@@ -51,7 +51,7 @@ class MorePage extends StatelessWidget {
             ListTile(
               leading: const Icon(Icons.info_outline),
               title: const AppText.bodyLarge('settings.about'),
-              onTap: () => context.router.push(const SettingsRoute()),
+              onTap: () => context.router.push(const AboutRoute()),
             ),
           ],
         ),

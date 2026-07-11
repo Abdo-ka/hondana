@@ -27,6 +27,30 @@ class AppRouter extends RootStackRouter {
         AutoRoute(page: ReaderRoute.page, path: '/reader'),
         AutoRoute(page: DownloadsRoute.page, path: '/downloads'),
         AutoRoute(page: SettingsRoute.page, path: '/settings'),
+        AutoRoute(
+          page: AppearanceSettingsRoute.page,
+          path: '/settings/appearance',
+        ),
+        AutoRoute(page: LibrarySettingsRoute.page, path: '/settings/library'),
+        AutoRoute(page: ReaderSettingsRoute.page, path: '/settings/reader'),
+        AutoRoute(
+          page: DownloadsSettingsRoute.page,
+          path: '/settings/downloads',
+        ),
+        AutoRoute(page: BrowseSettingsRoute.page, path: '/settings/browse'),
+        AutoRoute(
+          page: DataStorageSettingsRoute.page,
+          path: '/settings/data',
+        ),
+        AutoRoute(
+          page: SecuritySettingsRoute.page,
+          path: '/settings/security',
+        ),
+        AutoRoute(
+          page: AdvancedSettingsRoute.page,
+          path: '/settings/advanced',
+        ),
+        AutoRoute(page: AboutRoute.page, path: '/about'),
         AutoRoute(page: CategoriesRoute.page, path: '/categories'),
         AutoRoute(page: SourceWebViewRoute.page, path: '/webview'),
       ];

@@ -2,6 +2,8 @@ import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
+import 'package:mihonx/core/database/app_database.dart';
+import 'package:mihonx/core/di/di_container.dart';
 import 'package:mihonx/core/error/app_exception.dart';
 import 'package:mihonx/core/state/bloc_status.dart';
 import 'package:mihonx/features/browse/domain/source/source_manager.dart';
@@ -34,6 +36,8 @@ class GlobalSearchBloc extends Bloc<GlobalSearchEvent, GlobalSearchState> {
         .getCatalogueSources()
         .where((s) => _prefs.isEnabled(s.id))
         .toList();
+    // Fetched once per search; each source's results filter against it.
+    final libraryKeys = await _favoriteKeys();
     emit(GlobalSearchState(
       query: query,
       results: sources
@@ -45,14 +49,19 @@ class GlobalSearchBloc extends Bloc<GlobalSearchEvent, GlobalSearchState> {
       try {
         final page = await source.getSearchManga(1, query, source.getFilterList());
         if (emit.isDone) return;
+        final mangas = libraryKeys.isEmpty
+            ? page.mangas
+            : page.mangas
+                .where((m) => !libraryKeys.contains('${source.id}|${m.url}'))
+                .toList();
         emit(state.copyWith(
           results: _replace(
             source.id,
             (r) => r.copyWith(
-              status: page.mangas.isEmpty
+              status: mangas.isEmpty
                   ? const BlocStatus.empty()
                   : const BlocStatus.success(),
-              manga: page.mangas,
+              manga: mangas,
             ),
           ),
         ));
@@ -68,6 +77,18 @@ class GlobalSearchBloc extends Bloc<GlobalSearchEvent, GlobalSearchState> {
         ));
       }
     }));
+  }
+
+  /// Favorited `'$sourceId|$url'` keys for the hide-in-library setting — one
+  /// DB query per search, empty set when off. Read via getIt because this
+  /// bloc's DI constructor is fixed (generated config).
+  Future<Set<String>> _favoriteKeys() async {
+    if (!_prefs.hideInLibrary) return const {};
+    final db = getIt<AppDatabase>();
+    final rows = await (db.select(db.mangas)
+          ..where((m) => m.favorite.equals(true)))
+        .get();
+    return rows.map((r) => '${r.source}|${r.url}').toSet();
   }
 
   List<SourceSearchResult> _replace(

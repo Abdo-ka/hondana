@@ -159,10 +159,11 @@ class _PagedReaderState extends State<_PagedReader> {
   @override
   Widget build(BuildContext context) {
     return BlocListener<ReaderBloc, ReaderState>(
-      listenWhen: (a, b) => a.currentItem != b.currentItem,
+      // Jump only on explicit seeks (slider, chapter buttons, chapter load).
+      // Ordinary currentItem echoes of this widget's own page reports can
+      // arrive late during a fast swipe run and would yank back to an old page.
+      listenWhen: (a, b) => a.seek != b.seek,
       listener: (context, state) {
-        // External seeks only (slider, chapter buttons) — swipes already
-        // moved the controller.
         if (!_controller.hasClients) return;
         if ((_controller.page?.round() ?? -1) != state.currentItem) {
           _controller.jumpToPage(state.currentItem);
@@ -180,6 +181,9 @@ class _PagedReaderState extends State<_PagedReader> {
             valueListenable: _zoomed,
             builder: (context, zoomed, _) => PageView.builder(
               controller: _controller,
+              // Pre-builds the adjacent page so its image starts loading
+              // before the swipe (Mihon preloads ahead).
+              allowImplicitScrolling: true,
               physics: zoomed ? const NeverScrollableScrollPhysics() : null,
               scrollDirection: state.readingMode == ReadingMode.vertical
                   ? Axis.vertical
@@ -305,6 +309,18 @@ class _WebtoonReaderState extends State<_WebtoonReader> {
   final ItemScrollController _scrollController = ItemScrollController();
   final ScrollOffsetController _offsetController = ScrollOffsetController();
   final ItemPositionsListener _positions = ItemPositionsListener.create();
+
+  /// Fresh bucket per mount: ScrollablePositionedList prefers a
+  /// PageStorage-restored position over initialScrollIndex, so after a
+  /// chapter switch remounts this widget it would reopen at the previous
+  /// chapter's stale scroll position instead of the new chapter's page.
+  final PageStorageBucket _storageBucket = PageStorageBucket();
+
+  /// Transition-card height, captured once — immersive-mode toggles change
+  /// MediaQuery size and would resize every card, shifting the scroll.
+  late final double _transitionHeight =
+      MediaQuery.sizeOf(context).height * 0.7;
+
   late int _currentIndex;
   // Suppresses position reports while an external seek jump is in flight so
   // stale positions cannot bounce currentItem back (and cannot mark pages
@@ -359,10 +375,11 @@ class _WebtoonReaderState extends State<_WebtoonReader> {
   @override
   Widget build(BuildContext context) {
     return BlocListener<ReaderBloc, ReaderState>(
-      listenWhen: (a, b) => a.currentItem != b.currentItem,
+      // Jump only on explicit seeks (slider, chapter switch, chapter load).
+      // Plain currentItem changes include late echoes of this widget's own
+      // scroll reports — jumping on those yanks the reader to a stale page.
+      listenWhen: (a, b) => a.seek != b.seek,
       listener: (context, state) {
-        // Jump only for external seeks (slider, chapter switch), never for
-        // items this widget itself reported while scrolling.
         if (state.currentItem == _currentIndex) return;
         _currentIndex = state.currentItem;
         _pendingJump = true;
@@ -381,23 +398,30 @@ class _WebtoonReaderState extends State<_WebtoonReader> {
         builder: (context, state) => GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTapUp: _handleTap,
-          child: ScrollablePositionedList.builder(
-            itemScrollController: _scrollController,
-            scrollOffsetController: _offsetController,
-            itemPositionsListener: _positions,
-            initialScrollIndex: _currentIndex,
-            itemCount: state.items.length,
-            itemBuilder: (context, index) => switch (state.items[index]) {
-              final ReaderPageItem item => ReaderImage(
-                  url: item.page.imageUrl ?? item.page.url,
-                  headers: state.imageHeaders,
-                  fit: BoxFit.fitWidth,
-                ),
-              final ReaderTransitionItem item => SizedBox(
-                  height: MediaQuery.sizeOf(context).height * 0.7,
-                  child: Center(child: _ChapterTransitionView(item: item)),
-                ),
-            },
+          child: PageStorage(
+            bucket: _storageBucket,
+            child: ScrollablePositionedList.builder(
+              itemScrollController: _scrollController,
+              scrollOffsetController: _offsetController,
+              itemPositionsListener: _positions,
+              initialScrollIndex: _currentIndex,
+              // Keep ~2 screens of items alive around the viewport: upcoming
+              // images preload before they're visible and recently passed
+              // ones keep their decoded size (no placeholder-height shifts).
+              minCacheExtent: MediaQuery.sizeOf(context).height * 2,
+              itemCount: state.items.length,
+              itemBuilder: (context, index) => switch (state.items[index]) {
+                final ReaderPageItem item => ReaderImage(
+                    url: item.page.imageUrl ?? item.page.url,
+                    headers: state.imageHeaders,
+                    fit: BoxFit.fitWidth,
+                  ),
+                final ReaderTransitionItem item => SizedBox(
+                    height: _transitionHeight,
+                    child: Center(child: _ChapterTransitionView(item: item)),
+                  ),
+              },
+            ),
           ),
         ),
       ),

@@ -1,3 +1,4 @@
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
@@ -31,7 +32,9 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
   )   : _prefs = prefs,
         super(ReaderState(readingMode: prefs.readingMode)) {
     on<ReaderStarted>((e, emit) => _load(_chapterId, emit));
-    on<ReaderItemChanged>(_onItemChanged);
+    // Sequential so a fast fling's backlog of reports cannot interleave at
+    // the awaits and write lastPageRead out of order.
+    on<ReaderItemChanged>(_onItemChanged, transformer: sequential());
     on<ReaderPageChanged>(_onPageChanged);
     on<ReaderOverlayToggled>(
       (e, emit) => emit(state.copyWith(showOverlay: !state.showOverlay)),
@@ -112,6 +115,8 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
         items: items,
         // For the first loaded chapter, item index == page index.
         currentItem: initialPage,
+        // A load is an explicit seek: readers must jump to the new position.
+        seek: state.seek + 1,
         currentPage: initialPage,
         pageCount: pages.length,
         chapterId: chapterId,
@@ -283,6 +288,8 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
     );
     if (index == -1) return;
     await _onItemChanged(ReaderItemChanged(index), emit);
+    // Slider moves are explicit seeks; scroll-report echoes never bump this.
+    emit(state.copyWith(seek: state.seek + 1));
   }
 
   Future<void> _onModeChanged(

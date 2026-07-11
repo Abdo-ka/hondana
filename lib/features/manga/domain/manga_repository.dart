@@ -30,4 +30,10 @@ abstract interface class MangaRepository {
   Future<List<ChapterData>> getChaptersForManga(int mangaId);
 
   Future<void> setLastPageRead(int chapterId, int page);
+
+  Future<void> setChapterBookmark(int chapterId, bool bookmark);
+
+  /// Per-series reading mode: 0 = app default, else ReadingMode.index + 1
+  /// (Mihon's viewer_flags).
+  Future<void> setViewerFlags(int mangaId, int flags);
 }

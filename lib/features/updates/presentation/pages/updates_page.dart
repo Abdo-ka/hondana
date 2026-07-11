@@ -1,5 +1,4 @@
 import 'package:auto_route/auto_route.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -7,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mihonx/core/core.dart';
 import 'package:mihonx/core/di/di_container.dart';
 import 'package:mihonx/core/routing/app_router.gr.dart';
+import 'package:mihonx/core/utils/app_dates.dart';
 import 'package:mihonx/features/downloads/presentation/bloc/downloads_bloc.dart';
 import 'package:mihonx/features/downloads/presentation/widgets/chapter_download_button.dart';
 import 'package:mihonx/features/library/presentation/widgets/manga_cover.dart';
@@ -81,17 +81,7 @@ class _UpdatesList extends StatelessWidget {
     });
   }
 
-  static String _dayLabel(DateTime? date) {
-    if (date == null) return 'updates.unknown_date'.tr();
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final day = DateTime(date.year, date.month, date.day);
-    if (day == today) return 'updates.today'.tr();
-    if (day == today.subtract(const Duration(days: 1))) {
-      return 'updates.yesterday'.tr();
-    }
-    return DateFormat.yMMMd().format(date);
-  }
+  static String _dayLabel(DateTime? date) => formatAppDate(date);
 
   @override
   Widget build(BuildContext context) {

@@ -80,6 +80,9 @@ class WebCookieStore {
     }
     await _prefs.setString(_key, jsonEncode(all));
   }
+
+  /// Settings > Advanced > Clear cookies: drops every replayed cookie.
+  Future<void> clear() => _prefs.remove(_key);
 }
 
 /// Injects stored WebView cookies into outgoing Dio requests.

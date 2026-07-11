@@ -61,6 +61,10 @@ dependencies:
   flutter_inappwebview: ^6.1.5
   scrollable_positioned_list: ^0.3.8
   http: ^1.6.0
+  # Settings features: app lock (Face ID / Touch ID) and wifi-only library
+  # updates.
+  local_auth: ^2.3.0
+  connectivity_plus: ^7.0.0
 
 dev_dependencies:
   flutter_test:

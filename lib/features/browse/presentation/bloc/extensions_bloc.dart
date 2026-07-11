@@ -4,11 +4,13 @@ import 'package:flutter/foundation.dart' show immutable;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
+import 'package:mihonx/core/di/di_container.dart';
 import 'package:mihonx/core/error/app_exception.dart';
 import 'package:mihonx/core/state/bloc_status.dart';
 import 'package:mihonx/features/browse/data/extensions_index_repository.dart';
 import 'package:mihonx/features/browse/domain/extension_info.dart';
 import 'package:mihonx/features/browse/domain/source/source_manager.dart';
+import 'package:mihonx/features/browse/domain/source_preferences.dart';
 
 sealed class ExtensionsEvent {
   const ExtensionsEvent();
@@ -118,7 +120,11 @@ class ExtensionsBloc extends Bloc<ExtensionsEvent, ExtensionsState> {
   ) async {
     emit(state.copyWith(loadStatus: const BlocStatus.loading()));
     try {
-      final all = await _repo.fetchAll();
+      // Pref read via getIt: this bloc's DI constructor is fixed (generated
+      // config). Applied per fetch, so toggling it takes effect on next load.
+      final all = await _repo.fetchAll(
+        includeNsfw: getIt<SourcePreferences>().showNsfwSources,
+      );
       emit(state.copyWith(
         loadStatus:
             all.isEmpty ? const BlocStatus.empty() : const BlocStatus.success(),

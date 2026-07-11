@@ -1,11 +1,11 @@
 import 'package:auto_route/auto_route.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:mihonx/core/database/app_database.dart';
 import 'package:mihonx/core/extensions/context_ext.dart';
 import 'package:mihonx/core/routing/app_router.gr.dart';
+import 'package:mihonx/core/utils/app_dates.dart';
 import 'package:mihonx/core/widgets/app_text.dart';
 import 'package:mihonx/features/browse/data/source/local_source.dart';
 import 'package:mihonx/features/downloads/presentation/widgets/chapter_download_button.dart';
@@ -58,7 +58,7 @@ class MangaChapterTile extends StatelessWidget {
   String _subtitle() {
     final parts = <String>[];
     final date = chapter.dateUpload;
-    if (date != null) parts.add(DateFormat.yMMMd().format(date));
+    if (date != null) parts.add(formatAppDate(date));
     final scanlator = chapter.scanlator;
     if (scanlator != null && scanlator.isNotEmpty) parts.add(scanlator);
     return parts.join(' • ');

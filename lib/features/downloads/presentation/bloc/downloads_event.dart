@@ -61,6 +61,13 @@ final class DownloadsReordered extends DownloadsEvent {
   final int newIndex;
 }
 
+/// Settings > Downloads > Only on Wi-Fi. Persists the preference and applies
+/// it to running and future native tasks.
+final class DownloadsWifiOnlyChanged extends DownloadsEvent {
+  const DownloadsWifiOnlyChanged(this.wifiOnly);
+  final bool wifiOnly;
+}
+
 /// Internal: drains the queue. Droppable — one drain loop at a time.
 final class DownloadsQueueProcessed extends DownloadsEvent {
   const DownloadsQueueProcessed();

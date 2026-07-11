@@ -13,11 +13,14 @@ import 'package:mihonx/core/network/app_http.dart';
 import 'package:mihonx/features/browse/data/source/http_source_base.dart';
 import 'package:mihonx/features/browse/domain/source/model/s_chapter.dart';
 import 'package:mihonx/features/browse/domain/source/source_manager.dart';
+import 'package:mihonx/features/downloads/domain/download_preferences.dart';
 import 'package:mihonx/features/downloads/domain/download_queue_store.dart';
 import 'package:mihonx/features/downloads/domain/download_service.dart';
+import 'package:mihonx/features/downloads/domain/live_activity_service.dart';
 import 'package:mihonx/features/downloads/presentation/bloc/downloads_event.dart';
 import 'package:mihonx/features/downloads/presentation/bloc/downloads_state.dart';
 import 'package:mihonx/features/manga/domain/manga_repository.dart';
+import 'package:mihonx/features/more/domain/security_preferences.dart';
 
 /// App-wide download queue (singleton — survives navigation). Chapters are
 /// processed one at a time in queue order (Mihon behavior — queue chapter 1
@@ -31,8 +34,15 @@ import 'package:mihonx/features/manga/domain/manga_repository.dart';
 /// so remaining chapters resume after a restart.
 @lazySingleton
 class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
-  DownloadsBloc(this._service, this._repo, this._sources, this._store)
-      : super(const DownloadsState()) {
+  DownloadsBloc(
+    this._service,
+    this._repo,
+    this._sources,
+    this._store,
+    this._downloadPrefs,
+    this._securityPrefs,
+    this._liveActivity,
+  ) : super(const DownloadsState()) {
     on<DownloadsStarted>(_onStarted);
     on<DownloadEnqueued>(_onEnqueued);
     on<DownloadCancelRequested>(_onCancel);
@@ -42,6 +52,7 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
     on<DownloadsPauseToggled>(_onPauseToggled);
     on<DownloadsCancelAll>(_onCancelAll);
     on<DownloadsReordered>(_onReordered);
+    on<DownloadsWifiOnlyChanged>(_onWifiOnlyChanged);
     on<DownloadsQueueProcessed>(_onProcess, transformer: droppable());
     on<DownloadsTaskStatusChanged>(_onTaskStatus, transformer: sequential());
     add(const DownloadsStarted());
@@ -55,6 +66,9 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
   final MangaRepository _repo;
   final SourceManager _sources;
   final DownloadQueueStore _store;
+  final DownloadPreferences _downloadPrefs;
+  final SecurityPreferences _securityPrefs;
+  final LiveActivityService _liveActivity;
 
   /// In-flight chapters: aggregates per-page native tasks into one chapter.
   /// A chapter absent from this map ignores late native updates, which is
@@ -99,6 +113,13 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
         await permissions.request(bd.PermissionType.notifications);
       }
       await downloader.trackTasks();
+      // "Only on Wi-Fi": a global downloader requirement (survives restarts,
+      // applies to tasks resurrected from the native DB too).
+      await downloader.requireWiFi(
+        _downloadPrefs.wifiOnly
+            ? bd.RequireWiFi.forAllTasks
+            : bd.RequireWiFi.asSetByTask,
+      );
       await downloader.resumeFromBackground();
       await _reconcile(emit);
       // Re-enqueue tasks the OS killed without delivering a status update.
@@ -322,6 +343,23 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
     }
   }
 
+  Future<void> _onWifiOnlyChanged(
+    DownloadsWifiOnlyChanged event,
+    Emitter<DownloadsState> emit,
+  ) async {
+    await _downloadPrefs.setWifiOnly(event.wifiOnly);
+    try {
+      await bd.FileDownloader().requireWiFi(
+        event.wifiOnly
+            ? bd.RequireWiFi.forAllTasks
+            : bd.RequireWiFi.asSetByTask,
+        rescheduleRunningTasks: true,
+      );
+    } on Exception {
+      // Native downloader unavailable (tests) — the pref still persisted.
+    }
+  }
+
   /// Indices arrive pre-adjusted (onReorderItem semantics).
   void _onReordered(DownloadsReordered event, Emitter<DownloadsState> emit) {
     final queue = [...state.queue];
@@ -445,13 +483,19 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
     // iOS re-issues a group notification whenever its text changes, so the
     // body must stay static there (Android updates in place, so it can show
     // page counts and a progress bar).
+    // "Hide notification content" redacts titles from the system
+    // notification (the Live Activity is redacted the same way in
+    // _syncLiveActivity).
+    final redact = _securityPrefs.hideNotificationContent;
     bd.FileDownloader().configureNotificationForGroup(
       group,
       running: bd.TaskNotification(
-        task.mangaTitle,
-        Platform.isIOS
-            ? task.chapterName
-            : '${task.chapterName} · {numFinished}/{numTotal}',
+        redact ? 'Downloading' : task.mangaTitle,
+        redact
+            ? ''
+            : Platform.isIOS
+                ? task.chapterName
+                : '${task.chapterName} · {numFinished}/{numTotal}',
       ),
       progressBar: !Platform.isIOS,
       groupNotificationId: 'mihonx_downloads',
@@ -624,6 +668,37 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
     if (change.currentState.paused != change.nextState.paused) {
       _store.setPaused(change.nextState.paused);
     }
+    _syncLiveActivity(change.nextState);
+  }
+
+  /// Mirrors the queue into the iOS Live Activity (Dynamic Island): one
+  /// activity for the whole session, updated per page completion, ended when
+  /// nothing is downloading. Single hook — every queue/progress change flows
+  /// through an emit. Fire-and-forget; the service dedupes and throttles.
+  void _syncLiveActivity(DownloadsState s) {
+    final active = s.queue
+        .where((t) => t.status == DownloadTaskStatus.downloading)
+        .firstOrNull;
+    if (active == null || s.paused) {
+      // Paused or user-cancelled → dismiss immediately; a naturally drained
+      // queue lingers a few seconds showing the finished state.
+      final drained = !s.paused &&
+          s.queue.every((t) => t.status != DownloadTaskStatus.queued);
+      _liveActivity.end(immediate: !drained);
+      return;
+    }
+    final job = _jobs[active.chapterId];
+    final total = job?.totalPages ?? 0;
+    final redact = _securityPrefs.hideNotificationContent;
+    _liveActivity.update(
+      mangaTitle: redact ? 'Downloading' : active.mangaTitle,
+      chapterName: redact ? '' : active.chapterName,
+      progress: active.progress.clamp(0, 1),
+      completedPages: job?.completed.length ?? (active.progress * total).round(),
+      totalPages: total,
+      queued:
+          s.queue.where((t) => t.status == DownloadTaskStatus.queued).length,
+    );
   }
 
   @override

@@ -11,6 +11,7 @@ class ReaderState extends Equatable {
     this.status = const BlocStatus.loading(),
     this.items = const [],
     this.currentItem = 0,
+    this.seek = 0,
     this.currentPage = 0,
     this.pageCount = 0,
     this.readingMode = ReadingMode.rightToLeft,
@@ -32,6 +33,12 @@ class ReaderState extends Equatable {
   /// Index into [items] of what's on screen.
   final int currentItem;
 
+  /// Bumped on explicit seeks only (initial load, slider, chapter buttons).
+  /// Readers jump to [currentItem] when this changes — never on ordinary
+  /// [currentItem] echoes of their own scroll reports, which can arrive late
+  /// during a fast scroll and would yank the reader back to a stale page.
+  final int seek;
+
   /// Page position within the *current chapter* (indicator + slider).
   final int currentPage;
   final int pageCount;
@@ -48,6 +55,7 @@ class ReaderState extends Equatable {
     BlocStatus? status,
     List<ReaderItem>? items,
     int? currentItem,
+    int? seek,
     int? currentPage,
     int? pageCount,
     ReadingMode? readingMode,
@@ -63,6 +71,7 @@ class ReaderState extends Equatable {
       status: status ?? this.status,
       items: items ?? this.items,
       currentItem: currentItem ?? this.currentItem,
+      seek: seek ?? this.seek,
       currentPage: currentPage ?? this.currentPage,
       pageCount: pageCount ?? this.pageCount,
       readingMode: readingMode ?? this.readingMode,
@@ -81,6 +90,7 @@ class ReaderState extends Equatable {
         status,
         items,
         currentItem,
+        seek,
         currentPage,
         pageCount,
         readingMode,

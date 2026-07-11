@@ -9,7 +9,17 @@ class AppTheme {
   static const Color _seed = Color(0xFF2979FF);
 
   static ThemeData get light => _build(Brightness.light);
-  static ThemeData get dark => _build(Brightness.dark);
+
+  /// [pureBlack] = Mihon's "Pure black dark mode" (OLED).
+  static ThemeData dark({bool pureBlack = false}) {
+    final base = _build(Brightness.dark);
+    if (!pureBlack) return base;
+    return base.copyWith(
+      scaffoldBackgroundColor: Colors.black,
+      colorScheme: base.colorScheme.copyWith(surface: Colors.black),
+      appBarTheme: base.appBarTheme.copyWith(backgroundColor: Colors.black),
+    );
+  }
 
   static ThemeData _build(Brightness brightness) {
     final scheme = ColorScheme.fromSeed(

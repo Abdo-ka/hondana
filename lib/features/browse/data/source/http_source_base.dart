@@ -18,7 +18,7 @@ abstract class HttpSourceBase implements HttpSource {
   HttpSourceBase()
       : client = Dio(
           BaseOptions(
-            headers: const {'User-Agent': userAgent},
+            headers: {'User-Agent': userAgent},
             listFormat: ListFormat.multiCompatible,
             connectTimeout: const Duration(seconds: 20),
             receiveTimeout: const Duration(seconds: 30),
@@ -35,7 +35,10 @@ abstract class HttpSourceBase implements HttpSource {
     }
   }
 
-  static const String userAgent = appUserAgent;
+  /// Default UA for all source requests. Mutable so Settings > Advanced >
+  /// "Default user agent" can override it at startup (sources build their Dio
+  /// in constructors, hence "restart required" like Mihon).
+  static String userAgent = appUserAgent;
 
   final Dio client;
 

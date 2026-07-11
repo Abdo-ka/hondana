@@ -2,9 +2,11 @@ import 'package:bloc/bloc.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
 
+import 'package:mihonx/core/config/advanced_preferences.dart';
 import 'package:mihonx/core/di/di_container.dart';
 import 'package:mihonx/core/network/app_http.dart';
 import 'package:mihonx/core/utils/app_bloc_observer.dart';
+import 'package:mihonx/features/browse/data/source/http_source_base.dart';
 import 'package:mihonx/features/downloads/presentation/bloc/downloads_bloc.dart';
 
 /// Ordered startup invoked by `main()` before the first frame.
@@ -17,6 +19,14 @@ Future<void> preInitializations() async {
   await configureDependencies();
   cookieStoreResolver = () => getIt<WebCookieStore>();
   Bloc.observer = const AppBlocObserver();
+  // Settings > Advanced: UA override (sources bake it into their Dio at
+  // construction — restart-required, like Mihon) and cache-clear-on-launch.
+  final advanced = getIt<AdvancedPreferences>();
+  final userAgent = advanced.userAgent;
+  if (userAgent != null) HttpSourceBase.userAgent = userAgent;
+  if (advanced.clearCacheOnLaunch) {
+    await AppImageCache.manager.emptyCache();
+  }
   // Eager: reconciles native download tasks and resumes the persisted queue
   // on every launch — including iOS background relaunches — without waiting
   // for a downloads-aware page to be opened.

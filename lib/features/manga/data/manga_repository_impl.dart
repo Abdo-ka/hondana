@@ -152,5 +152,17 @@ class MangaRepositoryImpl implements MangaRepository {
     await (_db.update(_db.chapters)..where((c) => c.id.equals(chapterId)))
         .write(ChaptersCompanion(lastPageRead: Value(page)));
   }
+
+  @override
+  Future<void> setChapterBookmark(int chapterId, bool bookmark) async {
+    await (_db.update(_db.chapters)..where((c) => c.id.equals(chapterId)))
+        .write(ChaptersCompanion(bookmark: Value(bookmark)));
+  }
+
+  @override
+  Future<void> setViewerFlags(int mangaId, int flags) async {
+    await (_db.update(_db.mangas)..where((m) => m.id.equals(mangaId)))
+        .write(MangasCompanion(viewerFlags: Value(flags)));
+  }
 }
 

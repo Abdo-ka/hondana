@@ -46,6 +46,27 @@ class SourcePreferences extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ── Browse settings (Mihon: Settings > Browse) ────────────────────────────
+
+  static const _kHideInLibrary = 'sources.hide_in_library';
+  static const _kShowNsfw = 'sources.show_nsfw';
+
+  /// Hide entries already in library from browse/search results. Default off.
+  bool get hideInLibrary => _prefs.getBool(_kHideInLibrary) ?? false;
+
+  Future<void> setHideInLibrary(bool value) async {
+    await _prefs.setBool(_kHideInLibrary, value);
+    notifyListeners();
+  }
+
+  /// Show NSFW (18+) sources in the sources and extensions lists. Default on.
+  bool get showNsfwSources => _prefs.getBool(_kShowNsfw) ?? true;
+
+  Future<void> setShowNsfwSources(bool value) async {
+    await _prefs.setBool(_kShowNsfw, value);
+    notifyListeners();
+  }
+
   // ── Per-source base-URL overrides (sites hop domains frequently) ──────────
 
   static const _kUrls = 'sources.url_overrides';

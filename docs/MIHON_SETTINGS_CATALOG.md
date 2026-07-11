@@ -1,0 +1,177 @@
+# Mihon settings catalog (fetched from mihonapp/mihon@main, 2026-07-11)
+
+Applicability: yes | partial | no-android-only | no-deferred-feature (tracking/backup/extension-repos deferred per phase plan).
+
+## Appearance (SettingsAppearanceScreen.kt)
+- **App theme – mode** (select; yes): Light | Dark | System; default System — Rendered as segmented widget inside the 'App theme' custom preference (AppThemeModePreferenceWidget).
+- **App theme** (select; partial): Default, Dynamic (Monet), Catppuccin, Green Apple, Lavender, Midnight Dusk, Nord, Strawberry Daiquiri, Tako, Teal & Turquoise, Tidal Wave, Yin & Yang, Yotsuba, Monochrome; default = Dynamic if Android 12+ dynamic color available, else Default (3 deprecated hidden values: DARK_BLUE, HOT_PINK, BLUE) — Theme carousel widget. 'Dynamic' (Material You/Monet) is Android-only; on iOS default should be Default and Dynamic omitted or replaced. All other palettes port directly.
+- **Pure black dark mode** (toggle; yes): on/off; default off; disabled when theme mode = Light — Recreates activity on change (Android detail).
+- **App language** (action; partial): Pushes AppLanguageScreen (list of app locales; Android 13+ ties into per-app system language) — iOS equivalent: per-app language in Settings.app via localized bundles, or in-app locale override in Flutter.
+- **Tablet UI** (select; partial): Auto (label 'automatic_background'='Auto') | Always | Landscape | Never; default Automatic; shows 'requires app restart' toast — Controls tablet two-pane/nav-rail layout. Concept ports to iPad; restart requirement is an Android implementation detail.
+- **Date format** (select; yes): Default (locale short) | MM/dd/yy | dd/MM/yy | yyyy-MM-dd | dd MMM yyyy | MMM dd, yyyy; default '' (locale default); each entry shows today's date formatted
+- **Relative timestamps** (toggle; yes): on/off; default on; subtitle '"Today" instead of <formatted date>'
+- **Render images in manga descriptions** (toggle; yes): on/off; default on
+## Library (SettingsLibraryScreen.kt)
+- **Edit categories** (action; yes): Opens category editor; subtitle = '%d categories' (user category count)
+- **Default category** (select; yes): Always ask + [each user category]; default -1 = Always ask
+- **Per-category settings for sort** (toggle; yes): on/off; default off; turning OFF resets all category flags
+- **Automatic updates (Global update)** (select; partial): Off | Every 12 hours | Daily | Every 2 days | Every 3 days | Weekly (0/12/24/48/72/168h); default 0 = Off — iOS: BGAppRefreshTask/BGProcessingTask — interval is best-effort, not guaranteed like WorkManager. Keep the setting; document behavior.
+- **Automatic updates device restrictions** (multiselect; partial): Only on Wi-Fi | Only on unmetered network | When charging; default {Only on Wi-Fi}; enabled only when interval > 0 — iOS: 'When charging' maps to BGProcessingTaskRequest.requiresExternalPower; Wi-Fi/unmetered maps to constrained/expensive-network checks (NWPathMonitor). Semantics differ from WorkManager constraints.
+- **Categories (global update include/exclude)** (multiselect; yes): Tri-state per category (include / exclude / neutral); default: none explicitly included or excluded (= all updated) — TriStateListDialog; two string-set prefs: library_update_categories / _exclude.
+- **Automatically refresh metadata** (toggle; yes): on/off; default off; subtitle 'Check for new cover and details when updating library'
+- **Smart update** (multiselect; yes): Skip entries with unread chapter(s) | Skip unstarted entries | Skip entries with 'Completed' status | Predict next release time; default ALL FOUR selected
+- **Show unread count on Updates icon** (toggle; yes): on/off; default on — Tab badge — ports to iOS tab bar badge.
+- **Chapter on swipe to left** (select; yes): Disabled | Bookmark chapter | Mark as read | Download; default Bookmark chapter — Pref key is confusingly 'pref_chapter_swipe_end_action' (swipeToStartAction).
+- **Chapter on swipe to right** (select; yes): Disabled | Bookmark chapter | Mark as read | Download; default Mark as read
+- **Mark duplicate read chapter as read** (multiselect; yes): After reading a chapter | After fetching new chapter; default none
+- **Hide missing chapter indicators** (toggle; yes): on/off; default off
+## Reader (SettingsReaderScreen.kt)
+- **Default reading mode** (select; yes): Paged (left to right) | Paged (right to left) | Paged (vertical) | Long strip | Long strip with gaps; default Paged (right to left)
+- **Double tap animation speed** (select; yes): No animation (1ms) | Normal (500ms) | Fast (250ms); default Normal
+- **Show reading mode** (toggle; yes): on/off; default on; 'Briefly show current mode when reader is opened'
+- **Show tap zones overlay** (toggle; yes): on/off; default off; 'Briefly show when reader is opened'
+- **Animate page transitions** (toggle; yes): on/off; default on
+- **Default rotation (Display group)** (select; partial): Free | Portrait | Landscape | Locked portrait | Locked landscape | Reverse portrait; default Free — iOS supports per-screen orientation masks; 'Reverse portrait' unsupported on Face-ID iPhones. Suggest dropping Reverse portrait.
+- **Background color** (select; yes): Black | Gray | White | Auto; default Black (values 1/2/0/3)
+- **Fullscreen** (toggle; yes): on/off; default on — Hide status bar / home indicator on iOS.
+- **Show content in cutout area** (toggle; partial): on/off; default on; only enabled when device has display cutout AND fullscreen on — iOS analog: draw under notch/Dynamic Island (ignore safe area). Could keep as toggle or always-on.
+- **Keep screen on** (toggle; yes): on/off; default off — UIApplication.isIdleTimerDisabled.
+- **Show page number** (toggle; yes): on/off; default on
+- **Flash on page change (E-Ink group)** (toggle; yes): on/off; default off; 'Reduces ghosting on e-ink displays' — Niche on iOS but trivially portable (full-screen flash overlay).
+- **Flash duration** (slider; yes): 1–15 (×100 ms → 100–1500 ms); default 100 ms; enabled when flash on
+- **Flash every** (slider; yes): 1–10 pages; default 1; enabled when flash on
+- **Flash with** (select; yes): Black | White | White and Black; default Black; enabled when flash on
+- **Skip chapters marked read (Reading group)** (toggle; yes): on/off; default off
+- **Skip filtered chapters** (toggle; yes): on/off; default on
+- **Skip duplicate chapters** (toggle; yes): on/off; default off
+- **Always show chapter transition** (toggle; yes): on/off; default on
+- **Tap zones (Paged group)** (select; yes): Default | L shaped | Kindle-ish | Edge | Right and Left | Disabled; default Default (index 0)
+- **Invert tap zones (Paged)** (select; yes): None | Horizontal | Vertical | Both; default None; disabled when tap zones = Disabled
+- **Scale type** (select; yes): Fit screen | Stretch | Fit width | Fit height | Original size | Smart fit; default Fit screen (value 1)
+- **Zoom start position** (select; yes): Automatic | Left | Right | Center; default Automatic (value 1)
+- **Crop borders (Paged)** (toggle; yes): on/off; default off
+- **Automatically zoom into wide images** (toggle; yes): on/off; default on; enabled only when scale type = Fit screen
+- **Pan wide images** (toggle; yes): on/off; default on; disabled when tap zones = Disabled
+- **Split wide pages (Paged)** (toggle; yes): on/off; default off; turning on forces 'Rotate wide pages to fit' off (mutually exclusive)
+- **Invert split page placement (Paged)** (toggle; yes): on/off; default off; enabled when split on; subtitle about reading direction mismatch
+- **Rotate wide pages to fit (Paged)** (toggle; yes): on/off; default off; turning on forces 'Split wide pages' off
+- **Flip orientation of rotated wide pages (Paged)** (toggle; yes): on/off; default off; enabled when rotate-to-fit on
+- **Tap zones (Long strip group)** (select; yes): Default | L shaped | Kindle-ish | Edge | Right and Left | Disabled; default Default — Separate pref: reader_navigation_mode_webtoon.
+- **Invert tap zones (Long strip)** (select; yes): None | Horizontal | Vertical | Both; default None; disabled when tap zones = Disabled
+- **Side padding** (slider; yes): 0–25 (%); default 0
+- **Sensitivity for hiding menu on scroll** (select; yes): Highest | High | Low | Lowest (thresholds 5/13/31/47); default Low
+- **Crop borders (Long strip)** (toggle; yes): on/off; default off
+- **Split wide pages (Long strip)** (toggle; yes): on/off; default off; mutually exclusive with rotate-to-fit (webtoon)
+- **Invert split page placement (Long strip)** (toggle; yes): on/off; default off; enabled when split on
+- **Rotate wide pages to fit (Long strip)** (toggle; yes): on/off; default off; mutually exclusive with split
+- **Flip orientation of rotated wide pages (Long strip)** (toggle; yes): on/off; default off; enabled when rotate on
+- **Double tap to zoom (Long strip)** (toggle; yes): on/off; default on
+- **Disable zoom out (Long strip)** (toggle; yes): on/off; default off
+- **Volume keys (Navigation group)** (toggle; no-android-only): on/off; default off — iOS does not sanction intercepting hardware volume buttons for page turns (App Review risk).
+- **Invert volume keys** (toggle; no-android-only): on/off; default off; enabled when volume keys on
+- **Use vertical chapter navigator in** (multiselect; yes): Paged (LTR) | Paged (RTL) | Paged (vertical) | Long strip | Long strip with gaps; default empty set — Newer Mihon feature: vertical seekbar per reading mode.
+- **Place vertical navigator on the left side** (toggle; yes): on/off; default off; enabled when navigator set non-empty
+- **Vertical navigator height** (slider; yes): 65–100 (steps 6 → 65/70/75/80/85/90/95/100); default 65
+- **Show actions on long tap (Actions group)** (toggle; yes): on/off; default on — Long-press page → set-as-cover/share/save sheet.
+- **Save pages into separate folders** (toggle; yes): on/off; default off; 'Creates folders according to entries' title' — Affects saved page images (Pictures dir); on iOS map to Photos album or Files folder per manga.
+## Downloads (SettingsDownloadScreen.kt)
+- **Only on Wi-Fi** (toggle; yes): on/off; default on — iOS: check unconstrained/non-cellular path via NWPathMonitor.
+- **Save as CBZ archive** (toggle; yes): on/off; default on
+- **Split tall images** (toggle; yes): on/off; default on; 'Improves reader performance'
+- **Concurrent source downloads** (slider; yes): 1–10; default 5
+- **Concurrent page downloads** (slider; yes): 1–15; default 5; 'Pages downloaded simultaneously per source'
+- **After manually marked as read (Delete chapters group)** (toggle; yes): on/off; default off
+- **After reading automatically delete** (select; yes): Disabled | Last read chapter | Second to last | Third to last | Fourth to last | Fifth to last (-1/0/1/2/3/4); default Disabled
+- **Allow deleting bookmarked chapters** (toggle; yes): on/off; default off
+- **Excluded categories (from auto-delete)** (multiselect; yes): user categories; default none
+- **Download new chapters (Auto-download group)** (toggle; yes): on/off; default off
+- **Skip downloading duplicate read chapters** (toggle; yes): on/off; default off; enabled when download-new on
+- **Categories (auto-download include/exclude)** (multiselect; yes): tri-state per category; default none included/excluded (= all)
+- **Auto download while reading (Download ahead group)** (select; yes): Disabled | Next 2 | Next 3 | Next 5 | Next 10 unread chapters (0/2/3/5/10); default Disabled; info: 'Only works if the current chapter + the next one are already downloaded.'
+## Tracking (SettingsTrackingScreen.kt)
+- **Update progress after reading** (toggle; no-deferred-feature): on/off; default on
+- **Update progress when marked as read** (select; no-deferred-feature): Always | Always ask | Never; default Always
+- **MangaBaka (Trackers group)** (action; no-deferred-feature): login via OAuth browser / logout dialog — New tracker in current main.
+- **MyAnimeList** (action; no-deferred-feature): login via OAuth browser / logout
+- **AniList** (action; no-deferred-feature): login via OAuth browser / logout
+- **Kitsu** (action; no-deferred-feature): login dialog (email + password) / logout
+- **MangaUpdates** (action; no-deferred-feature): login dialog (username + password) / logout
+- **Shikimori** (action; no-deferred-feature): login via OAuth browser / logout
+- **Bangumi** (action; no-deferred-feature): login via OAuth browser / logout
+- **Hikka** (action; no-deferred-feature): login via OAuth browser / logout — Newer tracker.
+- **Enhanced trackers (Komga/Kavita/Suwayomi-type)** (action; no-deferred-feature): auto login/logout per matching installed source; info text lists services whose sources are missing
+## Browse (SettingsBrowseScreen.kt)
+- **Hide entries already in library** (toggle; yes): on/off; default off
+- **Extension stores** (action; no-deferred-feature): Pushes ExtensionStoresScreen (add/remove extension repo URLs); subtitle '%d repos' — Renamed from 'Extension repos' upstream; part of deferred extension-APK system.
+- **Show in sources and extensions lists (NSFW 18+ sources)** (toggle; partial): on/off; default ON; subtitle 'Requires app restart'; change gated behind biometric authenticate(); info re parental controls — Toggle itself portable (LocalAuthentication for the gate), but tied to extension/source catalog; also App Store content-policy consideration for the iOS port.
+## Data and storage (SettingsDataScreen.kt)
+- **Storage location** (action; partial): SAF folder picker (OpenDocumentTree); default = FolderProvider path (Mihon folder); info: 'Used for automatic backups, chapter downloads, and local source.' — No SAF on iOS — use app container by default; optional UIDocumentPicker folder for exports/local source.
+- **Create backup (Backup and restore group)** (action; no-deferred-feature): Pushes CreateBackupScreen (choose what to include → write .tachibk)
+- **Restore backup** (action; no-deferred-feature): File picker → RestoreBackupScreen; MIUI warning toast
+- **Automatic backup frequency** (select; no-deferred-feature): Off | Every 6 hours | Every 12 hours | Daily | Every 2 days | Weekly (0/6/12/24/48/168); default Every 12 hours; info shows 'Last automatically backed up: %s' + sensitive-data warning
+- **Storage usage** (text; yes): read-only StorageInfo widget (per-source disk usage bars)
+- **Clear chapter cache** (action; yes): subtitle 'Used: <size>'; clears ChapterCache, toasts '%d files cleared'
+- **Clear chapter cache on app launch** (toggle; yes): on/off; default off
+- **Library List (Export group)** (action; yes): Column dialog (checkboxes: Title on, Author on, Artist on; Author/Artist require Title) → save mihon_library.csv via CreateDocument — iOS: UIDocumentPicker/share sheet for CSV.
+## Security and privacy (SettingsSecurityScreen.kt)
+- **Require unlock** (toggle; yes): on/off; default off; enabled only if device auth supported; change requires successful authentication — iOS: LocalAuthentication (Face ID/Touch ID/passcode).
+- **Lock when idle** (select; yes): Always | 1 minute | 2 minutes | 5 minutes | 10 minutes | Never (0/1/2/5/10/-1); default Always; enabled when Require unlock on; change requires auth
+- **Hide notification content** (toggle; partial): on/off; default off — iOS notification previews are user-controlled system-wide; app can still omit sensitive text/covers from its own notifications — implement as content redaction.
+- **Secure screen** (select; no-android-only): Always | Incognito mode | Never; default Incognito mode; info: hides app in switcher + blocks screenshots — FLAG_SECURE has no iOS equivalent (cannot block screenshots). Could partially fake app-switcher blur, but listed android-only per spec.
+- **Send crash logs (Analytics and Crash logs group)** (toggle; partial): on/off; default on; only shown when build includes telemetry (telemetryIncluded) — PrivacyPreferences.crashlytics. Applies only if the iOS port ships Firebase/Crashlytics.
+- **Allow analytics** (toggle; partial): on/off; default on; telemetry builds only — PrivacyPreferences.analytics; iOS also requires ATT/privacy-manifest handling.
+## Advanced (SettingsAdvancedScreen.kt)
+- **Share crash logs** (action; yes): dumps logcat to file + share intent — iOS: collect app logs and present share sheet.
+- **Verbose logging** (toggle; yes): on/off; default off (release builds); restart-required toast
+- **Debug info** (action; yes): pushes DebugInfoScreen (app/device info, worker info)
+- **Onboarding guide** (action; yes): re-opens OnboardingScreen
+- **Manage notifications** (action; no-android-only): opens Android app-notification system settings
+- **Disable battery optimization (Background activity group)** (action; no-android-only): requests ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+- **Don't kill my app!** (action; no-android-only): opens https://dontkillmyapp.com/
+- **Reindex downloads (Data group)** (action; yes): invalidates DownloadCache; 'Force app to recheck downloaded chapters'
+- **Clear database** (action; yes): pushes ClearDatabaseScreen (delete history of non-library entries, per-source selection)
+- **Clear cookies (Networking group)** (action; yes): clears OkHttp cookie jar; toast
+- **Clear WebView data** (action; partial): clears WebView cache/history/storage — Applies if port uses WKWebView for Cloudflare/source login; clear WKWebsiteDataStore instead.
+- **DNS over HTTPS (DoH)** (select; partial): Disabled | Cloudflare | Google | AdGuard | Quad9 | AliDNS | DNSPod | 360 | Quad 101 | Mullvad | Control D | Njalla | Shecan; default Disabled; restart-required — OkHttp doh module is Android; on Flutter/iOS needs custom DNS resolution in the HTTP stack (non-trivial) — consider deferring.
+- **Default user agent string** (text; yes): free text, validated as HTTP header; default 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36'; restart-required — iOS port should ship an iOS-appropriate default UA.
+- **Reset default user agent string** (action; yes): deletes pref (enabled only when UA differs from default)
+- **Refresh library covers (Library group)** (action; yes): starts MetadataUpdateJob now
+- **Reset per-series reader settings** (action; yes): ResetViewerFlags for all manga; success/error toast
+- **Update library manga titles to match source** (toggle; yes): on/off; default off; warning about download-queue removal on rename
+- **Disallow non-ASCII filenames** (toggle; partial): on/off; default off; long compatibility note re Unicode-less storage media — APFS is Unicode-native; only relevant if exposing download folders to external storage/SMB — likely drop.
+- **Custom hardware bitmap threshold (Reader group)** (select; no-android-only): Default (2048 = GLUtil.SAFE_TEXTURE_LIMIT) + multiples of 1024 up to device GL texture limit; default 2048; enabled only when hardware bitmaps supported and device limit > safe limit — Android hardware-bitmap/GL specific.
+- **Use legacy decoder for long strip reader** (toggle; no-android-only): on/off; default off — SubsamplingScaleImageView-specific workaround.
+- **Custom display profile** (action; no-android-only): pick ICC color profile file; default none — Compensates for Android's lack of system color management; iOS color-manages automatically.
+- **Installer (Extensions group)** (select; no-android-only): Legacy | PackageInstaller | Shizuku | Private; default PackageInstaller (Legacy on MIUI; Private hidden in release builds); Shizuku prompts install if missing — APK install mechanics; also part of deferred extension system.
+- **Revoke trusted unknown extensions** (action; no-deferred-feature): clears trusted-extension list; restart toast
+## In-reader settings sheet – Reading mode tab (reader/settings/ReadingModePage.kt)
+- **Reading mode (For this series)** (select; yes): chips: Default | Paged (left to right) | Paged (right to left) | Paged (vertical) | Long strip | Long strip with gaps; default Default (inherits global); stored per-manga (viewer_flags)
+- **Rotation (For this series)** (select; partial): chips: Default | Free | Portrait | Landscape | Locked portrait | Locked landscape | Reverse portrait; default Default; per-manga — Same iOS orientation caveats as Settings > Reader > Default rotation.
+- **Pager sub-section (shown when current viewer is paged)** (select; yes): Tap zones, Invert tap zones (chips), Scale type (chips), Zoom start position (chips), Crop borders, Automatically zoom into wide images, Pan wide images, Split wide pages (+ Invert split page placement when on), Rotate wide pages to fit (+ Flip orientation when on) — all SAME preferences/defaults as Settings > Reader Paged group — Conditional sub-toggles only render when parent enabled (vs greyed-out on the settings screen).
+- **Long strip sub-section (shown when current viewer is webtoon)** (select; yes): Tap zones, Invert tap zones, Side padding slider (0–25%), Crop borders, Split wide pages (+ Invert), Rotate wide pages to fit (+ Flip), Double tap to zoom, Disable zoom out — SAME prefs/defaults as Settings > Reader Long strip group — Note: the 'Sensitivity for hiding menu on scroll' pref is NOT in the sheet, only on the settings screen.
+## In-reader settings sheet – General tab (reader/settings/GeneralSettingsPage.kt)
+- **Background color** (select; yes): chips: Black | Gray | White | Auto; default Black — same pref as Settings > Reader
+- **Show page number** (toggle; yes): default on — same pref
+- **Use vertical chapter navigator in** (multiselect; yes): chips of 5 reading modes; default empty — same pref
+- **Place vertical navigator on the left side** (toggle; yes): default off; shown only when navigator modes non-empty
+- **Vertical navigator height** (slider; yes): 65–100 steps 6; default 65; shown only when navigator modes non-empty
+- **Fullscreen** (toggle; yes): default on — same pref
+- **Show content in cutout area** (toggle; partial): default on; shown only when device has cutout AND fullscreen on — Safe-area equivalent on iOS.
+- **Keep screen on** (toggle; yes): default off — same pref
+- **Show actions on long tap** (toggle; yes): default on — same pref
+- **Always show chapter transition** (toggle; yes): default on — same pref
+- **Animate page transitions** (toggle; yes): default on — same pref
+- **Flash on page change** (toggle; yes): default off; when on reveals: Flash duration slider (1–15 ×100ms, default 100ms), Flash every slider (1–10 pages, default 1), Flash with chips (Black | White | White and Black, default Black)
+## In-reader settings sheet – Custom filter tab (reader/settings/ColorFilterPage.kt)
+- **Custom brightness** (toggle; yes): on/off; default off — Range -75..100: negative = black overlay dim (portable); positive sets screen brightness — UIScreen.brightness is settable on iOS.
+- **Custom brightness value** (slider; yes): -75 to 100; default 0 (system brightness); shown when custom brightness on
+- **Custom color filter** (toggle; yes): on/off; default off
+- **Red** (slider; yes): 0–255; default 0; shown when color filter on
+- **Green** (slider; yes): 0–255; default 0
+- **Blue** (slider; yes): 0–255; default 0
+- **Alpha** (slider; yes): 0–255; default 0
+- **Color filter blend mode** (select; yes): chips: Default (SrcOver) | Multiply (Modulate) | Screen | Overlay | Dodge/Lighten | Darken/Burn (last 3 only on Android P+); default Default (index 0) — Flutter BlendMode supports all six on iOS — no API-level gating needed.
+- **Grayscale** (toggle; yes): on/off; default off
+- **Inverted** (toggle; yes): on/off; default off
+## REMOVED UPSTREAM: General (SettingsGeneralScreen.kt)
+- **(screen deleted on main)** (text; yes): File no longer exists in mihonapp/mihon@main. Former contents relocated: App language, Tablet UI, Date format, Relative timestamps → Appearance > Display; Manage notifications → Advanced. No separate General screen should be built for parity. — Verified via GitHub contents API: settings/screen/ dir has no SettingsGeneralScreen.kt; SettingsMainScreen.kt item list confirms 10 entries (Appearance, Library, Reader, Downloads, Tracking, Browse, Data and storage, Security, Advanced, About).

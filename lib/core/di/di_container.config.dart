@@ -11,6 +11,7 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
+import 'package:mihonx/core/config/advanced_preferences.dart' as _i62;
 import 'package:mihonx/core/config/app_settings.dart' as _i826;
 import 'package:mihonx/core/database/app_database.dart' as _i390;
 import 'package:mihonx/core/di/di_container.dart' as _i459;
@@ -31,10 +32,14 @@ import 'package:mihonx/features/browse/presentation/bloc/global_search_bloc.dart
     as _i919;
 import 'package:mihonx/features/browse/presentation/bloc/source_catalogue_bloc.dart'
     as _i14;
+import 'package:mihonx/features/downloads/domain/download_preferences.dart'
+    as _i978;
 import 'package:mihonx/features/downloads/domain/download_queue_store.dart'
     as _i755;
 import 'package:mihonx/features/downloads/domain/download_service.dart'
     as _i158;
+import 'package:mihonx/features/downloads/domain/live_activity_service.dart'
+    as _i817;
 import 'package:mihonx/features/downloads/presentation/bloc/downloads_bloc.dart'
     as _i409;
 import 'package:mihonx/features/history/data/history_repository_impl.dart'
@@ -60,6 +65,8 @@ import 'package:mihonx/features/manga/data/manga_repository_impl.dart'
 import 'package:mihonx/features/manga/domain/manga_repository.dart' as _i484;
 import 'package:mihonx/features/manga/presentation/bloc/manga_details_bloc.dart'
     as _i862;
+import 'package:mihonx/features/more/domain/security_preferences.dart'
+    as _i1039;
 import 'package:mihonx/features/reader/domain/reader_preferences.dart' as _i334;
 import 'package:mihonx/features/reader/presentation/bloc/reader_bloc.dart'
     as _i934;
@@ -89,6 +96,9 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i448.ExtensionsIndexRepository(),
     );
     gh.lazySingleton<_i158.DownloadService>(() => _i158.DownloadService());
+    gh.lazySingleton<_i817.LiveActivityService>(
+      () => _i817.LiveActivityService(),
+    );
     gh.lazySingleton<_i598.SourceManager>(() => _i999.BuiltinSourceManager());
     gh.lazySingleton<_i196.LibraryRepository>(
       () => _i282.LibraryRepositoryImpl(
@@ -99,6 +109,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i484.MangaRepository>(
       () => _i1026.MangaRepositoryImpl(gh<_i390.AppDatabase>()),
     );
+    gh.lazySingleton<_i62.AdvancedPreferences>(
+      () => _i62.AdvancedPreferences(gh<_i460.SharedPreferences>()),
+    );
     gh.lazySingleton<_i826.AppSettings>(
       () => _i826.AppSettings(gh<_i460.SharedPreferences>()),
     );
@@ -108,11 +121,17 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i733.SourcePreferences>(
       () => _i733.SourcePreferences(gh<_i460.SharedPreferences>()),
     );
+    gh.lazySingleton<_i978.DownloadPreferences>(
+      () => _i978.DownloadPreferences(gh<_i460.SharedPreferences>()),
+    );
     gh.lazySingleton<_i755.DownloadQueueStore>(
       () => _i755.DownloadQueueStore(gh<_i460.SharedPreferences>()),
     );
     gh.lazySingleton<_i26.LibraryPreferences>(
       () => _i26.LibraryPreferences(gh<_i460.SharedPreferences>()),
+    );
+    gh.lazySingleton<_i1039.SecurityPreferences>(
+      () => _i1039.SecurityPreferences(gh<_i460.SharedPreferences>()),
     );
     gh.lazySingleton<_i334.ReaderPreferences>(
       () => _i334.ReaderPreferences(gh<_i460.SharedPreferences>()),
@@ -157,6 +176,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i484.MangaRepository>(),
         gh<_i598.SourceManager>(),
         gh<_i755.DownloadQueueStore>(),
+        gh<_i978.DownloadPreferences>(),
+        gh<_i1039.SecurityPreferences>(),
+        gh<_i817.LiveActivityService>(),
       ),
     );
     gh.factoryParam<_i862.MangaDetailsBloc, int, _i664.SManga>(

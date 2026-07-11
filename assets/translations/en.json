@@ -89,7 +89,8 @@
     "mode_webtoon": "Webtoon (continuous)",
     "finished": "Finished:",
     "next": "Next:",
-    "no_next_chapter": "There's no next chapter"
+    "no_next_chapter": "There's no next chapter",
+    "mode_webtoonGaps": "Webtoon (with gaps)"
   },
   "extensions": {
     "title": "Extensions",
@@ -131,7 +132,15 @@
     "theme_light": "Light",
     "theme_dark": "Dark",
     "default_reading_mode": "Default reading mode",
-    "about": "About"
+    "about": "About",
+    "appearance": "Appearance",
+    "library": "Library",
+    "reader": "Reader",
+    "downloads": "Downloads",
+    "browse": "Browse",
+    "data_storage": "Data and storage",
+    "security": "Security and privacy",
+    "advanced": "Advanced"
   },
   "more": {
     "downloads": "Download queue",
