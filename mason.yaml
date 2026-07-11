@@ -1,0 +1,6 @@
+# Mason brick registry. Install the CLI once with `dart pub global activate mason_cli`,
+# then run `mason get` here, and scaffold a feature with:
+#   mason make feature --feature_name reader
+bricks:
+  feature:
+    path: bricks/feature

@@ -1,0 +1,16 @@
+name: feature
+description: >-
+  Scaffolds a Hondana feature following the project's Clean Architecture,
+  feature-first structure (data / domain / presentation, with local + remote
+  data sources, a repository interface + implementation, a Bloc, and a
+  page split into a route wrapper and a mobile layout).
+version: 0.1.0
+
+environment:
+  mason: ">=0.1.0 <1.0.0"
+
+vars:
+  feature_name:
+    type: string
+    description: The feature name in snake_case (e.g. reader, library, downloads).
+    prompt: What is the feature name?

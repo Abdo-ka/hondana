@@ -7,6 +7,7 @@ analyzer:
     - "**/*.g.dart"
     - "**/*.gr.dart"
     - "**/*.config.dart"
+    - "bricks/**" # Mason templates contain {{mustache}} placeholders, not valid Dart
 
 linter:
   rules:
