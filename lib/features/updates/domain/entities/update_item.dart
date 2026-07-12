@@ -24,9 +24,3 @@ class UpdateItem {
   final String? thumbnailUrl;
   final DateTime? dateUpload;
 }
-
-/// Read-side source for the Updates feed.
-abstract interface class UpdatesRepository {
-  /// Emits recent chapters of favorited manga, newest first.
-  Stream<List<UpdateItem>> watchUpdates();
-}

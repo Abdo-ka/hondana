@@ -2,19 +2,19 @@ import 'package:drift/drift.dart';
 import 'package:injectable/injectable.dart';
 
 import 'package:hondana/core/database/app_database.dart';
-import 'package:hondana/features/updates/domain/updates_repository.dart';
+import 'package:hondana/features/updates/domain/entities/update_item.dart';
 
-/// Drift-backed [UpdatesRepository]: streams the newest favorited chapters.
-@LazySingleton(as: UpdatesRepository)
-class UpdatesRepositoryImpl implements UpdatesRepository {
-  UpdatesRepositoryImpl(this._db);
+/// Local (drift) data source for the Updates feed — the newest chapters of
+/// favorited manga.
+@injectable
+class UpdatesLocalDataSource {
+  UpdatesLocalDataSource(this._db);
 
   final AppDatabase _db;
 
   /// Watches chapters joined to their favorited manga, newest upload first,
   /// capped at 300 rows to bound the query. Mihon behavior: the Updates feed
   /// only surfaces library (favorited) entries.
-  @override
   Stream<List<UpdateItem>> watchUpdates() {
     final query =
         _db.select(_db.chapters).join([

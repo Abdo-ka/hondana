@@ -5,9 +5,9 @@ import 'package:injectable/injectable.dart';
 import 'package:hondana/core/error/app_exception.dart';
 import 'package:hondana/core/state/bloc_status.dart';
 import 'package:hondana/features/library/data/library_update_service.dart';
-import 'package:hondana/features/updates/domain/updates_repository.dart';
-import 'package:hondana/features/updates/presentation/bloc/updates_event.dart';
-import 'package:hondana/features/updates/presentation/bloc/updates_state.dart';
+import 'package:hondana/features/updates/domain/repositories/updates_repository.dart';
+import 'package:hondana/features/updates/presentation/state/bloc/updates_event.dart';
+import 'package:hondana/features/updates/presentation/state/bloc/updates_state.dart';
 
 /// Drives the Updates feed: streams new chapters and triggers library syncs.
 @injectable

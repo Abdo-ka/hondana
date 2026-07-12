@@ -71,12 +71,14 @@ import 'package:hondana/features/reader/domain/reader_preferences.dart'
     as _i959;
 import 'package:hondana/features/reader/presentation/bloc/reader_bloc.dart'
     as _i425;
-import 'package:hondana/features/updates/data/updates_repository_impl.dart'
-    as _i933;
-import 'package:hondana/features/updates/domain/updates_repository.dart'
-    as _i746;
-import 'package:hondana/features/updates/presentation/bloc/updates_bloc.dart'
-    as _i861;
+import 'package:hondana/features/updates/data/data_sources/updates_local_datasource.dart'
+    as _i135;
+import 'package:hondana/features/updates/data/repositories/updates_repository_imp.dart'
+    as _i534;
+import 'package:hondana/features/updates/domain/repositories/updates_repository.dart'
+    as _i478;
+import 'package:hondana/features/updates/presentation/state/bloc/updates_bloc.dart'
+    as _i85;
 import 'package:injectable/injectable.dart' as _i526;
 import 'package:shared_preferences/shared_preferences.dart' as _i460;
 
@@ -101,16 +103,19 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i264.LiveActivityService>(
       () => _i264.LiveActivityService(),
     );
-    gh.lazySingleton<_i746.UpdatesRepository>(
-      () => _i933.UpdatesRepositoryImpl(gh<_i306.AppDatabase>()),
-    );
     gh.factory<_i232.HistoryLocalDataSource>(
       () => _i232.HistoryLocalDataSource(gh<_i306.AppDatabase>()),
+    );
+    gh.factory<_i135.UpdatesLocalDataSource>(
+      () => _i135.UpdatesLocalDataSource(gh<_i306.AppDatabase>()),
     );
     gh.lazySingleton<_i944.MangaRepository>(
       () => _i153.MangaRepositoryImpl(gh<_i306.AppDatabase>()),
     );
     gh.lazySingleton<_i893.SourceManager>(() => _i1001.BuiltinSourceManager());
+    gh.lazySingleton<_i478.UpdatesRepository>(
+      () => _i534.UpdatesRepositoryImp(gh<_i135.UpdatesLocalDataSource>()),
+    );
     gh.factoryParam<_i672.MangaDetailsBloc, int, _i444.SManga>(
       (sourceId, initial) => _i672.MangaDetailsBloc(
         gh<_i944.MangaRepository>(),
@@ -213,9 +218,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i1060.HistoryBloc>(
       () => _i1060.HistoryBloc(gh<_i7.HistoryRepository>()),
     );
-    gh.factory<_i861.UpdatesBloc>(
-      () => _i861.UpdatesBloc(
-        gh<_i746.UpdatesRepository>(),
+    gh.factory<_i85.UpdatesBloc>(
+      () => _i85.UpdatesBloc(
+        gh<_i478.UpdatesRepository>(),
         gh<_i901.LibraryUpdateService>(),
       ),
     );

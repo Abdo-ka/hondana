@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:hondana/core/state/bloc_status.dart';
-import 'package:hondana/features/updates/domain/updates_repository.dart';
+import 'package:hondana/features/updates/domain/entities/update_item.dart';
 
 /// State for the Updates feed: the current items plus per-action statuses.
 @immutable
