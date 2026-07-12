@@ -5,7 +5,8 @@ import 'package:hondana/features/library/domain/manga.dart';
 
 /// Persistence for a single manga: caches browsed source manga, toggles the
 /// library flag, and syncs its chapters. Streams so the details screen and the
-/// library stay in lock-step.
+/// library stay in lock-step. Implemented in the data layer by
+/// `MangaRepositoryImp`.
 abstract interface class MangaRepository {
   /// Upserts the source manga and returns its local row id (favorite untouched).
   Future<int> resolveManga(int sourceId, SManga sManga);

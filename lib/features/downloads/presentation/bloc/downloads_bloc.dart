@@ -19,7 +19,7 @@ import 'package:hondana/features/downloads/domain/download_service.dart';
 import 'package:hondana/features/downloads/domain/live_activity_service.dart';
 import 'package:hondana/features/downloads/presentation/bloc/downloads_event.dart';
 import 'package:hondana/features/downloads/presentation/bloc/downloads_state.dart';
-import 'package:hondana/features/manga/domain/manga_repository.dart';
+import 'package:hondana/features/manga/domain/repositories/manga_repository.dart';
 import 'package:hondana/features/more/domain/security_preferences.dart';
 
 /// App-wide download queue (singleton — survives navigation). Chapters are

@@ -10,8 +10,8 @@ import 'package:hondana/core/utils/app_dates.dart';
 import 'package:hondana/core/widgets/app_text.dart';
 import 'package:hondana/features/browse/data/source/local_source.dart';
 import 'package:hondana/features/downloads/presentation/widgets/chapter_download_button.dart';
-import 'package:hondana/features/manga/presentation/bloc/manga_details_bloc.dart';
-import 'package:hondana/features/manga/presentation/bloc/manga_details_event.dart';
+import 'package:hondana/features/manga/presentation/state/bloc/manga_details_bloc.dart';
+import 'package:hondana/features/manga/presentation/state/bloc/manga_details_event.dart';
 
 /// A chapter row. Tap opens the reader; long-press toggles read; the trailing
 /// button downloads / shows progress / deletes the download.

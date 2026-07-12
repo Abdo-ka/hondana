@@ -9,9 +9,9 @@ import 'package:hondana/core/widgets/app_text.dart';
 import 'package:hondana/features/browse/domain/source/model/manga_status.dart';
 import 'package:hondana/features/browse/domain/source/source_manager.dart';
 import 'package:hondana/features/library/presentation/widgets/manga_cover.dart';
-import 'package:hondana/features/manga/presentation/bloc/manga_details_bloc.dart';
-import 'package:hondana/features/manga/presentation/bloc/manga_details_event.dart';
-import 'package:hondana/features/manga/presentation/bloc/manga_details_state.dart';
+import 'package:hondana/features/manga/presentation/state/bloc/manga_details_bloc.dart';
+import 'package:hondana/features/manga/presentation/state/bloc/manga_details_event.dart';
+import 'package:hondana/features/manga/presentation/state/bloc/manga_details_state.dart';
 
 /// Mihon-style details header: the cover doubles as a faded backdrop behind
 /// the info block; below it an action row, expandable description and genre

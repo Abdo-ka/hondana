@@ -61,11 +61,14 @@ import 'package:hondana/features/library/presentation/bloc/categories_bloc.dart'
     as _i608;
 import 'package:hondana/features/library/presentation/bloc/library_bloc.dart'
     as _i900;
-import 'package:hondana/features/manga/data/manga_repository_impl.dart'
-    as _i153;
-import 'package:hondana/features/manga/domain/manga_repository.dart' as _i944;
-import 'package:hondana/features/manga/presentation/bloc/manga_details_bloc.dart'
-    as _i672;
+import 'package:hondana/features/manga/data/data_sources/manga_local_datasource.dart'
+    as _i484;
+import 'package:hondana/features/manga/data/repositories/manga_repository_imp.dart'
+    as _i556;
+import 'package:hondana/features/manga/domain/repositories/manga_repository.dart'
+    as _i350;
+import 'package:hondana/features/manga/presentation/state/bloc/manga_details_bloc.dart'
+    as _i921;
 import 'package:hondana/features/more/domain/security_preferences.dart' as _i14;
 import 'package:hondana/features/reader/domain/reader_preferences.dart'
     as _i959;
@@ -106,23 +109,15 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i232.HistoryLocalDataSource>(
       () => _i232.HistoryLocalDataSource(gh<_i306.AppDatabase>()),
     );
+    gh.factory<_i484.MangaLocalDataSource>(
+      () => _i484.MangaLocalDataSource(gh<_i306.AppDatabase>()),
+    );
     gh.factory<_i135.UpdatesLocalDataSource>(
       () => _i135.UpdatesLocalDataSource(gh<_i306.AppDatabase>()),
-    );
-    gh.lazySingleton<_i944.MangaRepository>(
-      () => _i153.MangaRepositoryImpl(gh<_i306.AppDatabase>()),
     );
     gh.lazySingleton<_i893.SourceManager>(() => _i1001.BuiltinSourceManager());
     gh.lazySingleton<_i478.UpdatesRepository>(
       () => _i534.UpdatesRepositoryImp(gh<_i135.UpdatesLocalDataSource>()),
-    );
-    gh.factoryParam<_i672.MangaDetailsBloc, int, _i444.SManga>(
-      (sourceId, initial) => _i672.MangaDetailsBloc(
-        gh<_i944.MangaRepository>(),
-        gh<_i893.SourceManager>(),
-        sourceId,
-        initial,
-      ),
     );
     gh.lazySingleton<_i3.AdvancedPreferences>(
       () => _i3.AdvancedPreferences(gh<_i460.SharedPreferences>()),
@@ -166,32 +161,21 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i82.SourcePreferences>(),
       ),
     );
-    gh.factoryParam<_i425.ReaderBloc, int, dynamic>(
-      (_chapterId, _) => _i425.ReaderBloc(
-        gh<_i944.MangaRepository>(),
-        gh<_i893.SourceManager>(),
-        gh<_i7.HistoryRepository>(),
-        gh<_i170.DownloadService>(),
-        gh<_i763.AppSettings>(),
-        gh<_i959.ReaderPreferences>(),
-        _chapterId,
-      ),
-    );
     gh.factory<_i372.ExtensionsBloc>(
       () => _i372.ExtensionsBloc(
         gh<_i768.ExtensionsIndexRepository>(),
         gh<_i893.SourceManager>(),
       ),
     );
-    gh.lazySingleton<_i778.DownloadsBloc>(
-      () => _i778.DownloadsBloc(
-        gh<_i170.DownloadService>(),
-        gh<_i944.MangaRepository>(),
+    gh.lazySingleton<_i350.MangaRepository>(
+      () => _i556.MangaRepositoryImp(gh<_i484.MangaLocalDataSource>()),
+    );
+    gh.factoryParam<_i921.MangaDetailsBloc, int, _i444.SManga>(
+      (sourceId, initial) => _i921.MangaDetailsBloc(
+        gh<_i350.MangaRepository>(),
         gh<_i893.SourceManager>(),
-        gh<_i536.DownloadQueueStore>(),
-        gh<_i638.DownloadPreferences>(),
-        gh<_i14.SecurityPreferences>(),
-        gh<_i264.LiveActivityService>(),
+        sourceId,
+        initial,
       ),
     );
     gh.factoryParam<_i915.SourceCatalogueBloc, int, dynamic>(
@@ -222,6 +206,28 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i85.UpdatesBloc(
         gh<_i478.UpdatesRepository>(),
         gh<_i901.LibraryUpdateService>(),
+      ),
+    );
+    gh.lazySingleton<_i778.DownloadsBloc>(
+      () => _i778.DownloadsBloc(
+        gh<_i170.DownloadService>(),
+        gh<_i350.MangaRepository>(),
+        gh<_i893.SourceManager>(),
+        gh<_i536.DownloadQueueStore>(),
+        gh<_i638.DownloadPreferences>(),
+        gh<_i14.SecurityPreferences>(),
+        gh<_i264.LiveActivityService>(),
+      ),
+    );
+    gh.factoryParam<_i425.ReaderBloc, int, dynamic>(
+      (_chapterId, _) => _i425.ReaderBloc(
+        gh<_i350.MangaRepository>(),
+        gh<_i893.SourceManager>(),
+        gh<_i7.HistoryRepository>(),
+        gh<_i170.DownloadService>(),
+        gh<_i763.AppSettings>(),
+        gh<_i959.ReaderPreferences>(),
+        _chapterId,
       ),
     );
     return this;

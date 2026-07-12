@@ -7,9 +7,9 @@ import 'package:hondana/core/state/bloc_status.dart';
 import 'package:hondana/features/browse/domain/source/model/s_manga.dart';
 import 'package:hondana/features/browse/domain/source/source.dart';
 import 'package:hondana/features/browse/domain/source/source_manager.dart';
-import 'package:hondana/features/manga/domain/manga_repository.dart';
-import 'package:hondana/features/manga/presentation/bloc/manga_details_event.dart';
-import 'package:hondana/features/manga/presentation/bloc/manga_details_state.dart';
+import 'package:hondana/features/manga/domain/repositories/manga_repository.dart';
+import 'package:hondana/features/manga/presentation/state/bloc/manga_details_event.dart';
+import 'package:hondana/features/manga/presentation/state/bloc/manga_details_state.dart';
 
 /// Drives the manga details screen: resolves the manga to a local row, streams
 /// its persisted metadata and chapters, and refreshes both from the source.
