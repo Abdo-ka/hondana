@@ -74,6 +74,9 @@ lib/
 │   ├── utils/             BlocObserver, date helpers, native screen helpers
 │   └── widgets/           AppScaffold, AppAppBar, AppText, feedback indicators, …
 │
+├── services/             Cross-cutting app services — downloads, live activity,
+│                         library updates, maintenance (not owned by one feature)
+│
 └── features/<feature>/                 Scaffold new ones with `mason make feature`
     ├── data/
     │   ├── data_sources/     <f>_local_datasource.dart, <f>_remote_datasource.dart (@injectable)

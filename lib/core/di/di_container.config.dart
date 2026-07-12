@@ -35,10 +35,6 @@ import 'package:hondana/features/downloads/domain/download_preferences.dart'
     as _i638;
 import 'package:hondana/features/downloads/domain/download_queue_store.dart'
     as _i536;
-import 'package:hondana/features/downloads/domain/download_service.dart'
-    as _i170;
-import 'package:hondana/features/downloads/domain/live_activity_service.dart'
-    as _i264;
 import 'package:hondana/features/downloads/presentation/bloc/downloads_bloc.dart'
     as _i778;
 import 'package:hondana/features/history/data/data_sources/history_local_datasource.dart'
@@ -51,8 +47,6 @@ import 'package:hondana/features/history/presentation/state/bloc/history_bloc.da
     as _i1060;
 import 'package:hondana/features/library/data/library_repository_impl.dart'
     as _i417;
-import 'package:hondana/features/library/data/library_update_service.dart'
-    as _i901;
 import 'package:hondana/features/library/domain/library_preferences.dart'
     as _i791;
 import 'package:hondana/features/library/domain/library_repository.dart'
@@ -82,6 +76,9 @@ import 'package:hondana/features/updates/domain/repositories/updates_repository.
     as _i478;
 import 'package:hondana/features/updates/presentation/state/bloc/updates_bloc.dart'
     as _i85;
+import 'package:hondana/services/download_service.dart' as _i832;
+import 'package:hondana/services/library_update_service.dart' as _i893;
+import 'package:hondana/services/live_activity_service.dart' as _i519;
 import 'package:injectable/injectable.dart' as _i526;
 import 'package:shared_preferences/shared_preferences.dart' as _i460;
 
@@ -102,9 +99,15 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i768.ExtensionsIndexRepository>(
       () => _i768.ExtensionsIndexRepository(),
     );
-    gh.lazySingleton<_i170.DownloadService>(() => _i170.DownloadService());
-    gh.lazySingleton<_i264.LiveActivityService>(
-      () => _i264.LiveActivityService(),
+    gh.lazySingleton<_i832.DownloadService>(() => _i832.DownloadService());
+    gh.lazySingleton<_i519.LiveActivityService>(
+      () => _i519.LiveActivityService(),
+    );
+    gh.lazySingleton<_i161.LibraryRepository>(
+      () => _i417.LibraryRepositoryImpl(
+        gh<_i306.AppDatabase>(),
+        gh<_i832.DownloadService>(),
+      ),
     );
     gh.factory<_i232.HistoryLocalDataSource>(
       () => _i232.HistoryLocalDataSource(gh<_i306.AppDatabase>()),
@@ -116,6 +119,9 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i135.UpdatesLocalDataSource(gh<_i306.AppDatabase>()),
     );
     gh.lazySingleton<_i893.SourceManager>(() => _i1001.BuiltinSourceManager());
+    gh.factory<_i608.CategoriesBloc>(
+      () => _i608.CategoriesBloc(gh<_i161.LibraryRepository>()),
+    );
     gh.lazySingleton<_i478.UpdatesRepository>(
       () => _i534.UpdatesRepositoryImp(gh<_i135.UpdatesLocalDataSource>()),
     );
@@ -145,12 +151,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i959.ReaderPreferences>(
       () => _i959.ReaderPreferences(gh<_i460.SharedPreferences>()),
-    );
-    gh.lazySingleton<_i161.LibraryRepository>(
-      () => _i417.LibraryRepositoryImpl(
-        gh<_i306.AppDatabase>(),
-        gh<_i170.DownloadService>(),
-      ),
     );
     gh.lazySingleton<_i7.HistoryRepository>(
       () => _i377.HistoryRepositoryImp(gh<_i232.HistoryLocalDataSource>()),
@@ -182,52 +182,49 @@ extension GetItInjectableX on _i174.GetIt {
       (sourceId, _) =>
           _i915.SourceCatalogueBloc(gh<_i893.SourceManager>(), sourceId),
     );
-    gh.lazySingleton<_i901.LibraryUpdateService>(
-      () => _i901.LibraryUpdateService(
+    gh.lazySingleton<_i893.LibraryUpdateService>(
+      () => _i893.LibraryUpdateService(
         gh<_i306.AppDatabase>(),
         gh<_i893.SourceManager>(),
       ),
     );
-    gh.factory<_i608.CategoriesBloc>(
-      () => _i608.CategoriesBloc(gh<_i161.LibraryRepository>()),
-    );
-    gh.factory<_i900.LibraryBloc>(
-      () => _i900.LibraryBloc(
-        gh<_i161.LibraryRepository>(),
-        gh<_i791.LibraryPreferences>(),
-        gh<_i901.LibraryUpdateService>(),
-        gh<_i763.AppSettings>(),
-      ),
-    );
-    gh.factory<_i1060.HistoryBloc>(
-      () => _i1060.HistoryBloc(gh<_i7.HistoryRepository>()),
-    );
     gh.factory<_i85.UpdatesBloc>(
       () => _i85.UpdatesBloc(
         gh<_i478.UpdatesRepository>(),
-        gh<_i901.LibraryUpdateService>(),
+        gh<_i893.LibraryUpdateService>(),
       ),
     );
     gh.lazySingleton<_i778.DownloadsBloc>(
       () => _i778.DownloadsBloc(
-        gh<_i170.DownloadService>(),
+        gh<_i832.DownloadService>(),
         gh<_i350.MangaRepository>(),
         gh<_i893.SourceManager>(),
         gh<_i536.DownloadQueueStore>(),
         gh<_i638.DownloadPreferences>(),
         gh<_i14.SecurityPreferences>(),
-        gh<_i264.LiveActivityService>(),
+        gh<_i519.LiveActivityService>(),
       ),
+    );
+    gh.factory<_i1060.HistoryBloc>(
+      () => _i1060.HistoryBloc(gh<_i7.HistoryRepository>()),
     );
     gh.factoryParam<_i425.ReaderBloc, int, dynamic>(
       (_chapterId, _) => _i425.ReaderBloc(
         gh<_i350.MangaRepository>(),
         gh<_i893.SourceManager>(),
         gh<_i7.HistoryRepository>(),
-        gh<_i170.DownloadService>(),
+        gh<_i832.DownloadService>(),
         gh<_i763.AppSettings>(),
         gh<_i959.ReaderPreferences>(),
         _chapterId,
+      ),
+    );
+    gh.factory<_i900.LibraryBloc>(
+      () => _i900.LibraryBloc(
+        gh<_i161.LibraryRepository>(),
+        gh<_i791.LibraryPreferences>(),
+        gh<_i893.LibraryUpdateService>(),
+        gh<_i763.AppSettings>(),
       ),
     );
     return this;

@@ -11,7 +11,7 @@ import 'package:hondana/core/database/app_database.dart';
 import 'package:hondana/core/network/app_http.dart';
 import 'package:hondana/features/browse/domain/source/model/s_manga.dart';
 import 'package:hondana/features/browse/domain/source/source_manager.dart';
-import 'package:hondana/features/downloads/domain/download_service.dart';
+import 'package:hondana/services/download_service.dart';
 
 /// Disk/database/network housekeeping behind Settings > Data and storage and
 /// Settings > Advanced. Plain class — pages construct it with deps from getIt.

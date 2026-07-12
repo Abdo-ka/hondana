@@ -8,10 +8,10 @@ import 'package:hondana/core/database/app_database.dart';
 import 'package:hondana/core/di/di_container.dart';
 import 'package:hondana/core/network/app_http.dart';
 import 'package:hondana/features/browse/domain/source/source_manager.dart';
-import 'package:hondana/features/downloads/domain/download_service.dart';
+import 'package:hondana/services/download_service.dart';
 import 'package:hondana/features/downloads/presentation/bloc/downloads_bloc.dart';
 import 'package:hondana/features/downloads/presentation/bloc/downloads_event.dart';
-import 'package:hondana/features/more/data/maintenance_service.dart';
+import 'package:hondana/services/maintenance_service.dart';
 import 'package:hondana/features/more/presentation/widgets/settings_widgets.dart';
 
 /// Settings > Data and storage (Mihon SettingsDataScreen minus the deferred

@@ -199,6 +199,7 @@ nouns (e.g. "MangaDex") are not translated.
 lib/
 ├── main.dart / app.dart / initialization.dart   # entry, MaterialApp, bootstrap
 ├── core/            # DI, config, database, network, routing, state, theme, widgets
+├── services/        # cross-cutting app services (downloads, live activity, library updates, …)
 └── features/<feature>/                           # scaffold via `mason make feature`
     ├── data/
     │   ├── data_sources/   <f>_local_datasource.dart + <f>_remote_datasource.dart  (@injectable)

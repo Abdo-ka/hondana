@@ -10,8 +10,8 @@ import 'package:hondana/core/di/di_container.dart';
 import 'package:hondana/core/network/app_http.dart';
 import 'package:hondana/features/browse/data/source/http_source_base.dart';
 import 'package:hondana/features/browse/domain/source/source_manager.dart';
-import 'package:hondana/features/downloads/domain/download_service.dart';
-import 'package:hondana/features/more/data/maintenance_service.dart';
+import 'package:hondana/services/download_service.dart';
+import 'package:hondana/services/maintenance_service.dart';
 import 'package:hondana/features/more/presentation/widgets/settings_widgets.dart';
 
 /// Settings > Advanced (Mihon SettingsAdvancedScreen parity where portable):

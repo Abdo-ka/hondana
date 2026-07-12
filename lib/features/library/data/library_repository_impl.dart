@@ -2,7 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:injectable/injectable.dart';
 
 import 'package:hondana/core/database/app_database.dart';
-import 'package:hondana/features/downloads/domain/download_service.dart';
+import 'package:hondana/services/download_service.dart';
 import 'package:hondana/features/library/domain/category.dart';
 import 'package:hondana/features/library/domain/library_manga.dart';
 import 'package:hondana/features/library/domain/library_repository.dart';

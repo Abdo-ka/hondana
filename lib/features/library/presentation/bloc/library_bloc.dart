@@ -6,7 +6,7 @@ import 'package:hondana/core/config/app_settings.dart';
 import 'package:hondana/core/error/app_exception.dart';
 import 'package:hondana/core/state/bloc_status.dart';
 import 'package:hondana/features/browse/domain/source/model/manga_status.dart';
-import 'package:hondana/features/library/data/library_update_service.dart';
+import 'package:hondana/services/library_update_service.dart';
 import 'package:hondana/features/library/domain/library_manga.dart';
 import 'package:hondana/features/library/domain/library_preferences.dart';
 import 'package:hondana/features/library/domain/library_repository.dart';
