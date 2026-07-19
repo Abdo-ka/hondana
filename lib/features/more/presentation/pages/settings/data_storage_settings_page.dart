@@ -123,6 +123,32 @@ class _DataStorageViewState extends State<_DataStorageView> {
     await _refresh();
   }
 
+  Future<void> _clearReadChapters() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const AppText.titleMedium('settings.clear_read_chapters'),
+        content: const AppText.bodyMedium(
+          'settings.clear_read_chapters_confirm',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const AppText.bodyMedium('common.cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const AppText.bodyMedium('common.ok'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await _maintenance.clearReadChapters();
+    if (!mounted) return;
+    _toast('settings.read_chapters_cleared');
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
@@ -155,6 +181,16 @@ class _DataStorageViewState extends State<_DataStorageView> {
             leading: const Icon(Icons.delete_forever_outlined),
             title: const AppText.bodyLarge('settings.delete_all_downloads'),
             onTap: _deleteAllDownloads,
+          ),
+          const SettingsSectionHeader('settings.section_reading_data'),
+          ListTile(
+            leading: const Icon(Icons.remove_done_outlined),
+            title: const AppText.bodyLarge('settings.clear_read_chapters'),
+            subtitle: AppText.bodySmall(
+              'settings.clear_read_chapters_summary',
+              color: context.colorScheme.onSurfaceVariant,
+            ),
+            onTap: _clearReadChapters,
           ),
           const SettingsSectionHeader('settings.section_cache'),
           ValueListenableBuilder<int?>(

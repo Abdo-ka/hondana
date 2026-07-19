@@ -119,6 +119,19 @@ class MaintenanceService {
     });
   }
 
+  /// Resets read state across the whole app: clears every chapter's read flag
+  /// and page progress and wipes all reading history. Spans the entire database
+  /// on purpose — removing a manga from the library only flips `favorite`, so
+  /// its chapters and history linger, and this must clear those too.
+  Future<void> clearReadChapters() {
+    return db.transaction(() async {
+      await db.delete(db.historyEntries).go();
+      await db.update(db.chapters).write(
+        const ChaptersCompanion(read: Value(false), lastPageRead: Value(0)),
+      );
+    });
+  }
+
   /// Mihon's ResetViewerFlags: every entry falls back to the default reader
   /// settings. Returns the number of entries touched.
   Future<int> resetViewerFlags() => (db.update(

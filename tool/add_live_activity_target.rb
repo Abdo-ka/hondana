@@ -38,7 +38,7 @@ ext.build_configurations.each do |config|
   # FLUTTER_BUILD_NAME/NUMBER for the version settings below; App Store
   # validation requires the extension's version to match the app's.
   config.base_configuration_reference = generated_xcconfig
-  config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = 'com.hondana.hondana.DownloadActivity'
+  config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = 'com.hondana.DownloadActivity'
   config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.1'
   config.build_settings['SWIFT_VERSION'] = '5.0'
   config.build_settings['GENERATE_INFOPLIST_FILE'] = 'YES'

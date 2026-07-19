@@ -1,4 +1,4 @@
-package com.hondana.hondana
+package com.hondana
 
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
