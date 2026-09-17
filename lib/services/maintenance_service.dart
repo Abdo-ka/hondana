@@ -119,17 +119,36 @@ class MaintenanceService {
     });
   }
 
-  /// Resets read state across the whole app: clears every chapter's read flag
-  /// and page progress and wipes all reading history. Spans the entire database
-  /// on purpose — removing a manga from the library only flips `favorite`, so
-  /// its chapters and history linger, and this must clear those too.
-  Future<void> clearReadChapters() {
-    return db.transaction(() async {
-      await db.delete(db.historyEntries).go();
-      await db.update(db.chapters).write(
-        const ChaptersCompanion(read: Value(false), lastPageRead: Value(0)),
-      );
-    });
+  /// Reclaims disk by keeping only downloads worth keeping: a chapter that
+  /// still exists in the database and is unread. Everything else on disk is
+  /// deleted — chapters you've read, and orphans whose row/manga is gone (only
+  /// their files linger, unreachable from the app). Scans disk rather than the
+  /// chapter table so those orphans get caught. Read status and history are
+  /// left untouched; callers should rescan downloads afterwards so badges
+  /// reflect the freed disk.
+  Future<void> clearReadChapters() async {
+    final unread = (await (db.select(
+      db.chapters,
+    )..where((c) => c.read.equals(false))).get()).map((c) => c.id).toSet();
+    final root = await downloads.root();
+    for (final mangaDir in root.listSync().whereType<Directory>()) {
+      for (final chapterDir in mangaDir.listSync().whereType<Directory>()) {
+        final id = int.tryParse(p.basename(chapterDir.path));
+        if (id != null && unread.contains(id)) continue;
+        try {
+          await chapterDir.delete(recursive: true);
+        } on FileSystemException {
+          // Already gone.
+        }
+      }
+      // Drop the manga folder once its last chapter is gone so it stops
+      // counting as an entry in the storage summary.
+      try {
+        if (mangaDir.listSync().isEmpty) await mangaDir.delete();
+      } on FileSystemException {
+        // Already gone.
+      }
+    }
   }
 
   /// Mihon's ResetViewerFlags: every entry falls back to the default reader

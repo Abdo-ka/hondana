@@ -145,8 +145,11 @@ class _DataStorageViewState extends State<_DataStorageView> {
     );
     if (confirmed != true || !mounted) return;
     await _maintenance.clearReadChapters();
+    // Rescan so download badges/queue match the now-freed disk.
+    getIt<DownloadsBloc>().add(const DownloadsStarted());
     if (!mounted) return;
     _toast('settings.read_chapters_cleared');
+    await _refresh();
   }
 
   @override
