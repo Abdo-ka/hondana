@@ -4,7 +4,9 @@ import 'dart:io';
 
 import 'package:background_downloader/background_downloader.dart' as bd;
 import 'package:bloc_concurrency/bloc_concurrency.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:path/path.dart' as p;
@@ -22,16 +24,30 @@ import 'package:hondana/features/downloads/presentation/bloc/downloads_state.dar
 import 'package:hondana/features/manga/domain/repositories/manga_repository.dart';
 import 'package:hondana/features/more/domain/security_preferences.dart';
 
-/// App-wide download queue (singleton — survives navigation). Chapters are
-/// processed one at a time in queue order (Mihon behavior — queue chapter 1
-/// first and it finishes first). The active chapter's page list is fetched in
-/// the foreground, then each page becomes a native background task (WorkManager
-/// on Android, URLSession on iOS via background_downloader) so downloads
-/// continue when the app is backgrounded or killed. Per-page completions are
-/// aggregated back into one chapter-level [DownloadTask]; the `.done` marker
-/// is written only after every page of the chapter has completed. The pending
-/// queue itself is persisted via [DownloadQueueStore] and restored on startup,
-/// so remaining chapters resume after a restart.
+/// App-wide download queue (singleton — survives navigation). Chapters start
+/// in queue order (Mihon behavior — queue chapter 1 first and it finishes
+/// first), but several are kept in flight at once — see
+/// [_maxChaptersInFlight] — so the OS always holds a backlog of work. A
+/// chapter's page list is fetched in the foreground, then each page becomes a
+/// native background task (WorkManager on Android, URLSession on iOS via
+/// background_downloader) so downloads continue when the app is backgrounded
+/// or killed.
+///
+/// Keeping that backlog deep is what makes background downloading work on
+/// iOS. The OS suspends the Dart isolate a short while after the app leaves
+/// the foreground, so a strictly serial queue stalls as soon as the single
+/// in-flight chapter finishes: nothing is alive to fetch the next page list
+/// and enqueue it. Pages already handed to URLSession keep downloading
+/// regardless, and once the session drains iOS resumes (or relaunches) the app
+/// via `handleEventsForBackgroundURLSession` — which reaches this bloc through
+/// the eager `getIt<DownloadsBloc>()` in `preInitializations` — so the drain
+/// loop gets another window in which to top the backlog up.
+///
+/// Per-page completions are aggregated back into one chapter-level
+/// [DownloadTask]; the `.done` marker is written only after every page of the
+/// chapter has completed. The pending queue itself is persisted via
+/// [DownloadQueueStore] and restored on startup, so remaining chapters resume
+/// after a restart.
 @lazySingleton
 class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
   DownloadsBloc(
@@ -55,12 +71,23 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
     on<DownloadsWifiOnlyChanged>(_onWifiOnlyChanged);
     on<DownloadsQueueProcessed>(_onProcess, transformer: droppable());
     on<DownloadsTaskStatusChanged>(_onTaskStatus, transformer: sequential());
+    _lifecycle = AppLifecycleListener(onResume: _onAppResumed);
     add(const DownloadsStarted());
   }
 
   /// Task groups are `<prefix><mangaId>_<chapterId>` so a chapter's native
   /// tasks can be cancelled as a unit and reconciled after an app kill.
   static const _groupPrefix = 'hondana_dl_';
+
+  /// How many chapters may sit with the native downloader at once. Deeper than
+  /// one so backgrounded iOS keeps finding work after the Dart isolate is
+  /// suspended — see the class doc.
+  static const _maxChaptersInFlight = 4;
+
+  /// Ceiling on outstanding pages across those chapters, so a few very long
+  /// chapters can't flood WorkManager/URLSession. The first chapter always
+  /// starts, however many pages it has.
+  static const _maxPagesInFlight = 160;
 
   final DownloadService _service;
   final MangaRepository _repo;
@@ -81,8 +108,31 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
 
   StreamSubscription<bd.TaskUpdate>? _updatesSub;
 
+  /// Re-arms the pipeline whenever the app comes back to the foreground.
+  late final AppLifecycleListener _lifecycle;
+
   String _group(int mangaId, int chapterId) =>
       '$_groupPrefix${mangaId}_$chapterId';
+
+  /// Outstanding pages across every chapter currently in flight.
+  int get _pagesInFlight => _jobs.values.fold(
+    0,
+    (sum, job) => sum + job.totalPages - job.completed.length,
+  );
+
+  /// True while the native downloader already holds as much as it should.
+  /// Empty pipeline is never full, so the first chapter always starts.
+  bool get _pipelineFull =>
+      _jobs.isNotEmpty &&
+      (_jobs.length >= _maxChaptersInFlight ||
+          _pagesInFlight >= _maxPagesInFlight);
+
+  /// Re-arms the drain loop. [_onProcess] is a `while (true)` that returns
+  /// once the queue is exhausted, so anything that frees a pipeline slot pokes
+  /// it again; `droppable()` makes this a no-op while it is still running.
+  void _pump() {
+    if (!isClosed) add(const DownloadsQueueProcessed());
+  }
 
   Future<void> _onStarted(
     DownloadsStarted event,
@@ -302,13 +352,14 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
   ) async {
     await _ready.future; // Never enqueue before reconciliation finished.
     while (true) {
-      // One chapter at a time in queue order (Mihon): wait out any chapter
-      // already in flight — including one resurrected after an app kill —
-      // before starting the next.
-      while (_jobs.isNotEmpty) {
-        await _jobs.values.first.done;
-      }
       if (state.paused) return;
+      // Start chapters in queue order (Mihon) but keep a pipeline of them with
+      // the native downloader; when it is full, wait for whichever in-flight
+      // chapter finishes first — including one resurrected after an app kill.
+      while (_pipelineFull) {
+        await Future.any([for (final job in _jobs.values) job.done]);
+        if (state.paused) return;
+      }
       final next = state.queue
           .where((t) => t.status == DownloadTaskStatus.queued)
           .firstOrNull;
@@ -322,7 +373,7 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
         await _startChapter(next, emit);
       } catch (e) {
         // Catch Error too (e.g. a StateError/TypeError from a source's
-        // getPageList): an uncaught Error here would wedge the serial drain
+        // getPageList): an uncaught Error here would wedge the drain loop
         // with the chapter stuck at 'downloading'.
         final job = _jobs.remove(next.chapterId);
         job?.finish();
@@ -519,24 +570,21 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
       await _service.delete(task.mangaId, task.chapterId);
       return;
     }
-    // One combined system notification per chapter (fixed notification id, so
-    // consecutive chapters replace it) — the visible "background download".
-    // iOS re-issues a group notification whenever its text changes, so the
-    // body must stay static there (Android updates in place, so it can show
-    // page counts and a progress bar).
+    // One combined system notification for the whole queue (fixed notification
+    // id, so chapters replace rather than stack) — the visible "background
+    // download". iOS re-issues a group notification whenever its text changes
+    // and several chapters are in flight at once, so its text must not depend
+    // on which chapter last progressed; Android updates in place, so there it
+    // can name the manga and count pages.
     // "Hide notification content" redacts titles from the system
     // notification (the Live Activity is redacted the same way in
     // _syncLiveActivity).
-    final redact = _securityPrefs.hideNotificationContent;
+    final anonymous = _securityPrefs.hideNotificationContent || Platform.isIOS;
     bd.FileDownloader().configureNotificationForGroup(
       group,
       running: bd.TaskNotification(
-        redact ? 'Downloading' : task.mangaTitle,
-        redact
-            ? ''
-            : Platform.isIOS
-            ? task.chapterName
-            : '${task.chapterName} · {numFinished}/{numTotal}',
+        anonymous ? 'downloads.notification_running'.tr() : task.mangaTitle,
+        anonymous ? '' : '${task.chapterName} · {numFinished}/{numTotal}',
       ),
       progressBar: !Platform.isIOS,
       groupNotificationId: 'hondana_downloads',
@@ -619,7 +667,7 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
 
   // These three end a chapter's flight. `job.finish()` MUST run even if the
   // filesystem/native cleanup throws — a pending completer would deadlock the
-  // serial drain (`await _jobs.values.first.done`) forever.
+  // drain loop (`await Future.any(...)`) forever.
   Future<void> _finishChapter(
     _ChapterJob job,
     Emitter<DownloadsState> emit,
@@ -636,6 +684,7 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
       emit(state.copyWith(downloaded: {...state.downloaded, job.chapterId}));
     } finally {
       job.finish();
+      _pump();
     }
   }
 
@@ -661,6 +710,7 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
       );
     } finally {
       job?.finish();
+      _pump();
     }
   }
 
@@ -676,6 +726,7 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
       await _service.delete(job.mangaId, chapterId);
     } finally {
       job.finish();
+      _pump();
     }
   }
 
@@ -753,14 +804,35 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
       completedPages:
           job?.completed.length ?? (active.progress * total).round(),
       totalPages: total,
+      // Everything still outstanding behind the chapter on show — the other
+      // chapters in the pipeline are already downloading, not queued.
       queued: s.queue
-          .where((t) => t.status == DownloadTaskStatus.queued)
+          .where((t) => t.isActive && t.chapterId != active.chapterId)
           .length,
     );
   }
 
+  /// The Dart isolate is suspended while the app is backgrounded on iOS, so
+  /// on resume the drain loop may have been frozen mid-pipeline and native
+  /// status updates arrive in a burst. Poke the loop straight away, then —
+  /// once that burst has been applied — re-enqueue tasks the OS dropped
+  /// outright without ever reporting a final status.
+  void _onAppResumed() {
+    _pump();
+    Timer(const Duration(seconds: 5), () async {
+      if (isClosed) return;
+      try {
+        await bd.FileDownloader().rescheduleKilledTasks();
+      } catch (_) {
+        // Native downloader unavailable, or task tracking never started.
+      }
+      _pump();
+    });
+  }
+
   @override
   Future<void> close() async {
+    _lifecycle.dispose();
     await _updatesSub?.cancel();
     return super.close();
   }

@@ -117,7 +117,8 @@
     "pause": "Pause",
     "resume": "Resume",
     "cancel_all": "Cancel all",
-    "clear_finished": "Clear finished"
+    "clear_finished": "Clear finished",
+    "notification_running": "Downloading"
   },
   "categories": {
     "title": "Categories",
