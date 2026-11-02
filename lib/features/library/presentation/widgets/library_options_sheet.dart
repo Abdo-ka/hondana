@@ -162,18 +162,21 @@ class _SortTab extends StatelessWidget {
   }
 }
 
-/// Radio list selecting the [LibraryDisplayMode] (list / compact / comfortable).
+/// Radio list selecting the [LibraryDisplayMode] (list / compact / comfortable),
+/// then Mihon's "Tabs" section with the category item-count toggle.
 class _DisplayTab extends StatelessWidget {
   const _DisplayTab();
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<LibraryBloc, LibraryState>(
-      buildWhen: (a, b) => a.displayMode != b.displayMode,
+      buildWhen: (a, b) =>
+          a.displayMode != b.displayMode ||
+          a.showCategoryItemCount != b.showCategoryItemCount,
       builder: (context, state) => ListView(
-        children: LibraryDisplayMode.values
-            .map(
-              (m) => ListTile(
+        children: [
+          ...LibraryDisplayMode.values.map(
+            (m) => ListTile(
                 leading: Icon(
                   state.displayMode == m
                       ? Icons.radio_button_checked
@@ -187,8 +190,29 @@ class _DisplayTab extends StatelessWidget {
                   LibraryDisplayModeChanged(m),
                 ),
               ),
-            )
-            .toList(),
+          ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 4.h),
+            child: AppText.labelLarge(
+              'library.display_tabs',
+              color: context.colorScheme.primary,
+            ),
+          ),
+          ListTile(
+            leading: Icon(
+              state.showCategoryItemCount
+                  ? Icons.check_box
+                  : Icons.check_box_outline_blank,
+              color: state.showCategoryItemCount
+                  ? context.colorScheme.primary
+                  : context.colorScheme.onSurfaceVariant,
+            ),
+            title: const AppText.bodyMedium('library.display_item_count'),
+            onTap: () => context.read<LibraryBloc>().add(
+              LibraryCategoryItemCountToggled(!state.showCategoryItemCount),
+            ),
+          ),
+        ],
       ),
     );
   }

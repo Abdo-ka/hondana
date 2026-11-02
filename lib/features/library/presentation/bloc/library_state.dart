@@ -18,6 +18,8 @@ class LibraryState extends Equatable {
     this.loadStatus = const BlocStatus.initial(),
     this.refreshStatus = const BlocStatus.initial(),
     this.categories = const [],
+    this.categoryCounts = const {},
+    this.showCategoryItemCount = false,
     this.selectedCategoryId,
     this.manga = const [],
     this.selectedIds = const {},
@@ -36,6 +38,12 @@ class LibraryState extends Equatable {
   /// Status of the last global refresh request (drives the refresh spinner).
   final BlocStatus refreshStatus;
   final List<Category> categories;
+
+  /// Entries per category id; `null` is the "All" tab.
+  final Map<int?, int> categoryCounts;
+
+  /// Whether category tabs show their [categoryCounts] badge.
+  final bool showCategoryItemCount;
 
   /// Active category tab; `null` is the "all" pseudo-category.
   final int? selectedCategoryId;
@@ -78,6 +86,8 @@ class LibraryState extends Equatable {
     BlocStatus? loadStatus,
     BlocStatus? refreshStatus,
     List<Category>? categories,
+    Map<int?, int>? categoryCounts,
+    bool? showCategoryItemCount,
     Object? selectedCategoryId = _undefined,
     List<LibraryManga>? manga,
     Set<int>? selectedIds,
@@ -93,6 +103,9 @@ class LibraryState extends Equatable {
       loadStatus: loadStatus ?? this.loadStatus,
       refreshStatus: refreshStatus ?? this.refreshStatus,
       categories: categories ?? this.categories,
+      categoryCounts: categoryCounts ?? this.categoryCounts,
+      showCategoryItemCount:
+          showCategoryItemCount ?? this.showCategoryItemCount,
       selectedCategoryId: identical(selectedCategoryId, _undefined)
           ? this.selectedCategoryId
           : selectedCategoryId as int?,
@@ -113,6 +126,8 @@ class LibraryState extends Equatable {
     loadStatus,
     refreshStatus,
     categories,
+    categoryCounts,
+    showCategoryItemCount,
     selectedCategoryId,
     manga,
     selectedIds,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:hondana/core/extensions/context_ext.dart';
 import 'package:hondana/core/state/status_builder.dart';
 import 'package:hondana/core/widgets/app_text.dart';
 import 'package:hondana/features/library/domain/library_preferences.dart';
@@ -46,7 +47,9 @@ class _CategoryTabs extends StatelessWidget {
     return BlocBuilder<LibraryBloc, LibraryState>(
       buildWhen: (a, b) =>
           a.categories != b.categories ||
-          a.selectedCategoryId != b.selectedCategoryId,
+          a.selectedCategoryId != b.selectedCategoryId ||
+          a.categoryCounts != b.categoryCounts ||
+          a.showCategoryItemCount != b.showCategoryItemCount,
       builder: (context, state) => state.categories.isEmpty
           ? const SizedBox.shrink()
           : DefaultTabController(
@@ -66,13 +69,74 @@ class _CategoryTabs extends StatelessWidget {
                   ),
                 ),
                 tabs: [
-                  const Tab(child: AppText.labelLarge('library.all')),
+                  Tab(
+                    child: _CategoryTabLabel(
+                      label: 'library.all',
+                      count: state.showCategoryItemCount
+                          ? state.categoryCounts[null] ?? 0
+                          : null,
+                    ),
+                  ),
                   ...state.categories.map(
-                    (c) => Tab(child: AppText.labelLarge(c.name)),
+                    (c) => Tab(
+                      child: _CategoryTabLabel(
+                        label: c.name,
+                        count: state.showCategoryItemCount
+                            ? state.categoryCounts[c.id] ?? 0
+                            : null,
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
+    );
+  }
+}
+
+/// A category tab's name plus an optional item-count pill.
+///
+/// Mihon behavior: the name gets only the width the badge leaves, so a long
+/// category name ellipsizes instead of pushing the count out of the tab. A
+/// scrollable [TabBar] gives tabs unbounded width, hence the explicit cap.
+class _CategoryTabLabel extends StatelessWidget {
+  const _CategoryTabLabel({required this.label, this.count});
+
+  /// Translation key or literal category name ([AppText] resolves either).
+  final String label;
+
+  /// Entry count to show, or null to hide the badge.
+  final int? count;
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: context.width * 0.6),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: AppText.labelLarge(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (count != null) ...[
+            4.horizontalSpace,
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: context.colorScheme.onSurface.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 1.h),
+                child: AppText.labelSmall('$count'),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

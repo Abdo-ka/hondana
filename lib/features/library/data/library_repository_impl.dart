@@ -89,6 +89,31 @@ class LibraryRepositoryImpl implements LibraryRepository {
   }
 
   @override
+  Stream<Map<int?, int>> watchCategoryCounts() {
+    final query = _db.select(_db.mangas).join([
+      leftOuterJoin(
+        _db.mangasCategories,
+        _db.mangasCategories.mangaId.equalsExp(_db.mangas.id),
+        useColumns: false,
+      ),
+    ])
+      ..where(_db.mangas.favorite.equals(true))
+      ..addColumns([_db.mangasCategories.categoryId]);
+    return query.watch().map((rows) {
+      final all = <int>{};
+      final counts = <int?, int>{};
+      for (final row in rows) {
+        all.add(row.readTable(_db.mangas).id);
+        final categoryId = row.read(_db.mangasCategories.categoryId);
+        if (categoryId != null) {
+          counts[categoryId] = (counts[categoryId] ?? 0) + 1;
+        }
+      }
+      return counts..[null] = all.length;
+    });
+  }
+
+  @override
   Future<int> favoriteCount() async {
     final count = countAll();
     final row =

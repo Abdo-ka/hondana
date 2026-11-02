@@ -35,6 +35,7 @@ class LibraryPreferences {
   static const _kFilterCompleted = 'library.filter.completed';
   static const _kFilterDownloaded = 'library.filter.downloaded';
   static const _kDefaultCategory = 'library.defaultCategory';
+  static const _kCategoryItemCount = 'library.categoryNumberOfItems';
   static const _kUpdateInterval = 'library.updateIntervalHours';
   static const _kUpdateWifiOnly = 'library.updateWifiOnly';
   static const _kUpdateInclude = 'library.updateIncludeCategories';
@@ -87,6 +88,13 @@ class LibraryPreferences {
       TriFilter.values[_prefs.getInt(_kFilterDownloaded) ?? 0];
   Future<void> setFilterDownloaded(TriFilter f) =>
       _prefs.setInt(_kFilterDownloaded, f.index);
+
+  /// Item-count badge on each category tab (Mihon "Show number of items",
+  /// off by default).
+  bool get showCategoryItemCount =>
+      _prefs.getBool(_kCategoryItemCount) ?? false;
+  Future<void> setShowCategoryItemCount(bool v) =>
+      _prefs.setBool(_kCategoryItemCount, v);
 
   // ── Settings > Library ─────────────────────────────────────────────────────
 

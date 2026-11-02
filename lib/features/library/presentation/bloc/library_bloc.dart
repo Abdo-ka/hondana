@@ -31,6 +31,7 @@ class LibraryBloc extends Bloc<LibraryEvent, LibraryState> {
       super(
         LibraryState(
           displayMode: prefs.displayMode,
+          showCategoryItemCount: prefs.showCategoryItemCount,
           sortMode: prefs.sortMode,
           sortAscending: prefs.sortAscending,
           filterUnread: prefs.filterUnread,
@@ -42,6 +43,7 @@ class LibraryBloc extends Bloc<LibraryEvent, LibraryState> {
     on<LibrarySubscribed>(_onSubscribe, transformer: restartable());
     on<LibraryCategorySelected>(_onCategorySelected);
     on<LibraryDisplayModeChanged>(_onDisplayMode);
+    on<LibraryCategoryItemCountToggled>(_onCategoryItemCount);
     on<LibrarySortChanged>(_onSort);
     on<LibrarySearchChanged>(_onSearch);
     on<LibraryFilterCycled>(_onFilterCycled);
@@ -77,14 +79,21 @@ class LibraryBloc extends Bloc<LibraryEvent, LibraryState> {
     return super.close();
   }
 
+  /// Streams the categories and their entry counts (tab badges) together.
   Future<void> _onCategories(
     LibraryCategoriesSubscribed event,
     Emitter<LibraryState> emit,
-  ) {
-    return emit.forEach(
-      _repo.watchCategories(),
-      onData: (categories) => state.copyWith(categories: categories),
-    );
+  ) async {
+    await Future.wait([
+      emit.forEach(
+        _repo.watchCategories(),
+        onData: (categories) => state.copyWith(categories: categories),
+      ),
+      emit.forEach(
+        _repo.watchCategoryCounts(),
+        onData: (counts) => state.copyWith(categoryCounts: counts),
+      ),
+    ]);
   }
 
   /// Streams the library for the active category, running each emission
@@ -132,6 +141,14 @@ class LibraryBloc extends Bloc<LibraryEvent, LibraryState> {
   ) async {
     await _prefs.setDisplayMode(event.mode);
     emit(state.copyWith(displayMode: event.mode));
+  }
+
+  Future<void> _onCategoryItemCount(
+    LibraryCategoryItemCountToggled event,
+    Emitter<LibraryState> emit,
+  ) async {
+    await _prefs.setShowCategoryItemCount(event.show);
+    emit(state.copyWith(showCategoryItemCount: event.show));
   }
 
   Future<void> _onSort(

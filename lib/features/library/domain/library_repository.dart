@@ -10,6 +10,10 @@ abstract interface class LibraryRepository {
   /// User categories, ordered by [Category.position].
   Stream<List<Category>> watchCategories();
 
+  /// Library entry count per category id; the `null` key counts the whole
+  /// library ("All" tab). Drives the category tab badges.
+  Stream<Map<int?, int>> watchCategoryCounts();
+
   /// Number of favorited manga — used to gate empty-library UI.
   Future<int> favoriteCount();
 

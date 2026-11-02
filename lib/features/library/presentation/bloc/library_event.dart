@@ -27,6 +27,12 @@ final class LibraryDisplayModeChanged extends LibraryEvent {
   final LibraryDisplayMode mode;
 }
 
+/// Toggle the item-count badge on category tabs (also persisted).
+final class LibraryCategoryItemCountToggled extends LibraryEvent {
+  const LibraryCategoryItemCountToggled(this.show);
+  final bool show;
+}
+
 /// Change the sort mode and direction (also persisted to preferences).
 final class LibrarySortChanged extends LibraryEvent {
   const LibrarySortChanged(this.mode, this.ascending);

@@ -25,6 +25,8 @@
     "display_comfortableGrid": "Comfortable grid",
     "display_compactGrid": "Compact grid",
     "display_list": "List",
+    "display_tabs": "Tabs",
+    "display_item_count": "Show number of items",
     "sort_alphabetical": "Alphabetically",
     "sort_lastUpdate": "Last update",
     "sort_unread": "Unread",
