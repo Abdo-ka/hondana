@@ -40,9 +40,11 @@ class LibraryUpdateService {
     final dlInclude = dlPrefs.downloadNewIncludeCategoryIds;
     final dlExclude = dlPrefs.downloadNewExcludeCategoryIds;
 
-    final favorites = await (_db.select(
-      _db.mangas,
-    )..where((m) => m.favorite.equals(true))).get();
+    final favorites = _bySourceSize(
+      await (_db.select(
+        _db.mangas,
+      )..where((m) => m.favorite.equals(true))).get(),
+    );
     final categoriesOf = await _mangaCategories();
 
     var newChapters = 0;
@@ -186,6 +188,20 @@ class LibraryUpdateService {
       }
     }
     return newChapters;
+  }
+
+  /// Groups [favorites] by source, largest group first (Mihon behavior: the
+  /// sources with the most entries are updated first, so the longest
+  /// per-source run starts early instead of trailing behind the others).
+  List<MangaData> _bySourceSize(List<MangaData> favorites) {
+    final bySource = <int, List<MangaData>>{};
+    for (final m in favorites) {
+      bySource.putIfAbsent(m.source, () => []).add(m);
+    }
+    return (bySource.values.toList()
+          ..sort((a, b) => b.length.compareTo(a.length)))
+        .expand((group) => group)
+        .toList();
   }
 
   /// Tri-state category gate: any excluded category loses; a non-empty
