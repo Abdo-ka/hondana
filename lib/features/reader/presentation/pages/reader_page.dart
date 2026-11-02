@@ -611,6 +611,7 @@ class _WebtoonReaderState extends State<_WebtoonReader> {
   static const double _pageGap = 16;
 
   final ReaderPreferences _prefs = getIt<ReaderPreferences>();
+  final Map<String, double> _aspectRatios = {};
   final ItemScrollController _scrollController = ItemScrollController();
   final ScrollOffsetController _offsetController = ScrollOffsetController();
   final ItemPositionsListener _positions = ItemPositionsListener.create();
@@ -745,6 +746,7 @@ class _WebtoonReaderState extends State<_WebtoonReader> {
                         headers: state.imageHeaders,
                         fit: BoxFit.fitWidth,
                         reserveHeight: true,
+                        aspectRatios: _aspectRatios,
                       ),
                     ),
                     final ReaderTransitionItem item =>

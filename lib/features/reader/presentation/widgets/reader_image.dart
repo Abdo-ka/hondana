@@ -6,27 +6,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:hondana/core/network/app_http.dart';
 
-/// Remembers each page's intrinsic aspect ratio across rebuilds. In webtoon
-/// mode an item whose image is still loading (or was disposed offscreen and
-/// reloads) would otherwise change height when the bytes arrive — and item
-/// height changes near the viewport are exactly what makes continuous
-/// scrolling "jump to a random page". Once a page has been decoded we can
-/// reserve its final height immediately on every later build.
-class _PageAspectCache {
-  // ponytail: plain FIFO-capped map; an LRU only matters past ~600 open pages.
-  static const _max = 600;
-  static final _cache = <String, double>{};
-
-  static double? get(String url) => _cache[url];
-
-  static void set(String url, double aspect) {
-    if (!_cache.containsKey(url) && _cache.length >= _max) {
-      _cache.remove(_cache.keys.first);
-    }
-    _cache[url] = aspect;
-  }
-}
-
 /// Renders a reader page from a network URL (with source headers) or a local
 /// file path. With [BoxFit.fitWidth] (webtoon) the widget reserves the image's
 /// exact final height as soon as its aspect ratio is known, so late loads
@@ -37,6 +16,7 @@ class ReaderImage extends StatefulWidget {
     this.headers = const {},
     this.fit = BoxFit.contain,
     this.reserveHeight = false,
+    this.aspectRatios,
     super.key,
   });
 
@@ -48,6 +28,10 @@ class ReaderImage extends StatefulWidget {
   /// matters; paged mode is always viewport-sized and must not reserve.
   final bool reserveHeight;
 
+  /// Reader-session geometry, retained even when a page leaves the viewport.
+  /// Stores only ratios, never decoded images.
+  final Map<String, double>? aspectRatios;
+
   @override
   State<ReaderImage> createState() => _ReaderImageState();
 }
@@ -58,21 +42,46 @@ class _ReaderImageState extends State<ReaderImage> {
   ImageStream? _stream;
   ImageStreamListener? _listener;
 
+  ImageProvider? _image;
+  int? _decodeWidth;
+
   bool get _reservesHeight => widget.reserveHeight;
+  double get _placeholderHeight => _reservesHeight ? 500.h : 320.h;
 
   @override
-  void initState() {
-    super.initState();
-    _initAspect();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _configureImage();
   }
 
   @override
   void didUpdateWidget(ReaderImage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.url != widget.url) {
-      _stopListening();
-      _aspect.value = null;
-      _initAspect();
+    if (oldWidget.url != widget.url ||
+        oldWidget.headers != widget.headers ||
+        oldWidget.reserveHeight != widget.reserveHeight ||
+        oldWidget.aspectRatios != widget.aspectRatios) {
+      _image = null;
+      _configureImage();
+    }
+  }
+
+  void _configureImage() {
+    final url = widget.url;
+    final width = _reservesHeight
+        ? (MediaQuery.sizeOf(context).width *
+                  MediaQuery.devicePixelRatioOf(context))
+              .ceil()
+        : null;
+    if (_image != null && width == _decodeWidth) return;
+    _stopListening();
+    _decodeWidth = width;
+    _aspect.value = widget.aspectRatios?[url];
+    _image = url == null || url.isEmpty
+        ? null
+        : ResizeImage.resizeIfNeeded(width, null, _provider(url));
+    if (_image != null && _reservesHeight && _aspect.value == null) {
+      _resolveAspect(url!);
     }
   }
 
@@ -83,16 +92,8 @@ class _ReaderImageState extends State<ReaderImage> {
     super.dispose();
   }
 
-  void _initAspect() {
-    final url = widget.url;
-    if (url == null || url.isEmpty || !_reservesHeight) return;
-    _aspect.value = _PageAspectCache.get(url);
-    if (_aspect.value == null) _resolveAspect(url);
-  }
-
   ImageProvider _provider(String url) => url.startsWith('http')
-      // Same provider identity as the CachedNetworkImage below, so this
-      // resolves from the shared image cache instead of loading twice.
+      // Geometry and rendering share the same resized provider/cache entry.
       ? CachedNetworkImageProvider(
           url,
           headers: widget.headers,
@@ -101,12 +102,12 @@ class _ReaderImageState extends State<ReaderImage> {
       : FileImage(File(url));
 
   void _resolveAspect(String url) {
-    final stream = _provider(url).resolve(ImageConfiguration.empty);
+    final stream = _image!.resolve(ImageConfiguration.empty);
     final listener = ImageStreamListener(
       (info, _) {
         final aspect = info.image.width / info.image.height;
         info.dispose();
-        _PageAspectCache.set(url, aspect);
+        widget.aspectRatios?[url] = aspect;
         if (mounted && _aspect.value == null) _aspect.value = aspect;
       },
       onError: (_, _) {}, // The visible widget shows its own error state.
@@ -124,58 +125,52 @@ class _ReaderImageState extends State<ReaderImage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final url = widget.url;
-    if (url == null || url.isEmpty) return const SizedBox.shrink();
-    // Before the aspect ratio is known, hold a stable placeholder box close
-    // to a typical page so the eventual correction stays small. Fixed logical
-    // px, not MediaQuery — immersive-mode toggles change the reported screen
-    // size and would shift every still-loading item.
-    final placeholderHeight = _reservesHeight ? 500.0.h : 320.0.h;
-    final image = url.startsWith('http')
-        ? CachedNetworkImage(
-            imageUrl: url,
-            httpHeaders: widget.headers,
-            cacheManager: AppImageCache.manager,
+  Widget build(BuildContext context) => _image == null
+      ? const SizedBox.shrink()
+      : ValueListenableBuilder<double?>(
+          valueListenable: _aspect,
+          builder: (context, aspect, child) => _reservesHeight && aspect != null
+              ? AspectRatio(aspectRatio: aspect, child: child)
+              : ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: _reservesHeight ? _placeholderHeight : 0,
+                  ),
+                  child: child,
+                ),
+          child: Image(
+            image: _image!,
             fit: widget.fit,
-            fadeInDuration: Duration.zero,
-            fadeOutDuration: Duration.zero,
-            placeholder: (context, _) => SizedBox(
-              height: placeholderHeight,
-              child: const Center(child: CircularProgressIndicator.adaptive()),
+            // Width-sized decoding keeps long chapters inside the image cache
+            // budget, avoiding repeated full-resolution decodes on backscroll.
+            filterQuality: FilterQuality.low,
+            frameBuilder: (context, child, frame, synchronous) =>
+                synchronous || frame != null
+                ? child
+                : _ReaderImagePlaceholder(height: _placeholderHeight),
+            errorBuilder: (context, error, stack) => _ReaderImagePlaceholder(
+              height: _placeholderHeight,
+              failed: true,
             ),
-            errorWidget: (context, _, _) => SizedBox(
-              height: placeholderHeight,
-              child: const Icon(
-                Icons.broken_image_outlined,
-                color: Colors.white38,
-              ),
-            ),
-          )
-        : Image.file(
-            File(url),
-            fit: widget.fit,
-            errorBuilder: (context, _, _) => SizedBox(
-              height: placeholderHeight,
-              child: const Icon(
-                Icons.broken_image_outlined,
-                color: Colors.white38,
-              ),
-            ),
-          );
-    if (!_reservesHeight) return image;
-    return ValueListenableBuilder<double?>(
-      valueListenable: _aspect,
-      builder: (context, aspect, child) => aspect != null
-          ? AspectRatio(aspectRatio: aspect, child: child)
-          // Aspect not yet known: keep at least placeholder height. Without
-          // this a local Image.file lays out at ~0 height until decoded,
-          // collapsing a downloaded chapter into a stack of zero-height items.
-          : ConstrainedBox(
-              constraints: BoxConstraints(minHeight: placeholderHeight),
-              child: child,
-            ),
-      child: image,
-    );
-  }
+          ),
+        );
+}
+
+class _ReaderImagePlaceholder extends StatelessWidget {
+  const _ReaderImagePlaceholder({required this.height, this.failed = false});
+
+  final double height;
+  final bool failed;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: height,
+    child: Center(
+      child: failed
+          ? Icon(
+              Icons.broken_image_outlined,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            )
+          : const CircularProgressIndicator.adaptive(),
+    ),
+  );
 }
