@@ -142,7 +142,22 @@ abstract class MadaraSource extends HttpSourceBase {
       url: _relative(href),
       title: title,
       thumbnailUrl: _imgSrc(el.querySelector('img')),
+      latestChapter: _latestChapter(el),
     );
+  }
+
+  // The listing includes recent chapter links, not the complete chapter
+  // list. Preserve the newest label (including decimals/special chapters)
+  // without fetching details or pretending it is a total chapter count.
+  String? _latestChapter(Element el) {
+    final links = el.querySelectorAll(
+      '.chapter a, .list-chapter a, .chapter-item a, .latest-chap a',
+    );
+    for (final link in links) {
+      final label = link.text.replaceAll(RegExp(r'\s+'), ' ').trim();
+      if (label.isNotEmpty) return label;
+    }
+    return null;
   }
 
   // ── Details ──────────────────────────────────────────────────────────────

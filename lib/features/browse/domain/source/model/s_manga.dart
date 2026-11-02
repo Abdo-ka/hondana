@@ -13,6 +13,7 @@ class SManga {
     this.status = MangaStatus.unknown,
     this.thumbnailUrl,
     this.initialized = false,
+    this.latestChapter,
   });
 
   /// Source-relative key identifying the manga.
@@ -30,6 +31,9 @@ class SManga {
   /// True once details have been fetched (avoids redundant network calls).
   final bool initialized;
 
+  /// Newest chapter label supplied by the listing; not a total chapter count.
+  final String? latestChapter;
+
   SManga copyWith({
     String? url,
     String? title,
@@ -40,6 +44,7 @@ class SManga {
     MangaStatus? status,
     String? thumbnailUrl,
     bool? initialized,
+    String? latestChapter,
   }) {
     return SManga(
       url: url ?? this.url,
@@ -51,6 +56,7 @@ class SManga {
       status: status ?? this.status,
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
       initialized: initialized ?? this.initialized,
+      latestChapter: latestChapter ?? this.latestChapter,
     );
   }
 }

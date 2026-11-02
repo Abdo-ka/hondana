@@ -14,6 +14,7 @@ import 'package:hondana/features/browse/presentation/bloc/global_search_bloc.dar
 import 'package:hondana/features/browse/presentation/bloc/global_search_event.dart';
 import 'package:hondana/features/browse/presentation/bloc/global_search_state.dart';
 import 'package:hondana/features/library/presentation/widgets/manga_cover.dart';
+import 'package:hondana/features/browse/presentation/widgets/manga_latest_chapter_badge.dart';
 
 /// Searches every enabled source at once, showing one horizontal shelf per
 /// source. Mihon behavior: sources are queried in parallel and results stream
@@ -212,7 +213,24 @@ class _SearchCover extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: MangaCover(url: manga.thumbnailUrl, sourceId: sourceId),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    MangaCover(url: manga.thumbnailUrl, sourceId: sourceId),
+                    if (manga.latestChapter != null)
+                      PositionedDirectional(
+                        top: 4.h,
+                        start: 4.w,
+                        end: 4.w,
+                        child: Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: MangaLatestChapterBadge(
+                            chapter: manga.latestChapter!,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
               SizedBox(height: 4.h),
               AppText.labelSmall(

@@ -42,6 +42,7 @@
   "browse": {
     "empty": "Sources will appear here.",
     "no_results": "No results.",
+    "latest_chapter": "Latest: {chapter}",
     "search_hint": "Search…",
     "popular": "Popular",
     "latest": "Latest",

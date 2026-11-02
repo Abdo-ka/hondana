@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hondana/core/routing/app_router.gr.dart';
 import 'package:hondana/core/widgets/app_text.dart';
 import 'package:hondana/features/browse/domain/source/model/s_manga.dart';
+import 'package:hondana/features/browse/presentation/widgets/manga_latest_chapter_badge.dart';
 import 'package:hondana/features/library/presentation/widgets/manga_cover.dart';
 
 /// Paginating cover grid for source results. Reused by catalogue + search.
@@ -64,6 +65,16 @@ class _SourceMangaCell extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           MangaCover(url: manga.thumbnailUrl, sourceId: sourceId),
+          if (manga.latestChapter != null)
+            PositionedDirectional(
+              top: 4.h,
+              start: 4.w,
+              end: 4.w,
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: MangaLatestChapterBadge(chapter: manga.latestChapter!),
+              ),
+            ),
           Positioned(
             left: 0,
             right: 0,
