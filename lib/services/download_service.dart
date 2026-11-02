@@ -39,15 +39,16 @@ class DownloadService {
   /// Sorted local page paths, or null when the chapter isn't fully downloaded.
   Future<List<String>?> localPages(int mangaId, int chapterId) async {
     final dir = await chapterDir(mangaId, chapterId);
-    if (!File(p.join(dir.path, '.done')).existsSync()) return null;
-    final pages =
-        dir
-            .listSync()
-            .whereType<File>()
-            .where((f) => p.basename(f.path) != '.done')
-            .map((f) => f.path)
-            .toList()
-          ..sort();
+    if (!await File(p.join(dir.path, '.done')).exists()) return null;
+    // Listing a large downloaded chapter must not block the reader isolate,
+    // especially when the next chapter is preloaded during a scroll.
+    final pages = <String>[];
+    await for (final entry in dir.list()) {
+      if (entry is File && p.basename(entry.path) != '.done') {
+        pages.add(entry.path);
+      }
+    }
+    pages.sort();
     return pages;
   }
 

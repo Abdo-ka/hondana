@@ -20,10 +20,21 @@ import UIKit
     }
   }
 
-  /// Reader screen controls: keep-awake + brightness ("hondana/native").
+  /// Background-execution window held while the download queue hands its
+  /// next chapters to URLSession after the app is hidden (BackgroundExecution).
+  private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
+
+  private func endBackgroundTask() {
+    guard backgroundTask != .invalid else { return }
+    UIApplication.shared.endBackgroundTask(backgroundTask)
+    backgroundTask = .invalid
+  }
+
+  /// Reader screen controls (keep-awake + brightness) and background-execution
+  /// windows for the download queue ("hondana/native").
   private func registerNativeScreenChannel(messenger: FlutterBinaryMessenger) {
     let channel = FlutterMethodChannel(name: "hondana/native", binaryMessenger: messenger)
-    channel.setMethodCallHandler { call, result in
+    channel.setMethodCallHandler { [weak self] call, result in
       let args = call.arguments as? [String: Any] ?? [:]
       switch call.method {
       case "keepScreenOn":
@@ -38,6 +49,18 @@ import UIKit
         result(nil)
       case "getBrightness":
         result(Double(UIScreen.main.brightness))
+      case "beginBackgroundTask":
+        if let self = self, self.backgroundTask == .invalid {
+          self.backgroundTask = UIApplication.shared.beginBackgroundTask(
+            withName: "hondana.downloads"
+          ) { [weak self] in
+            self?.endBackgroundTask()
+          }
+        }
+        result(nil)
+      case "endBackgroundTask":
+        self?.endBackgroundTask()
+        result(nil)
       default:
         result(FlutterMethodNotImplemented)
       }
