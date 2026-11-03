@@ -26,26 +26,25 @@ import 'package:hondana/features/manga/domain/repositories/manga_repository.dart
 import 'package:hondana/features/more/domain/security_preferences.dart';
 
 /// App-wide download queue (singleton — survives navigation). Chapters are
-/// prepared in queue order (Mihon behavior — queue chapter 1 first and it
-/// starts first): each chapter's page list is fetched in Dart, then every page
-/// becomes a native background task (WorkManager on Android, URLSession on iOS
-/// via background_downloader) so downloads continue when the app is
-/// backgrounded or killed.
+/// downloaded **one at a time** in queue order (Mihon behavior — queue
+/// chapter 1 first and it finishes first). Each chapter's page list is fetched
+/// in Dart, then every page becomes a native background task (WorkManager on
+/// Android, URLSession on iOS via background_downloader) so downloads continue
+/// when the app is backgrounded or killed.
 ///
-/// Up to [_chapterLookahead] chapters are handed to the native downloader at
-/// once. Preparing a chapter needs Dart execution time, which iOS takes away a
-/// few seconds after the app leaves the foreground — submitting only the
-/// active chapter made the queue stop as soon as that chapter finished in the
-/// background. With a lookahead, the platform already owns the next chapters'
-/// pages; on hide the app also asks iOS for a short background-execution
-/// window ([BackgroundExecution]) so a chapter being prepared still reaches
-/// URLSession.
-///
-/// Android caps page concurrency with a native holding queue. On iOS every
-/// page is handed directly to background URLSession: the plugin's in-process
-/// holding queue is lost if iOS terminates the app. URLSession controls how
-/// many page transfers actually run simultaneously. Swiping the app away
-/// cancels iOS background transfers.
+/// Preparing a chapter (fetching its page list) needs Dart execution time,
+/// which iOS takes away a few seconds after the app leaves the foreground — so
+/// the next [_chapterLookahead] chapters are *prepared* ahead and handed to
+/// the plugin's native holding queue. That queue releases at most
+/// [_maxConcurrentPages] pages at a time, oldest first, and advances in native
+/// code whenever a transfer finishes — even while Dart is suspended — so the
+/// chapters still download one after another in the background. Only the
+/// head chapter shows as downloading; prepared chapters stay queued until it
+/// finishes ([_withHead]). On hide the app also asks iOS for a short
+/// background-execution window ([BackgroundExecution]) so a chapter being
+/// prepared still reaches the downloader. If iOS terminates the app, held
+/// pages are restored by `rescheduleKilledTasks` on the next launch. Swiping
+/// the app away cancels iOS background transfers.
 ///
 /// Per-page completions are aggregated back into one chapter-level
 /// [DownloadTask]; the `.done` marker is written only after every page of the
@@ -86,13 +85,14 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
   /// tasks can be cancelled as a unit and reconciled after an app kill.
   static const _groupPrefix = 'hondana_dl_';
 
-  /// Android page concurrency (native holding queue, overall and per host).
+  /// Pages downloaded simultaneously (native holding queue, overall and per
+  /// host). Chapters themselves download one at a time.
   static const _maxConcurrentPages = 4;
 
-  /// How many chapters may be submitted to the native downloader at once —
-  /// see the class doc. iOS needs a deep lookahead because Dart cannot run in
-  /// the background to prepare the next chapter; Android keeps the process
-  /// alive in a foreground service, so a short one avoids gaps between
+  /// How many chapters may be prepared and waiting in the native holding
+  /// queue — see the class doc. iOS needs a deep lookahead because Dart cannot
+  /// run in the background to prepare the next chapter; Android keeps the
+  /// process alive in a foreground service, so a short one avoids gaps between
   /// chapters without fetching page lists (whose image URLs can expire, e.g.
   /// MangaDex@Home) long before they are downloaded.
   static int get _chapterLookahead => Platform.isIOS ? 10 : 3;
@@ -160,15 +160,13 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
           bd.PermissionStatus.granted) {
         await permissions.request(bd.PermissionType.notifications);
       }
-      // iOS must own ALL pages before suspension/termination. A native
-      // holding queue is still app-process memory, not persistent URLSession
-      // work. Android retains its cap to avoid JobScheduler task limits.
+      // The native holding queue serializes prepared chapters (oldest pages
+      // first) and keeps advancing while Dart is suspended — see the class
+      // doc. It also keeps Android under JobScheduler's task limits.
       await downloader.configure(
         globalConfig: (
           bd.Config.holdingQueue,
-          Platform.isIOS
-              ? bd.Config.never
-              : (_maxConcurrentPages, _maxConcurrentPages, null),
+          (_maxConcurrentPages, _maxConcurrentPages, null),
         ),
         androidConfig: (bd.Config.runInForeground, bd.Config.always),
       );
@@ -295,7 +293,7 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
       );
     }
     if (resurrected.isNotEmpty) {
-      emit(state.copyWith(queue: [...state.queue, ...resurrected]));
+      emit(_withHead(state.copyWith(queue: [...state.queue, ...resurrected])));
     }
   }
 
@@ -391,17 +389,28 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
           return;
         }
       }
+      // Skip chapters already prepared (waiting in the holding queue).
       final next = state.queue
-          .where((t) => t.status == DownloadTaskStatus.queued)
+          .where(
+            (t) =>
+                t.status == DownloadTaskStatus.queued &&
+                !_jobs.containsKey(t.chapterId),
+          )
           .firstOrNull;
       if (next == null) {
         _idle();
         return;
       }
+      // Shown as downloading only when nothing is ahead of it.
       _update(
         emit,
         next.chapterId,
-        (t) => t.copyWith(status: DownloadTaskStatus.downloading, progress: 0),
+        (t) => t.copyWith(
+          status: _jobs.isEmpty
+              ? DownloadTaskStatus.downloading
+              : DownloadTaskStatus.queued,
+          progress: 0,
+        ),
       );
       try {
         await _startChapter(next, emit);
@@ -423,16 +432,18 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
     // chapter in the gap.
     emit(state.copyWith(paused: paused));
     if (paused) {
-      // The in-flight chapter returns to queued and restarts on resume.
-      // ponytail: restart, not byte-resume — pages are small images.
-      final active = state.queue
-          .where((t) => t.status == DownloadTaskStatus.downloading)
-          .toList();
-      for (final task in active) {
-        await _abortNative(task.chapterId);
+      // In-flight and prepared chapters return to queued and restart on
+      // resume. ponytail: restart, not byte-resume — pages are small images.
+      final active = {
+        ..._jobs.keys,
+        for (final t in state.queue)
+          if (t.status == DownloadTaskStatus.downloading) t.chapterId,
+      };
+      for (final chapterId in active) {
+        await _abortNative(chapterId);
         _update(
           emit,
-          task.chapterId,
+          chapterId,
           (t) => t.copyWith(status: DownloadTaskStatus.queued, progress: 0),
         );
       }
@@ -508,9 +519,8 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
     final pages = await source.getPageList(
       SChapter(url: chapter.url, name: chapter.name),
     );
-    // Cancel/delete may have landed while the page list was loading.
-    if (state.taskFor(task.chapterId)?.status !=
-        DownloadTaskStatus.downloading) {
+    // Cancel/delete/pause may have landed while the page list was loading.
+    if (!_stillWanted(task.chapterId)) {
       await _service.delete(task.mangaId, task.chapterId);
       return;
     }
@@ -592,8 +602,7 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
       return;
     }
     // A cancel/delete may have interleaved with the local-page copies above.
-    if (state.taskFor(task.chapterId)?.status !=
-        DownloadTaskStatus.downloading) {
+    if (!_stillWanted(task.chapterId)) {
       _jobs.remove(task.chapterId)?.finish();
       await _service.delete(task.mangaId, task.chapterId);
       return;
@@ -604,6 +613,8 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
       mangaTitle: task.mangaTitle,
       chapterName: task.chapterName,
     );
+    // Now tracked as a job: it becomes the head if nothing is ahead of it.
+    emit(_withHead(state));
     final enqueued = await bd.FileDownloader().enqueueAll(tasks);
     // Pause/cancel/delete may have aborted the chapter during the enqueue
     // await — its cancelAll(group) ran before these tasks existed, so they'd
@@ -727,6 +738,11 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
     try {
       await _service.markDone(job.mangaId, job.chapterId);
       await _deleteRecords(job.taskIds);
+      // Leave flight before the update so [_withHead] promotes the next
+      // prepared chapter in the same emit.
+      if (identical(_jobs[job.chapterId], job)) {
+        _jobs.remove(job.chapterId);
+      }
       _update(
         emit,
         job.chapterId,
@@ -803,13 +819,44 @@ class DownloadsBloc extends Bloc<DownloadsEvent, DownloadsState> {
     DownloadTask Function(DownloadTask) fn,
   ) {
     emit(
-      state.copyWith(
-        queue: state.queue
-            .map((t) => t.chapterId == chapterId ? fn(t) : t)
-            .toList(),
+      _withHead(
+        state.copyWith(
+          queue: state.queue
+              .map((t) => t.chapterId == chapterId ? fn(t) : t)
+              .toList(),
+        ),
       ),
     );
   }
+
+  /// Marks the first in-flight chapter (queue order) as downloading and every
+  /// other prepared chapter as queued — they wait in the native holding queue
+  /// behind it. Chapters without a job are left untouched.
+  DownloadsState _withHead(DownloadsState s) {
+    final head = s.queue
+        .where((t) => t.isActive && _jobs.containsKey(t.chapterId))
+        .firstOrNull
+        ?.chapterId;
+    if (head == null) return s;
+    return s.copyWith(
+      queue: [
+        for (final t in s.queue)
+          if (!t.isActive || !_jobs.containsKey(t.chapterId))
+            t
+          else
+            t.copyWith(
+              status: t.chapterId == head
+                  ? DownloadTaskStatus.downloading
+                  : DownloadTaskStatus.queued,
+            ),
+      ],
+    );
+  }
+
+  /// Whether a chapter being prepared should still be submitted: not
+  /// cancelled, deleted or failed, and the queue isn't paused.
+  bool _stillWanted(int chapterId) =>
+      !state.paused && (state.taskFor(chapterId)?.isActive ?? false);
 
   /// Persists queue identity/order (not per-page progress) and the paused
   /// flag whenever they change — Mihon's DownloadStore behavior.

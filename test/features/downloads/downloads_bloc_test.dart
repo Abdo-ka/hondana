@@ -50,7 +50,7 @@ void main() {
   tearDownAll(() => directory.delete(recursive: true));
 
   test(
-    'next chapters are prepared ahead and files reconcile on resume',
+    'one chapter downloads at a time while the next are prepared ahead',
     () async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
@@ -66,7 +66,7 @@ void main() {
         SecurityPreferences(prefs),
         LiveActivityService(),
       );
-      for (final id in [1, 2]) {
+      for (final id in [1, 2, 3]) {
         bloc.add(
           DownloadEnqueued(
             chapterId: id,
@@ -76,16 +76,25 @@ void main() {
           ),
         );
       }
-      // Chapter 1's remote pages are handed to the native downloader, which
-      // never reports back here. Chapter 2 must still be prepared meanwhile —
-      // the lookahead that keeps the queue moving while Dart is suspended in
-      // the background.
+      // Chapters 1 and 3 have remote pages, handed to the native downloader,
+      // which never reports back here. The next chapters must still be
+      // prepared meanwhile — the lookahead that keeps the queue moving while
+      // Dart is suspended in the background — but only the head chapter is
+      // shown downloading; chapter 3 waits behind it in the holding queue.
       await _waitUntil(
-        () => bloc.state.downloaded.contains(2),
-        'second chapter prepared ahead',
+        () =>
+            bloc.state.downloaded.contains(2) && source.requested.length == 3,
+        'next chapters prepared ahead',
       );
-      expect(source.requested, ['1', '2']);
+      expect(source.requested, ['1', '2', '3']);
       expect(bloc.state.taskFor(1)?.status, DownloadTaskStatus.downloading);
+      expect(bloc.state.taskFor(3)?.status, DownloadTaskStatus.queued);
+      expect(
+        bloc.state.queue.where(
+          (t) => t.status == DownloadTaskStatus.downloading,
+        ),
+        hasLength(1),
+      );
       expect(await service.isDownloaded(1, 1), isFalse);
       expect((await service.localPages(1, 2))!.single, endsWith('p0001.png'));
       expect(await service.localPages(1, 99), isNull);
@@ -142,11 +151,13 @@ class _Source implements Source {
   @override
   Future<List<MangaPage>> getPageList(SChapter chapter) async {
     requested.add(chapter.url);
-    // Chapter 1 is remote (native task), every other chapter is local.
+    // Chapters 1 and 3 are remote (native tasks), every other one is local.
     return [
       MangaPage(
         index: 0,
-        imageUrl: chapter.url == '1' ? 'https://example.com/p1.png' : path,
+        imageUrl: chapter.url == '2'
+            ? path
+            : 'https://example.com/${chapter.url}.png',
       ),
     ];
   }
